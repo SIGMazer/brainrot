@@ -1,44 +1,45 @@
 # The Brainrot Programming Language
+
 A Meme-Fueled Journey into Compiler Design, Internet Slang, and Skibidi Toilets
 
 ## Table of Contents
 
-1. **Foreword**  
-2. **Introduction**  
-3. **What Is Brainrot?**  
-4. **Installation and Requirements**  
-5. **Building the Compiler**  
-6. **Basic Usage**  
-7. **Language Reference**  
-   - 7.1. Keywords  
-   - 7.2. Operators  
-   - 7.3. Control Flow (if, for, while, switch)  
-   - 7.4. Declarations and Variables (`rizz`)  
-   - 7.5. Return Statements (`bussin`)  
-   - 7.6. Built-In Print and Error Functions  
-8. **Extended User Documentation**  
-   - 8.1. `yapping`  
-   - 8.2. `yappin`  
-   - 8.3. `baka`  
-9. **Limitations**  
-10. **Known Issues**  
-11. **Cultural Context: The Rise of ‘Brain Rot’**  
-12. **Meme Culture, Oxford Word of the Year, and Brainrot**  
-13. **Contributing**  
-14. **License**  
-15. **Closing Thoughts**  
+1. **Foreword**
+2. **Introduction**
+3. **What Is Brainrot?**
+4. **Installation and Requirements**
+5. **Building the Compiler**
+6. **Basic Usage**
+7. **Language Reference**
+   - 7.1. Keywords
+   - 7.2. Operators
+   - 7.3. Control Flow (if, for, while, switch)
+   - 7.4. Declarations and Variables (`rizz`)
+   - 7.5. Return Statements (`bussin`)
+   - 7.6. Built-In Print and Error Functions
+8. **Extended User Documentation**
+   - 8.1. `yapping`
+   - 8.2. `yappin`
+   - 8.3. `baka`
+9. **Limitations**
+10. **Known Issues**
+11. **Cultural Context: The Rise of ‘Brain Rot’**
+12. **Meme Culture, Oxford Word of the Year, and Brainrot**
+13. **Contributing**
+14. **License**
+15. **Closing Thoughts**
 
 ---
 
 ## 1. Foreword
 
-**“What if there was a programming language that replaced every single keyword with internet slang?”** That single question captures the essence of Brainrot: a meme-inspired, *C-like* language that breaks all expectations (and possibly your sanity). Originally built as a playful experiment, Brainrot demonstrates that, with enough Flex, Bison, and questionable design decisions, you can turn your wildest meme dreams into compilable code.
+**“What if there was a programming language that replaced every single keyword with internet slang?”** That single question captures the essence of Brainrot: a meme-inspired, _C-like_ language that breaks all expectations (and possibly your sanity). Originally built as a playful experiment, Brainrot demonstrates that, with enough Flex, Bison, and questionable design decisions, you can turn your wildest meme dreams into compilable code.
 
 ---
 
 ## 2. Introduction
 
-Brainrot might not be the language you *asked* for, but it might just be the language you *need*—especially if you’re looking for a hilarious way to learn about lexical analysis and parsing. The entire approach is to replace traditional C keywords with slang from TikTok, Gen Z memes, and beyond:
+Brainrot might not be the language you _asked_ for, but it might just be the language you _need_—especially if you’re looking for a hilarious way to learn about lexical analysis and parsing. The entire approach is to replace traditional C keywords with slang from TikTok, Gen Z memes, and beyond:
 
 - `skibidi` for `void`
 - `rizz` for `int`
@@ -67,24 +68,27 @@ Everything is overshadowed by the comedic vibe that references modern internet s
 
 To compile Brainrot from source, you’ll need:
 
-- **GCC** (GNU Compiler Collection)  
-- **Flex** (Fast Lexical Analyzer)  
-- **Bison** (Parser Generator)  
+- **GCC** (GNU Compiler Collection)
+- **Flex** (Fast Lexical Analyzer)
+- **Bison** (Parser Generator)
 
 Installation commands vary by platform:
 
 ### Ubuntu/Debian
+
 ```bash
 sudo apt-get update
 sudo apt-get install gcc flex bison libfl-dev
 ```
 
 ### Arch Linux
+
 ```bash
 sudo pacman -S gcc flex bison
 ```
 
 ### macOS (via Homebrew)
+
 ```bash
 brew install gcc flex bison
 ```
@@ -150,7 +154,7 @@ Brainrot replaces familiar C keywords with meme-inspired slang:
 | cooked     | auto         |
 | flex       | for          |
 | bussin     | return       |
-| edging     | if           |
+| edgy       | if           |
 | amogus     | else         |
 | goon       | while        |
 | bruh       | break        |
@@ -166,7 +170,6 @@ Brainrot replaces familiar C keywords with meme-inspired slang:
 | whopper    | extern       |
 | cringe     | goto         |
 | giga       | long         |
-| edgy       | register     |
 | soy        | short        |
 | nut        | signed       |
 | maxxing    | sizeof       |
@@ -183,41 +186,41 @@ Brainrot replaces familiar C keywords with meme-inspired slang:
 
 Brainrot supports common arithmetic and logical operators:
 
-- `+` Addition  
-- `-` Subtraction  
-- `*` Multiplication  
-- `/` Division  
-- `%` Modulus  
-- `<`, `>`, `<=`, `>=`, `==`, `!=`  
-- `=` Assignment  
-- `&&` Logical AND  
-- `||` Logical OR  
+- `+` Addition
+- `-` Subtraction
+- `*` Multiplication
+- `/` Division
+- `%` Modulus
+- `<`, `>`, `<=`, `>=`, `==`, `!=`
+- `=` Assignment
+- `&&` Logical AND
+- `||` Logical OR
 - `!` Logical NOT (depending on grammar rules)
 
 ### 7.3. Control Flow
 
-1. **If/Else**  
+1. **If/Else**
    ```c
-   edging (condition) {
+   edgy (condition) {
        // if-true block
    }
    amogus {
        // else block
    }
    ```
-2. **While**  
+2. **While**
    ```c
    goon (i < 5) {
        // loop body
    }
    ```
-3. **For**  
+3. **For**
    ```c
    flex (init_expr; condition; increment) {
        // loop body
    }
    ```
-4. **Switch**  
+4. **Switch**
    ```c
    ohio (expression) {
        sigma rule value:
@@ -230,12 +233,12 @@ Brainrot supports common arithmetic and logical operators:
 
 ### 7.4. Declarations and Variables (`rizz`)
 
-- **`rizz i = 0;`** declares an integer variable `i`, assigned 0.  
+- **`rizz i = 0;`** declares an integer variable `i`, assigned 0.
 - **`i = i + 1;`** increments i by 1, following typical C expression syntax.
 
 ### 7.5. Return Statements (`bussin`)
 
-- **`bussin expression;`** to end the main function (or any function, if you extend the language).  
+- **`bussin expression;`** to end the main function (or any function, if you extend the language).
 - Example:
   ```c
   bussin 0;
@@ -243,8 +246,8 @@ Brainrot supports common arithmetic and logical operators:
 
 ### 7.6. Built-In Print & Error Functions
 
-- **`yapping`**: prints text **and** automatically appends a newline.  
-- **`yappin`**: prints text **without** adding a newline.  
+- **`yapping`**: prints text **and** automatically appends a newline.
+- **`yappin`**: prints text **without** adding a newline.
 - **`baka`**: prints to `stderr`, typically used for errors/warnings.
 
 ---
@@ -256,10 +259,12 @@ Brainrot supports common arithmetic and logical operators:
 ```c
 void yapping(const char* format, ...);
 ```
-- Similar to `printf`, but **always** appends its own newline after printing.  
+
+- Similar to `printf`, but **always** appends its own newline after printing.
 - If you include `\n` in `format`, expect **two** line breaks in total.
 
 **Example**:
+
 ```c
 yapping("Value: %d", 10);
 // Output => "Value: 10\n"
@@ -270,10 +275,12 @@ yapping("Value: %d", 10);
 ```c
 void yappin(const char* format, ...);
 ```
-- Similar to `printf` but **no** extra newline is added.  
+
+- Similar to `printf` but **no** extra newline is added.
 - Perfect for building partial lines or for more granular control of output formatting.
 
 **Example**:
+
 ```c
 yappin("Hello ");
 yappin("World!\n");
@@ -285,11 +292,13 @@ yappin("World!\n");
 ```c
 void baka(const char* format, ...);
 ```
-- Prints error messages to **`stderr`**.  
-- Does **not** automatically add a newline (unless your format string includes one).  
+
+- Prints error messages to **`stderr`**.
+- Does **not** automatically add a newline (unless your format string includes one).
 - Great for logs, warnings, and error messages.
 
 **Example**:
+
 ```c
 baka("Error: undefined variable %s\n", varName);
 ```
@@ -298,18 +307,18 @@ baka("Error: undefined variable %s\n", varName);
 
 ## 9. Limitations
 
-- No built-in support for increment/decrement (`++`, `--`).  
-- Functions other than `skibidi main` not fully supported (unless you add them).  
-- Arrays, complex data structures, and advanced memory management are absent.  
+- No built-in support for increment/decrement (`++`, `--`).
+- Functions other than `skibidi main` not fully supported (unless you add them).
+- Arrays, complex data structures, and advanced memory management are absent.
 - Error reporting is minimal, typically halting on the first serious parse error.
 
 ---
 
 ## 10. Known Issues
 
-- Some macOS users must manually manage `libfl` symlinks.  
-- Minimal string manipulation: no standard library for string operations.  
-- Grammar conflicts can arise if you expand the language significantly.  
+- Some macOS users must manually manage `libfl` symlinks.
+- Minimal string manipulation: no standard library for string operations.
+- Grammar conflicts can arise if you expand the language significantly.
 - The language’s comedic nature may cause colleagues to question your sanity.
 
 ---
@@ -322,8 +331,8 @@ The term **"brain rot"** was declared Oxford Word of the Year 2024, symbolizing 
 
 ## 12. Meme Culture, Oxford Word of the Year, and Brainrot
 
-- The language’s name, “Brainrot,” resonates with the 2024 Word of the Year conversation.  
-- Memes like **“Skibidi Toilet,”** **“Only in Ohio,”** and **“rizz”** are central to Gen Z and Gen Alpha humor. Brainrot references them liberally as a whimsical statement on how quickly online slang evolves—and how easily it can be turned into code.  
+- The language’s name, “Brainrot,” resonates with the 2024 Word of the Year conversation.
+- Memes like **“Skibidi Toilet,”** **“Only in Ohio,”** and **“rizz”** are central to Gen Z and Gen Alpha humor. Brainrot references them liberally as a whimsical statement on how quickly online slang evolves—and how easily it can be turned into code.
 - The unstoppable spread of these memes ironically parallels the unstoppable creativity and chaos that emerges from community-driven language development.
 
 ---
@@ -332,9 +341,9 @@ The term **"brain rot"** was declared Oxford Word of the Year 2024, symbolizing 
 
 If you want to add new slang or expand Brainrot:
 
-1. **Fork** the GitHub repository.  
-2. **Create** a new branch for your changes.  
-3. **Edit** the grammar (`lang.y`) and lexer (`lang.l`) to support the new token or feature.  
+1. **Fork** the GitHub repository.
+2. **Create** a new branch for your changes.
+3. **Edit** the grammar (`lang.y`) and lexer (`lang.l`) to support the new token or feature.
 4. **Submit** a Pull Request with a clear description of your changes.
 
 All contributions, even more memes, are welcome—just be prepared for the comedic consequences!
@@ -349,8 +358,8 @@ This project is licensed under the **GPL License**. See the `LICENSE` file in th
 
 ## 15. Closing Thoughts
 
-Brainrot is a testament to the fact that compiler design can be both educational and thoroughly *unserious*. Whether you’re an aspiring language implementer, a meme connoisseur, or just someone who thought “C needed more spice,” Brainrot might be the ideal playground for you. Code in Brainrot, add your own slang, or show it off to your friends to watch them recoil in confusion and laughter.
+Brainrot is a testament to the fact that compiler design can be both educational and thoroughly _unserious_. Whether you’re an aspiring language implementer, a meme connoisseur, or just someone who thought “C needed more spice,” Brainrot might be the ideal playground for you. Code in Brainrot, add your own slang, or show it off to your friends to watch them recoil in confusion and laughter.
 
-### “Just because you *can* do something doesn’t mean you *should*—but in Brainrot’s case, maybe you *really should.*” 
+### “Just because you _can_ do something doesn’t mean you _should_—but in Brainrot’s case, maybe you _really should._”
 
 Happy coding, and remember: if your mind starts to go blank from all the memes, that’s not a bug—it’s Brainrot by design!

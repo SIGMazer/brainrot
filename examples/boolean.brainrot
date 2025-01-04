@@ -1,7 +1,7 @@
 skibidi main {
     cap nocap = yes;
 
-    edging(nocap) {
+    edgy(nocap) {
         yapping("It's valid!");
     }
     
