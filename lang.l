@@ -102,7 +102,7 @@ extern int yylineno;
 ","              { return COMMA; }
 ":"              { return COLON; }
 
-"//"[^\n]*      ; /* Ignore single line comments */
+"🚽"[^\n]*      ; /* Ignore single line comments */
 "yes"            { yylval.ival = 1; return BOOLEAN; }
 "no"             { yylval.ival = 0; return BOOLEAN; }
 [0-9]+\.[0-9]+[fF]? {

@@ -1,8 +1,8 @@
 skibidi main {
-    // Calculate pi * r^2
+    🚽 Calculate pi * r^2
     gigachad pi = 3.141592;
     gigachad r = 5.0;
-    gigachad area = pi * r * r;    // Area of a circle
+    gigachad area = pi * r * r;    🚽 Area of a circle
     yappin("%lf\n", area);
     bussin 0;
 }
