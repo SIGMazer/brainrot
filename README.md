@@ -131,7 +131,7 @@ Join our community on [Discord](https://discord.com/invite/G9BqwB3a).
 | bruh       | break        | ✅           |
 | grind      | continue     | ✅           |
 | chad       | float        | ✅           |
-| gigachad   | double       | ❌           |
+| gigachad   | double       | ✅           |
 | yap        | char         | ✅           |
 | grimace    | const        | ❌           |
 | sigma rule | case         | ✅           |
