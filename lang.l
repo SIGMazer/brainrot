@@ -56,7 +56,7 @@ extern int yylineno;
 "grind"          { return CONTINUE; }
 "based"          { return DEFAULT; }
 "mewing"         { return DO; }
-"gigachad"       { return DOUBLE; }
+"gigachad"       { return GIGACHAD; }
 "gyatt"          { return ENUM; }
 "whopper"        { return EXTERN; }
 "chad"           { return CHAD; }
@@ -105,8 +105,21 @@ extern int yylineno;
 "//"[^\n]*      ; /* Ignore single line comments */
 "yes"            { yylval.ival = 1; return BOOLEAN; }
 "no"             { yylval.ival = 0; return BOOLEAN; }
-[0-9]+\.[0-9]+  { yylval.fval = atof(yytext); return FLOAT_LITERAL; }
-[0-9]+           { yylval.ival = atoi(yytext); return NUMBER; }
+[0-9]+\.[0-9]+[fF]? {
+    if (yytext[strlen(yytext) - 1] == 'f' || yytext[strlen(yytext) - 1] == 'F') {
+        // 'f' or 'F' suffix: float literal
+        char *buffer = strdup(yytext);
+        buffer[strlen(buffer) - 1] = '\0'; // Remove the 'f' suffix
+        yylval.fval = atof(buffer);  // Convert to float
+        free(buffer);
+        return FLOAT_LITERAL;
+    } else {
+        // No suffix: double literal
+        yylval.dval = strtod(yytext, NULL);  // Convert to double
+        return DOUBLE_LITERAL;
+    }
+}
+[0-9]+           { yylval.ival = atoi(yytext); return INT_LITERAL; }
 '.' { yylval.ival = yytext[1]; return CHAR; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = strdup(yytext); return IDENTIFIER; }
 \"([^\\\"]|\\.)*\" {

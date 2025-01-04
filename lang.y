@@ -67,6 +67,7 @@ ASTNode *root = NULL;
 %union {
     int ival;
     float fval;
+    double dval;
     char cval;
     char *sval;
     ASTNode *node;
@@ -80,14 +81,15 @@ ASTNode *root = NULL;
 %token LPAREN RPAREN LBRACE RBRACE
 %token LT GT LE GE EQ NE EQUALS AND OR
 %token BREAK CASE CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM
-%token EXTERN CHAD FOR GOTO IF INT LONG REGISTER SHORT SIGNED
+%token EXTERN CHAD GIGACHAD FOR GOTO IF LONG REGISTER SHORT SIGNED
 %token SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE GOON
 %token <sval> IDENTIFIER
-%token <ival> NUMBER
+%token <ival> INT_LITERAL
 %token <sval> STRING_LITERAL
 %token <cval> CHAR
 %token <ival> BOOLEAN
 %token <fval> FLOAT_LITERAL
+%token <dval> DOUBLE_LITERAL
 
 /* Declare types for non-terminals */
 %type <node> program skibidi_function
@@ -197,12 +199,16 @@ if_statement:
 
 declaration:
     optional_modifiers RIZZ IDENTIFIER
-        { $$ = create_assignment_node($3, create_number_node(0)); }
+        { $$ = create_assignment_node($3, create_int_node(0)); }
     | optional_modifiers RIZZ IDENTIFIER EQUALS expression
         { $$ = create_assignment_node($3, $5); }
     | optional_modifiers CHAD IDENTIFIER
         { $$ = create_assignment_node($3, create_float_node(0.0f)); }
     | optional_modifiers CHAD IDENTIFIER EQUALS expression
+        { $$ = create_assignment_node($3, $5); }
+    | optional_modifiers GIGACHAD IDENTIFIER
+        { $$ = create_assignment_node($3, create_double_node(0.0L)); }
+    | optional_modifiers GIGACHAD IDENTIFIER EQUALS expression
         { $$ = create_assignment_node($3, $5); }
     |  optional_modifiers YAP IDENTIFIER
         { $$ = create_assignment_node($3, create_char_node(0)); }
@@ -315,10 +321,12 @@ return_statement:
     ;
 
 expression:
-      NUMBER
-        { $$ = create_number_node($1); }
+      INT_LITERAL
+        { $$ = create_int_node($1); }
     | FLOAT_LITERAL
         { $$ = create_float_node($1); } 
+    | DOUBLE_LITERAL
+        { $$ = create_double_node($1); } 
     | CHAR
         { $$ = create_char_node($1); }
     | BOOLEAN

@@ -45,6 +45,7 @@ bool set_float_variable(char *name, float value, TypeModifiers mods)
         if (strcmp(symbol_table[i].name, name) == 0)
         {
             symbol_table[i].is_float = true;
+            symbol_table[i].is_double = false;
             symbol_table[i].value.fvalue = value;
             symbol_table[i].modifiers = mods;
             return true;
@@ -55,7 +56,35 @@ bool set_float_variable(char *name, float value, TypeModifiers mods)
     {
         symbol_table[var_count].name = strdup(name);
         symbol_table[var_count].is_float = true;
+        symbol_table[var_count].is_double = false;
         symbol_table[var_count].value.fvalue = value;
+        symbol_table[var_count].modifiers = mods;
+        var_count++;
+        return true;
+    }
+    return false;
+}
+
+bool set_double_variable(char *name, double value, TypeModifiers mods)
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            symbol_table[i].is_float = false;
+            symbol_table[i].is_double = true;
+            symbol_table[i].value.dvalue = value;
+            symbol_table[i].modifiers = mods;
+            return true;
+        }
+    }
+
+    if (var_count < MAX_VARS)
+    {
+        symbol_table[var_count].name = strdup(name);
+        symbol_table[var_count].is_float = false;
+        symbol_table[var_count].is_double = true;
+        symbol_table[var_count].value.dvalue = value;
         symbol_table[var_count].modifiers = mods;
         var_count++;
         return true;
@@ -125,11 +154,11 @@ extern TypeModifiers get_variable_modifiers(const char *name);
 
 /* Function implementations */
 
-ASTNode *create_number_node(int value)
+ASTNode *create_int_node(int value)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_NUMBER;
-    node->data.value = value;
+    node->type = NODE_INT;
+    node->data.ivalue = value;
     node->modifiers.is_unsigned = current_modifiers.is_unsigned;
     return node;
 }
@@ -142,6 +171,14 @@ ASTNode *create_float_node(float value)
     return node;
 }
 
+ASTNode *create_double_node(double value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DOUBLE;
+    node->data.dvalue = value;
+    return node;
+}
+
 float evaluate_expression_float(ASTNode *node)
 {
     if (!node)
@@ -151,8 +188,10 @@ float evaluate_expression_float(ASTNode *node)
     {
     case NODE_FLOAT:
         return node->data.fvalue;
-    case NODE_NUMBER:
-        return (float)node->data.value;
+    case NODE_DOUBLE:
+        return (float)node->data.dvalue;
+    case NODE_INT:
+        return (float)node->data.ivalue;
     case NODE_IDENTIFIER:
     {
         char *name = node->data.name;
@@ -160,7 +199,18 @@ float evaluate_expression_float(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, name) == 0)
             {
-                return symbol_table[i].is_float ? symbol_table[i].value.fvalue : (float)symbol_table[i].value.ivalue;
+                if (symbol_table[i].is_double)
+                {
+                    return (float)symbol_table[i].value.dvalue;
+                }
+                else if (symbol_table[i].is_float)
+                {
+                    return symbol_table[i].value.fvalue;
+                }
+                else
+                {
+                    return (float)symbol_table[i].value.ivalue;
+                }
             }
         }
         yyerror("Undefined variable");
@@ -221,6 +271,98 @@ float evaluate_expression_float(ASTNode *node)
     }
 }
 
+double evaluate_expression_double(ASTNode *node)
+{
+    if (!node)
+        return 0.0f;
+
+    switch (node->type)
+    {
+    case NODE_DOUBLE:
+        return node->data.dvalue;
+    case NODE_FLOAT:
+        return (double)node->data.fvalue;
+    case NODE_INT:
+        return (double)node->data.ivalue;
+    case NODE_IDENTIFIER:
+    {
+        char *name = node->data.name;
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, name) == 0)
+            {
+                if (symbol_table[i].is_double)
+                {
+                    return symbol_table[i].value.dvalue;
+                }
+                else if (symbol_table[i].is_float)
+                {
+                    return (double)symbol_table[i].value.fvalue;
+                }
+                else
+                {
+                    return (double)symbol_table[i].value.ivalue;
+                }
+            }
+        }
+        yyerror("Undefined variable");
+        return 0.0f;
+    }
+    case NODE_OPERATION:
+    {
+        double left = evaluate_expression_double(node->data.op.left);
+        double right = evaluate_expression_double(node->data.op.right);
+
+        switch (node->data.op.op)
+        {
+        case OP_PLUS:
+            return left + right;
+        case OP_MINUS:
+            return left - right;
+        case OP_TIMES:
+            return left * right;
+        case OP_DIVIDE:
+            if (right == 0.0L)
+            {
+                yyerror("Division by zero");
+                return 0.0L;
+            }
+            return left / right;
+        case OP_LT:
+            return left < right ? 1.0L : 0.0L;
+        case OP_GT:
+            return left > right ? 1.0L : 0.0L;
+        case OP_LE:
+            return left <= right ? 1.0L : 0.0L;
+        case OP_GE:
+            return left >= right ? 1.0L : 0.0L;
+        case OP_EQ:
+            return left == right ? 1.0L : 0.0L;
+        case OP_NE:
+            return left != right ? 1.0L : 0.0L;
+        default:
+            yyerror("Invalid operator for double operation");
+            return 0.0L;
+        }
+    }
+    case NODE_UNARY_OPERATION:
+    {
+        float operand = evaluate_expression_double(node->data.unary.operand);
+        switch (node->data.unary.op)
+        {
+        case OP_NEG:
+            return -operand;
+        default:
+            yyerror("Unknown unary operator for double");
+            return 0.0L;
+        }
+    }
+    default:
+        yyerror("Invalid double expression");
+        return 0.0L;
+    }
+}
+
 int evaluate_expression_int(ASTNode *node)
 {
     if (!node)
@@ -228,15 +370,18 @@ int evaluate_expression_int(ASTNode *node)
 
     switch (node->type)
     {
-    case NODE_NUMBER:
-        return node->data.value;
+    case NODE_INT:
+        return node->data.ivalue;
     case NODE_BOOLEAN:
-        return node->data.value; // Already 1 or 0
-    case NODE_CHAR:              // Add explicit handling for characters
-        return node->data.value;
+        return node->data.ivalue; // Already 1 or 0
+    case NODE_CHAR:               // Add explicit handling for characters
+        return node->data.ivalue;
     case NODE_FLOAT:
         yyerror("Cannot use float in integer context");
         return (int)node->data.fvalue;
+    case NODE_DOUBLE:
+        yyerror("Cannot use double in integer context");
+        return (int)node->data.dvalue;
     case NODE_SIZEOF:
     {
         char *name = node->data.name;
@@ -247,6 +392,10 @@ int evaluate_expression_int(ASTNode *node)
                 if (symbol_table[i].is_float)
                 {
                     return sizeof(float);
+                }
+                else if (symbol_table[i].is_double)
+                {
+                    return sizeof(double);
                 }
                 else if (symbol_table[i].modifiers.is_unsigned)
                 {
@@ -276,6 +425,11 @@ int evaluate_expression_int(ASTNode *node)
                 {
                     yyerror("Cannot use float variable in integer context");
                     return (int)symbol_table[i].value.fvalue;
+                }
+                if (symbol_table[i].is_double)
+                {
+                    yyerror("Cannot use double variable in integer context");
+                    return (int)symbol_table[i].value.dvalue;
                 }
                 return symbol_table[i].value.ivalue;
             }
@@ -374,7 +528,7 @@ ASTNode *create_char_node(char value)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_CHAR;
-    node->data.value = value;
+    node->data.ivalue = value;
     return node;
 }
 
@@ -382,7 +536,7 @@ ASTNode *create_boolean_node(int value)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_BOOLEAN;
-    node->data.value = value ? 1 : 0;
+    node->data.ivalue = value ? 1 : 0;
     node->modifiers.is_boolean = true;
     return node;
 }
@@ -548,7 +702,9 @@ bool is_float_expression(ASTNode *node)
     {
     case NODE_FLOAT:
         return true;
-    case NODE_NUMBER:
+    case NODE_INT:
+        return false;
+    case NODE_DOUBLE:
         return false;
     case NODE_IDENTIFIER:
     {
@@ -573,11 +729,51 @@ bool is_float_expression(ASTNode *node)
     }
 }
 
+bool is_double_expression(ASTNode *node)
+{
+    if (!node)
+        return false;
+
+    switch (node->type)
+    {
+    case NODE_DOUBLE:
+        return true;
+    case NODE_FLOAT:
+        return false;
+    case NODE_INT:
+        return false;
+    case NODE_IDENTIFIER:
+    {
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, node->data.name) == 0)
+            {
+                return symbol_table[i].is_double;
+            }
+        }
+        yyerror("Undefined variable in type check");
+        return false;
+    }
+    case NODE_OPERATION:
+    {
+        // If either operand is double, result is double
+        return is_double_expression(node->data.op.left) ||
+               is_double_expression(node->data.op.right);
+    }
+    default:
+        return false;
+    }
+}
+
 int evaluate_expression(ASTNode *node)
 {
     if (is_float_expression(node))
     {
         return (int)evaluate_expression_float(node);
+    }
+    if (is_double_expression(node))
+    {
+        return (int)evaluate_expression_double(node);
     }
     return evaluate_expression_int(node);
 }
@@ -601,6 +797,14 @@ void execute_assignment(ASTNode *node)
         if (!set_float_variable(name, value, mods))
         {
             yyerror("Failed to set float variable");
+        }
+    }
+    else if (is_double_expression(value_node))
+    {
+        double value = evaluate_expression_double(value_node);
+        if (!set_double_variable(name, value, mods))
+        {
+            yyerror("Failed to set double variable");
         }
     }
     else
@@ -628,7 +832,7 @@ void execute_statement(ASTNode *node)
         if (value_node->type == NODE_CHAR)
         {
             // Handle character assignments directly
-            if (!set_int_variable(name, value_node->data.value, mods))
+            if (!set_int_variable(name, value_node->data.ivalue, mods))
             {
                 yyerror("Failed to set character variable");
             }
@@ -639,6 +843,14 @@ void execute_statement(ASTNode *node)
             if (!set_float_variable(name, value, mods))
             {
                 yyerror("Failed to set float variable");
+            }
+        }
+        else if (is_double_expression(value_node))
+        {
+            double value = evaluate_expression_double(value_node);
+            if (!set_double_variable(name, value, mods))
+            {
+                yyerror("Failed to set double variable");
             }
         }
         else
@@ -653,7 +865,7 @@ void execute_statement(ASTNode *node)
     }
     case NODE_OPERATION:
     case NODE_UNARY_OPERATION:
-    case NODE_NUMBER:
+    case NODE_INT:
     case NODE_CHAR:
     case NODE_IDENTIFIER:
         evaluate_expression(node);
@@ -879,6 +1091,25 @@ void execute_yapping_call(ArgumentList *args)
     if (is_float_expression(expr))
     {
         float val = evaluate_expression_float(expr);
+        if (strstr(formatNode->data.name, "%f") != NULL)
+        {
+            yapping(formatNode->data.name, val); // Use provided format
+        }
+        else if (strstr(formatNode->data.name, "%.") != NULL)
+        {
+            yapping(formatNode->data.name, val); // Use provided precision
+        }
+        else
+        {
+            yapping("%.6f", val); // Force exactly 6 decimal places
+        }
+        return;
+    }
+
+    // Handle double expressions
+    if (is_double_expression(expr))
+    {
+        double val = evaluate_expression_double(expr);
         yapping(formatNode->data.name, val);
         return;
     }
@@ -981,15 +1212,34 @@ void execute_yappin_call(ArgumentList *args)
         return;
     }
 
-    // Handle float expressions
     if (is_float_expression(expr))
     {
         float val = evaluate_expression_float(expr);
-        yappin(formatNode->data.name, val);
+        if (strstr(formatNode->data.name, "%f") != NULL)
+        {
+            yappin("%.6f", val); // Force 6 decimal places
+        }
+        else
+        {
+            yappin("%.6f", val);
+        }
         return;
     }
 
-    // Handle integer expressions
+    if (is_double_expression(expr))
+    {
+        double val = evaluate_expression_double(expr);
+        if (strstr(formatNode->data.name, "%lf") != NULL)
+        {
+            yappin("%.6lf", val); // Force 6 decimal places
+        }
+        else
+        {
+            yappin("%.6lf", val);
+        }
+        return;
+    }
+
     int val = evaluate_expression_int(expr);
     yappin(formatNode->data.name, val);
 }

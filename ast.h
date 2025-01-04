@@ -34,8 +34,10 @@ typedef struct
     {
         int ivalue;
         float fvalue;
+        double dvalue;
     } value;
     bool is_float;
+    bool is_double;
     TypeModifiers modifiers;
 } variable;
 
@@ -61,8 +63,9 @@ typedef enum
 /* AST node types */
 typedef enum
 {
-    NODE_NUMBER,
+    NODE_INT,
     NODE_FLOAT,
+    NODE_DOUBLE,
     NODE_CHAR,
     NODE_BOOLEAN,
     NODE_IDENTIFIER,
@@ -118,8 +121,9 @@ struct ASTNode
     TypeModifiers modifiers;
     union
     {
-        int value;
+        int ivalue;
         float fvalue;
+        double dvalue;
         char *name;
         struct
         {
@@ -168,13 +172,15 @@ extern int var_count;
 /* Function prototypes */
 bool set_int_variable(char *name, int value, TypeModifiers mods);
 bool set_float_variable(char *name, float value, TypeModifiers mods);
+bool set_double_variable(char *name, double value, TypeModifiers mods);
 TypeModifiers get_variable_modifiers(const char *name);
 void reset_modifiers(void);
 TypeModifiers get_current_modifiers(void);
 
 /* Node creation functions */
-ASTNode *create_number_node(int value);
+ASTNode *create_int_node(int value);
 ASTNode *create_float_node(float value);
+ASTNode *create_double_node(double value);
 ASTNode *create_char_node(char value);
 ASTNode *create_boolean_node(int value);
 ASTNode *create_identifier_node(char *name);
@@ -198,9 +204,11 @@ CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
 
 /* Evaluation and execution functions */
+double evaluate_expression_double(ASTNode *node);
 float evaluate_expression_float(ASTNode *node);
 int evaluate_expression_int(ASTNode *node);
 int evaluate_expression(ASTNode *node);
+bool is_double_expression(ASTNode *node);
 bool is_float_expression(ASTNode *node);
 void execute_statement(ASTNode *node);
 void execute_statements(ASTNode *node);
