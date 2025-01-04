@@ -3,14 +3,24 @@ import json
 import os
 import pytest
 
-# Load expected results from JSON file
-with open("expected_results.json", "r") as file:
+# Get the absolute path to the directory containing the script
+script_dir = os.path.dirname(__file__)
+
+# Construct the full path to the JSON file with expected results
+file_path = os.path.join(script_dir, "expected_results.json")
+
+# Load expected results from the JSON file
+with open(file_path, "r") as file:
     expected_results = json.load(file)
 
 @pytest.mark.parametrize("example,expected_output", expected_results.items())
 def test_brainrot_examples(example, expected_output):
+    # Construct absolute paths for the brainrot executable and example file
+    brainrot_path = os.path.abspath(os.path.join(script_dir, "../brainrot"))
+    example_file_path = os.path.abspath(os.path.join(script_dir, f"../examples/{example}"))
+
     # Define the command to execute
-    command = f".././brainrot < ../examples/{example}"
+    command = f"{brainrot_path} < {example_file_path}"
 
     # Run the command and capture the output
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
@@ -32,6 +42,5 @@ def test_brainrot_examples(example, expected_output):
         f"Stderr:\n{result.stderr}"
     )
 
-
 if __name__ == "__main__":
-    pytest.main(["-v", os.path.basename(__file__)])
+    pytest.main(["-v", os.path.abspath(__file__)])
