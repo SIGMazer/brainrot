@@ -1091,18 +1091,7 @@ void execute_yapping_call(ArgumentList *args)
     if (is_float_expression(expr))
     {
         float val = evaluate_expression_float(expr);
-        if (strstr(formatNode->data.name, "%f") != NULL)
-        {
-            yapping(formatNode->data.name, val); // Use provided format
-        }
-        else if (strstr(formatNode->data.name, "%.") != NULL)
-        {
-            yapping(formatNode->data.name, val); // Use provided precision
-        }
-        else
-        {
-            yapping("%.6f", val); // Force exactly 6 decimal places
-        }
+        yapping(formatNode->data.name, val);
         return;
     }
 
@@ -1215,28 +1204,14 @@ void execute_yappin_call(ArgumentList *args)
     if (is_float_expression(expr))
     {
         float val = evaluate_expression_float(expr);
-        if (strstr(formatNode->data.name, "%f") != NULL)
-        {
-            yappin("%.6f", val); // Force 6 decimal places
-        }
-        else
-        {
-            yappin("%.6f", val);
-        }
+        yappin(formatNode->data.name, val);
         return;
     }
 
     if (is_double_expression(expr))
     {
         double val = evaluate_expression_double(expr);
-        if (strstr(formatNode->data.name, "%lf") != NULL)
-        {
-            yappin("%.6lf", val); // Force 6 decimal places
-        }
-        else
-        {
-            yappin("%.6lf", val);
-        }
+        yappin(formatNode->data.name, val);
         return;
     }
 

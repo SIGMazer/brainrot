@@ -3,6 +3,6 @@ skibidi main {
     chad pi = 3.141592;
     chad r = 5.0;
     chad area = pi * r * r;    // Area of a circle
-    yappin("%f\n", area);
+    yappin("%.3f\n", area);
     bussin 0;
 }
