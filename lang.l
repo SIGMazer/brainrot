@@ -61,10 +61,9 @@ extern int yylineno;
 "whopper"        { return EXTERN; }
 "chad"           { return CHAD; }
 "cringe"         { return GOTO; }
-"edging"         { return IF; }
+"edgy"           { return IF; }
 "amogus"         { return ELSE; }
 "giga"           { return LONG; }
-"edgy"           { return REGISTER; }
 "soy"            { return SHORT; }
 "nut"            { return SIGNED; }
 "maxxing"        { return SIZEOF; }

@@ -125,7 +125,7 @@ Join our community on [Discord](https://discord.com/invite/G9BqwB3a).
 | cooked     | auto         | ❌           |
 | flex       | for          | ✅           |
 | bussin     | return       | ✅           |
-| edging     | if           | ✅           |
+| edgy       | if           | ✅           |
 | amogus     | else         | ✅           |
 | goon       | while        | ✅           |
 | bruh       | break        | ✅           |
@@ -141,7 +141,6 @@ Join our community on [Discord](https://discord.com/invite/G9BqwB3a).
 | whopper    | extern       | ❌           |
 | cringe     | goto         | ❌           |
 | giga       | long         | ❌           |
-| edgy       | register     | ❌           |
 | soy        | short        | ❌           |
 | nut        | signed       | ✅           |
 | maxxing    | sizeof       | ✅           |
