@@ -106,6 +106,45 @@ TypeModifiers get_current_modifiers(void)
     return mods;
 }
 
+/* Include the symbol table functions */
+extern bool set_variable(char *name, int value, TypeModifiers mod);
+extern int get_variable(char *name);
+extern void yyerror(const char *s);
+extern void yapping(const char *format, ...);
+extern void yappin(const char *format, ...);
+extern void baka(const char *format, ...);
+extern TypeModifiers get_variable_modifiers(const char *name);
+extern int yylineno;
+
+/* Function implementations */
+
+bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage)
+{
+    if (!node->alreadyChecked)
+    {
+        node->alreadyChecked = true;
+        node->isValidSymbol = false;
+
+        // Do the table lookup
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, node->data.name) == 0)
+            {
+                node->isValidSymbol = true;
+                break;
+            }
+        }
+
+        if (!node->isValidSymbol)
+        {
+            yylineno = yylineno - 2;
+            yyerror(contextErrorMessage);
+        }
+    }
+
+    return node->isValidSymbol;
+}
+
 void execute_switch_statement(ASTNode *node)
 {
     int switch_value = evaluate_expression(node->data.switch_stmt.expression);
@@ -142,17 +181,6 @@ void execute_switch_statement(ASTNode *node)
         // Break encountered; do nothing
     }
 }
-
-/* Include the symbol table functions */
-extern bool set_variable(char *name, int value, TypeModifiers mod);
-extern int get_variable(char *name);
-extern void yyerror(const char *s);
-extern void yapping(const char *format, ...);
-extern void yappin(const char *format, ...);
-extern void baka(const char *format, ...);
-extern TypeModifiers get_variable_modifiers(const char *name);
-
-/* Function implementations */
 
 ASTNode *create_int_node(int value)
 {
@@ -416,6 +444,9 @@ int evaluate_expression_int(ASTNode *node)
     }
     case NODE_IDENTIFIER:
     {
+        if (!check_and_mark_identifier(node, "Undefined variable"))
+            exit(1);
+
         char *name = node->data.name;
         for (int i = 0; i < var_count; i++)
         {
@@ -708,6 +739,8 @@ bool is_float_expression(ASTNode *node)
         return false;
     case NODE_IDENTIFIER:
     {
+        if (!check_and_mark_identifier(node, "Undefined variable in type check"))
+            exit(1);
         for (int i = 0; i < var_count; i++)
         {
             if (strcmp(symbol_table[i].name, node->data.name) == 0)
@@ -744,6 +777,8 @@ bool is_double_expression(ASTNode *node)
         return false;
     case NODE_IDENTIFIER:
     {
+        if (!check_and_mark_identifier(node, "Undefined variable in type check"))
+            exit(1);
         for (int i = 0; i < var_count; i++)
         {
             if (strcmp(symbol_table[i].name, node->data.name) == 0)

@@ -1,3 +1,4 @@
+%define parse.error verbose
 %{
 #include "ast.h"
 #include <stdio.h>
@@ -381,7 +382,8 @@ int main(void) {
 }
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s at line %d\n", s, yylineno);
+    extern char *yytext;
+    fprintf(stderr, "Error: %s at line %d\n", s, yylineno - 1);
 }
 
 void yapping(const char* format, ...) {
