@@ -1,0 +1,10 @@
+skibidi main {
+    chad f = 0.0;
+    gigachad d = 0.0;
+    rizz i = 0;
+    yappin("%f\n", 1.0 / f);      🚽 Should output: inf
+    yappin("%f\n", f / f);        🚽 Should output: nan
+    yappin("%f\n", d / 0.0);      🚽 Should output: inf
+    yapping("%d\n", 1 / i);       🚽 Should output: Error: Division by zero
+    bussin 0;
+}

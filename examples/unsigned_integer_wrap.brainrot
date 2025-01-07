@@ -1,0 +1,6 @@
+skibidi main {
+    nonut rizz big = 4294967295; 🚽 UINT_MAX
+    yappin("%u\n", big + 1);     🚽 Should output: 0 (wrap around)
+    yappin("%u\n", big * 2);     🚽 Should output: 4294967294 (wrap around)
+    bussin 0;
+}

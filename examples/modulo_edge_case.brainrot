@@ -1,0 +1,9 @@
+skibidi main {
+    rizz a = -5;
+    rizz b = 3;
+    yappin("%d\n", a % b);       🚽 Should output: -2
+    nonut rizz x = 5;
+    nonut rizz y = 3;
+    yappin("%u\n", x % y);       🚽 Should output: 2
+    bussin 0;
+}

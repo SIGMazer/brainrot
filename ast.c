@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <setjmp.h>
 #include <string.h>
+#include <math.h>
+#include <limits.h>
 
 static jmp_buf break_env;
 
@@ -258,24 +260,39 @@ float evaluate_expression_float(ASTNode *node)
         case OP_TIMES:
             return left * right;
         case OP_DIVIDE:
-            if (right == 0.0f)
+            if (fabsf(right) < 1e-10f)
             {
-                yyerror("Division by zero");
-                return 0.0f;
+                if (fabsf(left) < 1e-10f)
+                {
+                    return 0.0f / 0.0f; // NaN
+                }
+                return left > 0 ? __FLT_MAX__ : -__FLT_MAX__;
             }
             return left / right;
         case OP_LT:
-            return left < right ? 1.0f : 0.0f;
+        {
+            return (left - right) < -__FLT_EPSILON__ ? 1.0f : 0.0f;
+        }
         case OP_GT:
-            return left > right ? 1.0f : 0.0f;
+        {
+            return (left - right) > __FLT_EPSILON__ ? 1.0f : 0.0f;
+        }
         case OP_LE:
-            return left <= right ? 1.0f : 0.0f;
+        {
+            return (left - right) <= __FLT_EPSILON__ ? 1.0f : 0.0f;
+        }
         case OP_GE:
-            return left >= right ? 1.0f : 0.0f;
+        {
+            return (left - right) >= -__FLT_EPSILON__ ? 1.0f : 0.0f;
+        }
         case OP_EQ:
-            return left == right ? 1.0f : 0.0f;
+        {
+            return fabsf(left - right) <= __FLT_EPSILON__ ? 1.0f : 0.0f;
+        }
         case OP_NE:
-            return left != right ? 1.0f : 0.0f;
+        {
+            return fabsf(left - right) > __FLT_EPSILON__ ? 1.0f : 0.0f;
+        }
         default:
             yyerror("Invalid operator for float operation");
             return 0.0f;
@@ -350,10 +367,13 @@ double evaluate_expression_double(ASTNode *node)
         case OP_TIMES:
             return left * right;
         case OP_DIVIDE:
-            if (right == 0.0L)
+            if (fabs(right) < 1e-10)
             {
-                yyerror("Division by zero");
-                return 0.0L;
+                if (fabs(left) < 1e-10)
+                {
+                    return 0.0 / 0.0; // NaN
+                }
+                return left > 0 ? __DBL_MAX__ : -__DBL_MAX__;
             }
             return left / right;
         case OP_LT:
@@ -825,7 +845,26 @@ void execute_assignment(ASTNode *node)
     ASTNode *value_node = node->data.op.right;
     TypeModifiers mods = node->modifiers;
 
-    // Check if the right-hand side is a float expression
+    // Handle type conversion for float to int
+    if (value_node->type == NODE_FLOAT || is_float_expression(value_node))
+    {
+        float value = evaluate_expression_float(value_node);
+        if (node->data.op.left->type == NODE_INT)
+        {
+            // Check for overflow
+            if (value > INT_MAX || value < INT_MIN)
+            {
+                yyerror("Float to int conversion overflow");
+                value = INT_MAX;
+            }
+            if (!set_int_variable(name, (int)value, mods))
+            {
+                yyerror("Failed to set integer variable");
+            }
+            return;
+        }
+    }
+
     if (is_float_expression(value_node))
     {
         float value = evaluate_expression_float(value_node);

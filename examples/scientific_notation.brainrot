@@ -1,0 +1,7 @@
+skibidi main {
+    chad f = 1.23e-7;
+    gigachad d = 1.23e-15;
+    yappin("%e\n", f);    🚽 Should output: 1.230000e-07
+    yappin("%e\n", d);    🚽 Should output: 1.230000e-15
+    bussin 0;
+}

@@ -104,17 +104,13 @@ extern int yylineno;
 "🚽"[^\n]*      ; /* Ignore single line comments */
 "W"              { yylval.ival = 1; return BOOLEAN; }
 "L"              { yylval.ival = 0; return BOOLEAN; }
-[0-9]+\.[0-9]+[fF]? {
-    if (yytext[strlen(yytext) - 1] == 'f' || yytext[strlen(yytext) - 1] == 'F') {
-        // 'f' or 'F' suffix: float literal
-        char *buffer = strdup(yytext);
-        buffer[strlen(buffer) - 1] = '\0'; // Remove the 'f' suffix
-        yylval.fval = atof(buffer);  // Convert to float
-        free(buffer);
+[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?[fF]? {
+    char *endptr;
+    if (strchr(yytext, 'f') || strchr(yytext, 'F')) {
+        yylval.fval = strtof(yytext, &endptr);
         return FLOAT_LITERAL;
     } else {
-        // No suffix: double literal
-        yylval.dval = strtod(yytext, NULL);  // Convert to double
+        yylval.dval = strtod(yytext, &endptr);
         return DOUBLE_LITERAL;
     }
 }

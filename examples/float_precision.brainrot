@@ -1,0 +1,7 @@
+skibidi main {
+    chad tiny = 1.175494351e-38;  🚽 FLT_MIN
+    chad big = 3.402823466e+38;   🚽 FLT_MAX
+    chad sum = big + tiny;        
+    yappin("%f\n", sum - big);    🚽 Should output: 0.000000 (precision loss)
+    bussin 0;
+}

@@ -1,0 +1,10 @@
+skibidi main {
+    chad f = 16777216.0;          
+    gigachad d = 16777216.0;
+    chad f1 = f + 1.0;            
+    gigachad d1 = d + 1.0;        
+    yappin("%.1f %.1f\n", f1 - f, d1 - d);  
+    🚽 Should output: 0.0 1.0 
+    🚽 (float loses precision, double maintains it)
+    bussin 0;
+}
