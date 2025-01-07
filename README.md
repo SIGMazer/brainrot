@@ -111,7 +111,7 @@ skibidi main {
 
 ## 🗪 Community
 
-Join our community on [Discord](https://discord.com/invite/G9BqwB3a).
+Join our community on [Discord](discord.gg/FjHhvBHSGj).
 
 ## 📚 Language Reference
 
