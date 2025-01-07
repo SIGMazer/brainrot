@@ -150,8 +150,8 @@ Join our community on [Discord](https://discord.com/invite/G9BqwB3a).
 | chungus    | union        | ❌           |
 | nonut      | unsigned     | ✅           |
 | schizo     | volatile     | ✅           |
-| yes        | true         | ✅           |
-| no         | false        | ✅           |
+| W          | true         | ✅           |
+| L          | false        | ✅           |
 
 ### Builtin functions
 

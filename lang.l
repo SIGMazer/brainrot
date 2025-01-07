@@ -102,8 +102,8 @@ extern int yylineno;
 ":"              { return COLON; }
 
 "🚽"[^\n]*      ; /* Ignore single line comments */
-"yes"            { yylval.ival = 1; return BOOLEAN; }
-"no"             { yylval.ival = 0; return BOOLEAN; }
+"W"              { yylval.ival = 1; return BOOLEAN; }
+"L"              { yylval.ival = 0; return BOOLEAN; }
 [0-9]+\.[0-9]+[fF]? {
     if (yytext[strlen(yytext) - 1] == 'f' || yytext[strlen(yytext) - 1] == 'F') {
         // 'f' or 'F' suffix: float literal

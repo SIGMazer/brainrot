@@ -1169,7 +1169,7 @@ void execute_yapping_call(ArgumentList *args)
         }
         else
         {
-            yapping("%s", val ? "yes" : "no");
+            yapping("%s", val ? "W" : "L");
         }
         return;
     }
@@ -1231,7 +1231,7 @@ void execute_yappin_call(ArgumentList *args)
         }
         else
         {
-            yappin(val ? "yes" : "no");
+            yappin(val ? "W" : "L");
         }
         return;
     }
