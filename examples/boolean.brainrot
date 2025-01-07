@@ -1,12 +1,12 @@
 skibidi main {
-    cap nocap = yes;
+    cap nocap = W;
 
     edgy(nocap) {
         yapping("It's valid!");
     }
     
-    nocap = yes && no;
+    nocap = W && L;
     yapping("nocap: ", nocap);
-    nocap = yes || no;
+    nocap = W || L;
     yapping("nocap: ", nocap);
 }
