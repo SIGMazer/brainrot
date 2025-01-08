@@ -1,0 +1,9 @@
+skibidi main {
+    chad f = 3.14;
+    gigachad d = 3.14;
+    rizz i = 42;
+    nonut rizz u = 42;
+    yappin("%f\n", f * i); 🚽 Should output: 131.880000
+    yappin("%f\n", d * u); 🚽 Should output: 131.880000
+    bussin 0;
+}

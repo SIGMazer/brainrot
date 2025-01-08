@@ -1,0 +1,8 @@
+skibidi main {
+    chad huge_float = 3.4e38;
+    rizz converted = huge_float;   🚽 Should be INT_MAX or error
+    gigachad precise = 123456789.123456789;
+    chad less_precise = precise;   🚽 Precision loss
+    yappin("%f\n", less_precise); 🚽 Should output: 123456789.000000
+    bussin 0;
+}

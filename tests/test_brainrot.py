@@ -17,7 +17,7 @@ with open(file_path, "r") as file:
 def test_brainrot_examples(example, expected_output):
     # Construct absolute paths for the brainrot executable and example file
     brainrot_path = os.path.abspath(os.path.join(script_dir, "../brainrot"))
-    example_file_path = os.path.abspath(os.path.join(script_dir, f"../examples/{example}"))
+    example_file_path = os.path.abspath(os.path.join(script_dir, f"../examples/{example}.brainrot"))
 
     # Define the command to execute
     command = f"{brainrot_path} < {example_file_path}"

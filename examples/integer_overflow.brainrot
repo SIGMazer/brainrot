@@ -1,0 +1,7 @@
+skibidi main {
+    rizz max = 2147483647;  🚽 INT_MAX
+    rizz min = -2147483648; 🚽 INT_MIN
+    yappin("%d\n", max + 1);  🚽 Should output: -2147483648 (overflow)
+    yappin("%d\n", min - 1);  🚽 Should output: 2147483647 (underflow)
+    bussin 0;
+}

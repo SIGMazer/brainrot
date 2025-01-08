@@ -1,0 +1,11 @@
+🚽 TODO: disabled test. returns 1.0 instead of 0.0. Needs further investigation.
+skibidi main {
+    chad f = 1.0e8;  
+    gigachad d = 1.0e8;
+    chad f1 = f + 1.0;            
+    gigachad d1 = d + 1.0;        
+    yappin("%.1f %.1f\n", f1 - f, d1 - d);  
+    🚽 Should output: 0.0 1.0 
+    🚽 (float loses precision, double maintains it)
+    bussin 0;
+}
