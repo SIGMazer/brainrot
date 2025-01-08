@@ -1,5 +1,5 @@
 skibidi main {
-    chad epsilon = 1.0e-7;
+    chad epsilon = 1.0e-6;
     chad a = 1.0;
     chad b = 0.9999999;
     edgy (a - b < epsilon) {

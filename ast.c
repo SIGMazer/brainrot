@@ -260,9 +260,9 @@ float evaluate_expression_float(ASTNode *node)
         case OP_TIMES:
             return left * right;
         case OP_DIVIDE:
-            if (fabsf(right) < 1e-10f)
+            if (fabsf(right) < __FLT_MIN__)
             {
-                if (fabsf(left) < 1e-10f)
+                if (fabsf(left) < __FLT_MIN__)
                 {
                     return 0.0f / 0.0f; // NaN
                 }
@@ -319,7 +319,7 @@ float evaluate_expression_float(ASTNode *node)
 double evaluate_expression_double(ASTNode *node)
 {
     if (!node)
-        return 0.0f;
+        return 0.0L;
 
     switch (node->type)
     {
@@ -351,7 +351,7 @@ double evaluate_expression_double(ASTNode *node)
             }
         }
         yyerror("Undefined variable");
-        return 0.0f;
+        return 0.0L;
     }
     case NODE_OPERATION:
     {
@@ -367,9 +367,9 @@ double evaluate_expression_double(ASTNode *node)
         case OP_TIMES:
             return left * right;
         case OP_DIVIDE:
-            if (fabs(right) < 1e-10)
+            if (fabs(right) < __DBL_MIN__)
             {
-                if (fabs(left) < 1e-10)
+                if (fabs(left) < __DBL_MIN__)
                 {
                     return 0.0 / 0.0; // NaN
                 }
@@ -377,17 +377,29 @@ double evaluate_expression_double(ASTNode *node)
             }
             return left / right;
         case OP_LT:
-            return left < right ? 1.0L : 0.0L;
+        {
+            return (left - right) < -__FLT_EPSILON__ ? 1.0L : 0.0L;
+        }
         case OP_GT:
-            return left > right ? 1.0L : 0.0L;
+        {
+            return (left - right) > __DBL_EPSILON__ ? 1.0L : 0.0L;
+        }
         case OP_LE:
-            return left <= right ? 1.0L : 0.0L;
+        {
+            return (left - right) <= __DBL_EPSILON__ ? 1.0L : 0.0L;
+        }
         case OP_GE:
-            return left >= right ? 1.0L : 0.0L;
+        {
+            return (left - right) >= -__DBL_EPSILON__ ? 1.0L : 0.0L;
+        }
         case OP_EQ:
-            return left == right ? 1.0L : 0.0L;
+        {
+            return fabs(left - right) <= __DBL_EPSILON__ ? 1.0L : 0.0L;
+        }
         case OP_NE:
-            return left != right ? 1.0L : 0.0L;
+        {
+            return fabs(left - right) > __DBL_EPSILON__ ? 1.0L : 0.0L;
+        }
         default:
             yyerror("Invalid operator for double operation");
             return 0.0L;
