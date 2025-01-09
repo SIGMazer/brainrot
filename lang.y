@@ -16,6 +16,7 @@ void yappin(const char* format, ...);
 void baka(const char* format, ...);
 TypeModifiers get_variable_modifiers(const char* name);
 extern TypeModifiers current_modifiers;
+extern VarType current_var_type;
 
 /* Function to add or update variables in the symbol table */
 bool set_variable(char *name, int value, TypeModifiers mods) {
@@ -202,29 +203,53 @@ if_statement:
 
 declaration:
     optional_modifiers RIZZ IDENTIFIER
-        { $$ = create_assignment_node($3, create_int_node(0)); }
+        { 
+            current_var_type = VAR_INT;
+            $$ = create_assignment_node($3, create_int_node(0)); 
+        }
     | optional_modifiers RIZZ IDENTIFIER EQUALS expression
-        { $$ = create_assignment_node($3, $5); }
+        { 
+            current_var_type = VAR_INT;
+            $$ = create_assignment_node($3, $5); 
+        }
     | optional_modifiers CHAD IDENTIFIER
-        { $$ = create_assignment_node($3, create_float_node(0.0f)); }
+        { 
+            current_var_type = VAR_FLOAT;
+            $$ = create_assignment_node($3, create_float_node(0.0f)); 
+        }
     | optional_modifiers CHAD IDENTIFIER EQUALS expression
-        { $$ = create_assignment_node($3, $5); }
+        { 
+            current_var_type = VAR_FLOAT;
+            $$ = create_assignment_node($3, $5); 
+        }
     | optional_modifiers GIGACHAD IDENTIFIER
-        { $$ = create_assignment_node($3, create_double_node(0.0L)); }
+        { 
+            current_var_type = VAR_DOUBLE;
+            $$ = create_assignment_node($3, create_double_node(0.0L)); 
+        }
     | optional_modifiers GIGACHAD IDENTIFIER EQUALS expression
-        { $$ = create_assignment_node($3, $5); }
+        { 
+            current_var_type = VAR_DOUBLE;
+            $$ = create_assignment_node($3, $5); 
+        }
     |  optional_modifiers YAP IDENTIFIER
-        { $$ = create_assignment_node($3, create_char_node(0)); }
+        { 
+            current_var_type = VAR_CHAR;
+            $$ = create_assignment_node($3, create_char_node(0)); 
+        }
     | optional_modifiers YAP IDENTIFIER EQUALS expression
-        { $$ = create_assignment_node($3, $5); }
+        { 
+            current_var_type = VAR_CHAR;
+            $$ = create_assignment_node($3, $5); 
+        }
     | optional_modifiers CAP IDENTIFIER
         { 
-            current_modifiers.is_boolean = true; 
+            current_var_type = VAR_BOOL; 
             $$ = create_assignment_node($3, create_boolean_node(0)); 
         }
     | optional_modifiers CAP IDENTIFIER EQUALS expression
         { 
-            current_modifiers.is_boolean = true; 
+            current_var_type = VAR_BOOL;  
             $$ = create_assignment_node($3, $5); 
         }
     ;
@@ -244,7 +269,7 @@ modifier:
     | UNSIGNED 
         { current_modifiers.is_unsigned = true; }
     | CAP
-        { current_modifiers.is_boolean = true; } 
+        { current_var_type = VAR_BOOL; } 
     ;
 
 for_statement:
