@@ -2,7 +2,7 @@ skibidi main {
     rizz i = 2;
 
     edgy (i == 2) {
-        ragequit(69);
+        ragequit(0);
     } amogus {
         ragequit(42);
     }
