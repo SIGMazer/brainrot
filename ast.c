@@ -16,104 +16,86 @@ Variable symbol_table[MAX_VARS];
 int var_count = 0;
 
 // Symbol table functions
-bool set_int_variable(char *name, int value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_INT;
-            symbol_table[i].value.ivalue = value;
+bool set_variable(char *name, void *value, VarType type, TypeModifiers mods) {
+    // Search for an existing variable
+    for (int i = 0; i < var_count; i++) {
+        if (strcmp(symbol_table[i].name, name) == 0) {
+            symbol_table[i].var_type = type;
             symbol_table[i].modifiers = mods;
+
+            switch (type) {
+                case VAR_INT:
+                    symbol_table[i].value.ivalue = *(int *)value;
+                    break;
+                case VAR_FLOAT:
+                    symbol_table[i].value.fvalue = *(float *)value;
+                    break;
+                case VAR_DOUBLE:
+                    symbol_table[i].value.dvalue = *(double *)value;
+                    break;
+                case VAR_BOOL:
+                    symbol_table[i].value.bvalue = *(bool *)value;
+                    break;
+                case VAR_CHAR:
+                    symbol_table[i].value.ivalue = *(char *)value;
+                    break;
+                case VAR_SHORT: //TODO add short type
+                    symbol_table[i].value.ivalue = *(short *)value;
+                    break;
+            }
             return true;
         }
     }
 
-    if (var_count < MAX_VARS)
-    {
+    // Add a new variable if it doesn't exist
+    if (var_count < MAX_VARS) {
         symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_INT;
-        symbol_table[var_count].value.ivalue = value;
+        symbol_table[var_count].var_type = type;
         symbol_table[var_count].modifiers = mods;
+
+        switch (type) {
+            case VAR_INT:
+                symbol_table[var_count].value.ivalue = *(int *)value;
+                break;
+            case VAR_FLOAT:
+                symbol_table[var_count].value.fvalue = *(float *)value;
+                break;
+            case VAR_DOUBLE:
+                symbol_table[var_count].value.dvalue = *(double *)value;
+                break;
+            case VAR_BOOL:
+                symbol_table[var_count].value.bvalue = *(bool *)value;
+                break;
+            case VAR_CHAR:
+                symbol_table[var_count].value.ivalue = *(char *)value;
+                break;
+            case VAR_SHORT:
+                symbol_table[var_count].value.ivalue = *(short *)value;
+                break;
+            default:   
+                break;
+
+        }
         var_count++;
         return true;
     }
-    return false;
+    return false; // Symbol table is full
 }
 
-bool set_bool_variable(char *name, bool value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_BOOL;
-            symbol_table[i].value.bvalue = value;
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
-
-    if (var_count < MAX_VARS)
-    {
-        symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_BOOL;
-        symbol_table[var_count].value.bvalue = value;
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
+bool set_int_variable(char *name, int value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_INT, mods);
 }
 
-bool set_float_variable(char *name, float value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_FLOAT;
-            symbol_table[i].value.fvalue = value;
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
-
-    if (var_count < MAX_VARS)
-    {
-        symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_FLOAT;
-        symbol_table[var_count].value.fvalue = value;
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
+bool set_float_variable(char *name, float value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_FLOAT, mods);
 }
 
-bool set_double_variable(char *name, double value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_DOUBLE;
-            symbol_table[i].value.dvalue = value;
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
+bool set_double_variable(char *name, double value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_DOUBLE, mods);
+}
 
-    if (var_count < MAX_VARS)
-    {
-        symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_DOUBLE;
-        symbol_table[var_count].value.dvalue = value;
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
+bool set_bool_variable(char *name, bool value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_BOOL, mods);
 }
 
 void reset_modifiers(void)
@@ -131,7 +113,6 @@ TypeModifiers get_current_modifiers(void)
 }
 
 /* Include the symbol table functions */
-extern bool set_variable(char *name, int value, TypeModifiers mod);
 extern int get_variable(char *name);
 extern void yyerror(const char *s);
 extern void ragequit(int exit_code);
@@ -213,7 +194,7 @@ static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modif
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
-        fprintf(stderr, "Error: Memory allocation failed for ASTNode.\n");
+        yyerror("Error: Memory allocation failed for ASTNode.\n");
         exit(EXIT_FAILURE);
     }
     node->type = type;
