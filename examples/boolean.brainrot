@@ -6,7 +6,7 @@ skibidi main {
     }
     
     nocap = W && L;
-    yapping("nocap: ", nocap);
+    yapping("nocap: %b", nocap); 🚽 use %b identifier for boolean types
     nocap = W || L;
-    yapping("nocap: ", nocap);
+    yapping("nocap: %b", nocap);
 }

@@ -22,9 +22,19 @@ typedef struct
     bool is_volatile;
     bool is_signed;
     bool is_unsigned;
-    bool is_boolean;
     bool is_sizeof;
 } TypeModifiers;
+
+typedef enum
+{
+    VAR_INT,
+    VAR_FLOAT,
+    VAR_DOUBLE,
+    VAR_SHORT,
+    VAR_BOOL,
+    VAR_CHAR,
+    NONE,
+} VarType;
 
 /* Symbol table structure */
 typedef struct
@@ -33,13 +43,13 @@ typedef struct
     union
     {
         int ivalue;
+        bool bvalue;
         float fvalue;
         double dvalue;
     } value;
-    bool is_float;
-    bool is_double;
     TypeModifiers modifiers;
-} variable;
+    VarType var_type;
+} Variable;
 
 /* Operator types */
 typedef enum
@@ -119,10 +129,12 @@ struct ASTNode
 {
     NodeType type;
     TypeModifiers modifiers;
+    VarType var_type;
     bool alreadyChecked;
     bool isValidSymbol;
     union
     {
+        bool bvalue;
         int ivalue;
         float fvalue;
         double dvalue;
@@ -168,7 +180,7 @@ struct ASTNode
 
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
-extern variable symbol_table[MAX_VARS];
+extern Variable symbol_table[MAX_VARS];
 extern int var_count;
 
 /* Function prototypes */
@@ -184,7 +196,7 @@ ASTNode *create_int_node(int value);
 ASTNode *create_float_node(float value);
 ASTNode *create_double_node(double value);
 ASTNode *create_char_node(char value);
-ASTNode *create_boolean_node(int value);
+ASTNode *create_boolean_node(bool value);
 ASTNode *create_identifier_node(char *name);
 ASTNode *create_assignment_node(char *name, ASTNode *expr);
 ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right);
@@ -209,6 +221,7 @@ ASTNode *create_break_node(void);
 double evaluate_expression_double(ASTNode *node);
 float evaluate_expression_float(ASTNode *node);
 int evaluate_expression_int(ASTNode *node);
+bool evaluate_expression_bool(ASTNode *node);
 int evaluate_expression(ASTNode *node);
 bool is_double_expression(ASTNode *node);
 bool is_float_expression(ASTNode *node);
