@@ -9,9 +9,10 @@
 
 static jmp_buf break_env;
 
-TypeModifiers current_modifiers = {false, false, false, false, false};
+TypeModifiers current_modifiers = {false, false, false, false};
+VarType current_var_type = NONE;
 
-variable symbol_table[MAX_VARS];
+Variable symbol_table[MAX_VARS];
 int var_count = 0;
 
 // Symbol table functions
@@ -21,7 +22,7 @@ bool set_int_variable(char *name, int value, TypeModifiers mods)
     {
         if (strcmp(symbol_table[i].name, name) == 0)
         {
-            symbol_table[i].is_float = false;
+            symbol_table[i].var_type = VAR_INT;
             symbol_table[i].value.ivalue = value;
             symbol_table[i].modifiers = mods;
             return true;
@@ -31,8 +32,33 @@ bool set_int_variable(char *name, int value, TypeModifiers mods)
     if (var_count < MAX_VARS)
     {
         symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].is_float = false;
+        symbol_table[var_count].var_type = VAR_INT;
         symbol_table[var_count].value.ivalue = value;
+        symbol_table[var_count].modifiers = mods;
+        var_count++;
+        return true;
+    }
+    return false;
+}
+
+bool set_bool_variable(char *name, bool value, TypeModifiers mods)
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            symbol_table[i].var_type = VAR_BOOL;
+            symbol_table[i].value.bvalue = value;
+            symbol_table[i].modifiers = mods;
+            return true;
+        }
+    }
+
+    if (var_count < MAX_VARS)
+    {
+        symbol_table[var_count].name = strdup(name);
+        symbol_table[var_count].var_type = VAR_BOOL;
+        symbol_table[var_count].value.bvalue = value;
         symbol_table[var_count].modifiers = mods;
         var_count++;
         return true;
@@ -46,8 +72,7 @@ bool set_float_variable(char *name, float value, TypeModifiers mods)
     {
         if (strcmp(symbol_table[i].name, name) == 0)
         {
-            symbol_table[i].is_float = true;
-            symbol_table[i].is_double = false;
+            symbol_table[i].var_type = VAR_FLOAT;
             symbol_table[i].value.fvalue = value;
             symbol_table[i].modifiers = mods;
             return true;
@@ -57,8 +82,7 @@ bool set_float_variable(char *name, float value, TypeModifiers mods)
     if (var_count < MAX_VARS)
     {
         symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].is_float = true;
-        symbol_table[var_count].is_double = false;
+        symbol_table[var_count].var_type = VAR_FLOAT;
         symbol_table[var_count].value.fvalue = value;
         symbol_table[var_count].modifiers = mods;
         var_count++;
@@ -73,8 +97,7 @@ bool set_double_variable(char *name, double value, TypeModifiers mods)
     {
         if (strcmp(symbol_table[i].name, name) == 0)
         {
-            symbol_table[i].is_float = false;
-            symbol_table[i].is_double = true;
+            symbol_table[i].var_type = VAR_DOUBLE;
             symbol_table[i].value.dvalue = value;
             symbol_table[i].modifiers = mods;
             return true;
@@ -84,8 +107,7 @@ bool set_double_variable(char *name, double value, TypeModifiers mods)
     if (var_count < MAX_VARS)
     {
         symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].is_float = false;
-        symbol_table[var_count].is_double = true;
+        symbol_table[var_count].var_type = VAR_DOUBLE;
         symbol_table[var_count].value.dvalue = value;
         symbol_table[var_count].modifiers = mods;
         var_count++;
@@ -192,6 +214,7 @@ ASTNode *create_int_node(int value)
     node->type = NODE_INT;
     node->data.ivalue = value;
     node->modifiers.is_unsigned = current_modifiers.is_unsigned;
+    node->var_type = current_var_type;
     return node;
 }
 
@@ -200,6 +223,7 @@ ASTNode *create_float_node(float value)
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_FLOAT;
     node->data.fvalue = value;
+    node->var_type = current_var_type;
     return node;
 }
 
@@ -208,6 +232,7 @@ ASTNode *create_double_node(double value)
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_DOUBLE;
     node->data.dvalue = value;
+    node->var_type = current_var_type;
     return node;
 }
 
@@ -231,11 +256,11 @@ float evaluate_expression_float(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, name) == 0)
             {
-                if (symbol_table[i].is_double)
+                if (symbol_table[i].var_type == VAR_DOUBLE)
                 {
                     return (float)symbol_table[i].value.dvalue;
                 }
-                else if (symbol_table[i].is_float)
+                else if (symbol_table[i].var_type == VAR_FLOAT)
                 {
                     return symbol_table[i].value.fvalue;
                 }
@@ -338,11 +363,11 @@ double evaluate_expression_double(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, name) == 0)
             {
-                if (symbol_table[i].is_double)
+                if (symbol_table[i].var_type == VAR_DOUBLE)
                 {
                     return symbol_table[i].value.dvalue;
                 }
-                else if (symbol_table[i].is_float)
+                else if (symbol_table[i].var_type == VAR_FLOAT)
                 {
                     return (double)symbol_table[i].value.fvalue;
                 }
@@ -435,7 +460,7 @@ int evaluate_expression_int(ASTNode *node)
     case NODE_INT:
         return node->data.ivalue;
     case NODE_BOOLEAN:
-        return node->data.ivalue; // Already 1 or 0
+        return node->data.bvalue; // Already 1 or 0
     case NODE_CHAR:               // Add explicit handling for characters
         return node->data.ivalue;
     case NODE_FLOAT:
@@ -451,25 +476,29 @@ int evaluate_expression_int(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, name) == 0)
             {
-                if (symbol_table[i].is_float)
+                if (symbol_table[i].var_type == VAR_FLOAT)
                 {
                     return sizeof(float);
                 }
-                else if (symbol_table[i].is_double)
+                else if (symbol_table[i].var_type == VAR_DOUBLE)
                 {
                     return sizeof(double);
                 }
-                else if (symbol_table[i].modifiers.is_unsigned)
+                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
                 {
                     return sizeof(unsigned int);
                 }
-                else if (symbol_table[i].modifiers.is_boolean)
+                else if (symbol_table[i].var_type == VAR_BOOL)
                 {
                     return sizeof(bool);
                 }
-                else
+                else if (symbol_table[i].var_type == VAR_INT)
                 {
                     return sizeof(int);
+                }
+                else
+                {
+                    yyerror("Undefined variable in sizeof");
                 }
             }
         }
@@ -486,12 +515,12 @@ int evaluate_expression_int(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, name) == 0)
             {
-                if (symbol_table[i].is_float)
+                if (symbol_table[i].var_type == VAR_FLOAT)
                 {
                     yyerror("Cannot use float variable in integer context");
                     return (int)symbol_table[i].value.fvalue;
                 }
-                if (symbol_table[i].is_double)
+                if (symbol_table[i].var_type == VAR_DOUBLE)
                 {
                     yyerror("Cannot use double variable in integer context");
                     return (int)symbol_table[i].value.dvalue;
@@ -589,20 +618,146 @@ int evaluate_expression_int(ASTNode *node)
     }
 }
 
+bool evaluate_expression_bool(ASTNode *node)
+{
+    if (!node)
+        return 0;
+
+    switch (node->type)
+    {
+    case NODE_INT:
+        return (bool)node->data.ivalue;
+    case NODE_BOOLEAN:
+        return node->data.bvalue;
+    case NODE_CHAR:
+        return (bool)node->data.ivalue;
+    case NODE_FLOAT:
+        return (bool)node->data.fvalue;
+    case NODE_DOUBLE:
+        return (bool)node->data.dvalue;
+    case NODE_IDENTIFIER:
+    {
+        if (!check_and_mark_identifier(node, "Undefined variable"))
+            exit(1);
+
+        char *name = node->data.name;
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, name) == 0)
+            {
+                if (symbol_table[i].var_type == VAR_INT)
+                {
+                    return (bool)symbol_table[i].value.ivalue;
+                }
+                if (symbol_table[i].var_type == VAR_FLOAT)
+                {
+                    return (bool)symbol_table[i].value.fvalue;
+                }
+                if (symbol_table[i].var_type == VAR_DOUBLE)
+                {
+                    return (bool)symbol_table[i].value.dvalue;
+                }
+                return symbol_table[i].value.bvalue;
+            }
+        }
+        yyerror("Undefined variable");
+        return 0;
+    }
+    case NODE_OPERATION:
+    {
+        // Special handling for logical operations
+        if (node->data.op.op == OP_AND || node->data.op.op == OP_OR)
+        {
+            bool left = evaluate_expression_bool(node->data.op.left);
+            bool right = evaluate_expression_bool(node->data.op.right);
+
+            switch (node->data.op.op)
+            {
+            case OP_AND:
+                return left && right;
+            case OP_OR:
+                return left || right;
+            default:
+                break;
+            }
+        }
+
+        // Regular integer operations
+        bool left = evaluate_expression_bool(node->data.op.left);
+        bool right = evaluate_expression_bool(node->data.op.right);
+
+        switch (node->data.op.op)
+        {
+        case OP_PLUS:
+            return left + right;
+        case OP_MINUS:
+            return left - right;
+        case OP_TIMES:
+            return left * right;
+        case OP_DIVIDE:
+            if (right == 0)
+            {
+                yyerror("Division by zero");
+                return 0;
+            }
+            return left / right;
+        case OP_MOD:
+            if (right == 0)
+            {
+                yyerror("Division by zero");
+                return 0;
+            }
+            return left % right;
+        case OP_LT:
+            return left < right;
+        case OP_GT:
+            return left > right;
+        case OP_LE:
+            return left <= right;
+        case OP_GE:
+            return left >= right;
+        case OP_EQ:
+            return left == right;
+        case OP_NE:
+            return left != right;
+        default:
+            yyerror("Unknown operator");
+            return 0;
+        }
+    }
+    case NODE_UNARY_OPERATION:
+    {
+        bool operand = evaluate_expression_bool(node->data.unary.operand);
+        switch (node->data.unary.op)
+        {
+        case OP_NEG:
+            return -operand;
+        default:
+            yyerror("Unknown unary operator");
+            return 0;
+        }
+    }
+    default:
+        yyerror("Invalid boolean expression");
+        return 0;
+    }
+}
+
 ASTNode *create_char_node(char value)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_CHAR;
     node->data.ivalue = value;
+    node->var_type = current_var_type;
     return node;
 }
 
-ASTNode *create_boolean_node(int value)
+ASTNode *create_boolean_node(bool value)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_BOOLEAN;
-    node->data.ivalue = value ? 1 : 0;
-    node->modifiers.is_boolean = true;
+    node->data.bvalue = value ? 1 : 0;
+    node->var_type = current_var_type;
     return node;
 }
 
@@ -629,7 +784,7 @@ ASTNode *create_assignment_node(char *name, ASTNode *expr)
     node->modifiers = get_current_modifiers();
     if (expr->type == NODE_BOOLEAN)
     {
-        node->modifiers.is_boolean = true;
+        node->var_type = VAR_BOOL;
     }
     node->data.op.left = create_identifier_node(name);
     node->data.op.right = expr;
@@ -779,7 +934,7 @@ bool is_float_expression(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, node->data.name) == 0)
             {
-                return symbol_table[i].is_float;
+                return symbol_table[i].var_type == VAR_FLOAT;
             }
         }
         yyerror("Undefined variable in type check");
@@ -817,7 +972,7 @@ bool is_double_expression(ASTNode *node)
         {
             if (strcmp(symbol_table[i].name, node->data.name) == 0)
             {
-                return symbol_table[i].is_double;
+                return symbol_table[i].var_type == VAR_DOUBLE;
             }
         }
         yyerror("Undefined variable in type check");
@@ -923,6 +1078,13 @@ void execute_statement(ASTNode *node)
             if (!set_int_variable(name, value_node->data.ivalue, mods))
             {
                 yyerror("Failed to set character variable");
+            }
+        }
+        else if (value_node->type == NODE_BOOLEAN)
+        {
+            if (!set_bool_variable(name, value_node->data.bvalue, mods))
+            {
+                yyerror("Failed to set boolean variable");
             }
         }
         else if (is_float_expression(value_node))
@@ -1211,7 +1373,10 @@ void execute_yapping_call(ArgumentList *args)
     {
         TypeModifiers mods = get_variable_modifiers(expr->data.name);
         is_unsigned = mods.is_unsigned;
-        is_bool = mods.is_boolean;
+        if (expr->var_type == VAR_BOOL)
+        {
+            is_bool = true;
+        }
     }
     else
     {
@@ -1219,19 +1384,24 @@ void execute_yapping_call(ArgumentList *args)
         is_unsigned = expr->modifiers.is_unsigned;
     }
 
-    if (is_bool)
+    if (strstr(formatNode->data.name, "%b") != NULL)
     {
-        int val = evaluate_expression_int(expr);
+        bool val = evaluate_expression_bool(expr);
 
-        // If format specifier is present, handle differently
-        if (strstr(formatNode->data.name, "%") != NULL)
+        // 1) Build a new format string that changes "%b" -> "%s"
+        char newFormat[256];
+        strncpy(newFormat, formatNode->data.name, sizeof(newFormat));
+        newFormat[sizeof(newFormat) - 1] = '\0';
+
+        // replace the first "%B" with "%s"
+        char *pos = strstr(newFormat, "%b");
+        if (pos)
         {
-            yapping(formatNode->data.name, val);
+            pos[1] = 's'; // i.e. 'b' -> 's'
         }
-        else
-        {
-            yapping("%s", val ? "W" : "L");
-        }
+
+        // 2) Call yapping with that new format & "W"/"L"
+        yapping(newFormat, val ? "W" : "L");
         return;
     }
     if (is_unsigned)
@@ -1283,7 +1453,7 @@ void execute_yappin_call(ArgumentList *args)
 
     // Check if it's a boolean value
     if (expr->type == NODE_BOOLEAN ||
-        (expr->type == NODE_IDENTIFIER && get_variable_modifiers(expr->data.name).is_boolean))
+        (expr->type == NODE_IDENTIFIER && expr->var_type == VAR_BOOL))
     {
         int val = evaluate_expression_int(expr);
         if (strstr(formatNode->data.name, "%d") != NULL)
