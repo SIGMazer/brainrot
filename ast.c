@@ -208,31 +208,111 @@ void execute_switch_statement(ASTNode *node)
     }
 }
 
-ASTNode *create_int_node(int value)
+static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_INT;
-    node->data.ivalue = value;
-    node->modifiers.is_unsigned = current_modifiers.is_unsigned;
-    node->var_type = current_var_type;
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->type = type;
+    node->var_type = var_type;
+    node->modifiers = modifiers;
+    node->alreadyChecked = false;
+    node->isValidSymbol = false;
+    return node;
+}
+
+
+ASTNode *create_int_node(int value)
+{
+    ASTNode *node = create_node(NODE_INT, VAR_INT, current_modifiers);
+    SET_DATA_INT(node, value);
     return node;
 }
 
 ASTNode *create_float_node(float value)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_FLOAT;
-    node->data.fvalue = value;
-    node->var_type = current_var_type;
+    ASTNode *node = create_node(NODE_FLOAT, VAR_FLOAT, current_modifiers);
+    SET_DATA_FLOAT(node, value);
+    return node;
+}
+
+ASTNode *create_char_node(char value)
+{
+    ASTNode *node = create_node(NODE_CHAR, VAR_CHAR, current_modifiers);
+    SET_DATA_INT(node, value); // Store char as integer
+    return node;
+}
+
+ASTNode *create_boolean_node(bool value)
+{
+    ASTNode *node = create_node(NODE_BOOLEAN, VAR_BOOL, current_modifiers);
+    SET_DATA_BOOL(node, value);
+    return node;
+}
+
+ASTNode *create_identifier_node(char *name)
+{
+    ASTNode *node = create_node(NODE_IDENTIFIER, NONE, current_modifiers);
+    SET_DATA_NAME(node, name);
+    return node;
+}
+
+ASTNode *create_assignment_node(char *name, ASTNode *expr)
+{
+    ASTNode *node = create_node(NODE_ASSIGNMENT, NONE, get_current_modifiers());
+    SET_DATA_OP(node, create_identifier_node(name), expr, OP_ASSIGN);
+    return node;
+}
+
+ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = create_node(NODE_OPERATION, NONE, current_modifiers);
+    SET_DATA_OP(node, left, right, op);
+    return node;
+}
+
+ASTNode *create_unary_operation_node(OperatorType op, ASTNode *operand)
+{
+    ASTNode *node = create_node(NODE_UNARY_OPERATION, NONE, current_modifiers);
+    SET_DATA_UNARY_OP(node, operand, op);
+    return node;
+}
+
+ASTNode *create_for_statement_node(ASTNode *init, ASTNode *cond, ASTNode *incr, ASTNode *body)
+{
+    ASTNode *node = create_node(NODE_FOR_STATEMENT, NONE, current_modifiers);
+    SET_DATA_FOR(node, init, cond, incr, body);
+    return node;
+}
+
+ASTNode *create_while_statement_node(ASTNode *cond, ASTNode *body)
+{
+    ASTNode *node = create_node(NODE_WHILE_STATEMENT, NONE, current_modifiers);
+    SET_DATA_WHILE(node, cond, body);
+    return node;
+}
+
+ASTNode *create_function_call_node(char *func_name, ArgumentList *args)
+{
+    ASTNode *node = create_node(NODE_FUNC_CALL, NONE, current_modifiers);
+    SET_DATA_FUNC_CALL(node, func_name, args);
     return node;
 }
 
 ASTNode *create_double_node(double value)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_DOUBLE;
-    node->data.dvalue = value;
-    node->var_type = current_var_type;
+    ASTNode *node = create_node(NODE_DOUBLE, VAR_DOUBLE, current_modifiers);
+    SET_DATA_DOUBLE(node, value);
+    return node;
+}
+
+ASTNode *create_sizeof_node(char *name)
+{
+    ASTNode *node = create_node(NODE_SIZEOF, NONE, current_modifiers);
+    SET_DATA_NAME(node, name);
     return node;
 }
 
@@ -793,108 +873,6 @@ bool evaluate_expression_bool(ASTNode *node)
         yyerror("Invalid boolean expression");
         return 0;
     }
-}
-
-ASTNode *create_char_node(char value)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_CHAR;
-    node->data.ivalue = value;
-    node->var_type = current_var_type;
-    return node;
-}
-
-ASTNode *create_boolean_node(bool value)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_BOOLEAN;
-    node->data.bvalue = value ? 1 : 0;
-    node->var_type = current_var_type;
-    return node;
-}
-
-ASTNode *create_sizeof_node(char *identifier)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_SIZEOF;
-    node->data.name = strdup(identifier);
-    return node;
-}
-
-ASTNode *create_identifier_node(char *name)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_IDENTIFIER;
-    node->data.name = strdup(name);
-    return node;
-}
-
-ASTNode *create_assignment_node(char *name, ASTNode *expr)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_ASSIGNMENT;
-    node->modifiers = get_current_modifiers();
-    if (expr->type == NODE_BOOLEAN)
-    {
-        node->var_type = VAR_BOOL;
-    }
-    node->data.op.left = create_identifier_node(name);
-    node->data.op.right = expr;
-    node->data.op.op = '=';
-    return node;
-}
-
-ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_OPERATION;
-    node->data.op.left = left;
-    node->data.op.right = right;
-    node->data.op.op = op;
-
-    node->modifiers.is_unsigned = left->modifiers.is_unsigned || right->modifiers.is_unsigned;
-    node->modifiers.is_signed = false;
-    node->modifiers.is_volatile = left->modifiers.is_volatile || right->modifiers.is_volatile;
-
-    return node;
-}
-
-ASTNode *create_unary_operation_node(OperatorType op, ASTNode *operand)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_UNARY_OPERATION;
-    node->data.unary.operand = operand;
-    node->data.unary.op = op;
-    return node;
-}
-
-ASTNode *create_for_statement_node(ASTNode *init, ASTNode *cond, ASTNode *incr, ASTNode *body)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_FOR_STATEMENT;
-    node->data.for_stmt.init = init;
-    node->data.for_stmt.cond = cond;
-    node->data.for_stmt.incr = incr;
-    node->data.for_stmt.body = body;
-    return node;
-}
-
-ASTNode *create_while_statement_node(ASTNode *cond, ASTNode *body)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_WHILE_STATEMENT;
-    node->data.while_stmt.cond = cond;
-    node->data.while_stmt.body = body;
-    return node;
-}
-
-ASTNode *create_function_call_node(char *func_name, ArgumentList *args)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_FUNC_CALL;
-    node->data.func_call.function_name = strdup(func_name);
-    node->data.func_call.arguments = args;
-    return node;
 }
 
 ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list)
