@@ -1,0 +1,10 @@
+skibidi main {
+    flex(rizz i = 0; i < 10; ++i) {
+        yapping("%d", i);
+    }
+
+    flex(rizz i = 10; i > 0; --i){
+        yapping("%d", i);
+    }
+    bussin 0;
+}

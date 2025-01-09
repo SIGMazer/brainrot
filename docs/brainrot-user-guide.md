@@ -69,6 +69,17 @@ count = 42;
 
 A **statement** often ends with a **semicolon** `;` unless it is a compound statement (like `{ ... }`).
 
+### Increment and Decrement Operators (`++`, `--`)
+In addition to basic arithmetic and logical expressions, you can also use **increment** (`++`) and **decrement** (`--`) operators in Brainrot.
+
+- **Pre-Increment (`++i`)**: Increments the value of `i` by 1 before it is used in an expression.
+- **Post-Increment (`i++`)**: Uses the current value of `i`, then increments it by 1.
+- **Pre-Decrement (`--i`)**: Decrements the value of `i` by 1 before it is used in an expression.
+- **Post-Decrement (`i--`)**: Uses the current value of `i`, then decrements it by 1.
+
+You can use these operators in expressions to simplify code and make it more concise.
+
+
 Examples of valid statements:
 
 ```c
@@ -354,7 +365,7 @@ skibidi main {
 
 - **Keywords** like `skibidi`, `rizz`, `goon`, `flex`, `edgy`, `amogus`, etc., are specialized synonyms for standard concepts (`main`, `int`, `while`, `for`, `if`, `else`, etc.).
 - **Syntax** is otherwise quite C-like: `;` to end statements, braces `{ }` to define blocks, parentheses `( )` around conditions.
-- **Expressions** accept typical operators (`+`, `-`, `*`, `/`, `%`, relational, logical) plus the assignment operator `=`, matching standard precedence rules.
+- **Expressions** accept typical operators (`+`,`++`, `-`,`--`, `*`, `/`, `%`, relational, logical) plus the assignment operator `=`, matching standard precedence rules.
 - **Escapes in strings** (`"\n"`, `"\t"`, etc.) may require an unescape function in your lexer, so check that it’s converting them into real newlines or tabs at runtime.
 
 ---

@@ -83,7 +83,7 @@ ASTNode *root = NULL;
 %token SKIBIDI RIZZ YAP BAKA MAIN BUSSIN FLEX CAP
 %token PLUS MINUS TIMES DIVIDE MOD SEMICOLON COLON COMMA
 %token LPAREN RPAREN LBRACE RBRACE
-%token LT GT LE GE EQ NE EQUALS AND OR
+%token LT GT LE GE EQ NE EQUALS AND OR DEC INC
 %token BREAK CASE CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM
 %token EXTERN CHAD GIGACHAD FOR GOTO IF LONG SHORT SIGNED
 %token SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE GOON
@@ -121,7 +121,7 @@ ASTNode *root = NULL;
 %left OR                /* Logical OR */
 %left AND               /* Logical AND */
 %nonassoc EQ NE         /* Equality operators */
-%nonassoc LT GT LE GE   /* Relational operators */
+%nonassoc LT GT LE GE DEC INC   /* Relational operators */
 %left PLUS MINUS        /* Addition and subtraction */
 %left TIMES DIVIDE MOD  /* Multiplication, division, modulo */
 %right UMINUS           /* Unary minus */
@@ -397,7 +397,24 @@ expression:
         { $$ = $2; }
     | STRING_LITERAL
         { $$ = create_string_literal_node($1); }
+    | expression INC %prec LOWER_THAN_ELSE
+          {
+              $$ = create_unary_operation_node(OP_POST_INC, $1);  // Post-increment
+          }
+    | expression DEC %prec LOWER_THAN_ELSE
+          {
+              $$ = create_unary_operation_node(OP_POST_DEC, $1);  // Post-decrement
+          }
+    | INC expression %prec LOWER_THAN_ELSE
+          {
+              $$ = create_unary_operation_node(OP_PRE_INC, $2);   // Pre-increment
+          }
+    | DEC expression %prec LOWER_THAN_ELSE
+          {
+              $$ = create_unary_operation_node(OP_PRE_DEC, $2);   // Pre-decrement
+          }
     ;
+
 
 %%
 

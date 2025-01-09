@@ -332,6 +332,23 @@ float evaluate_expression_float(ASTNode *node)
         {
         case OP_NEG:
             return -operand;
+        case OP_POST_DEC:{
+            float old_value =operand;
+            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return old_value;
+                         }
+        case OP_POST_INC:{
+            float old_value =operand;
+            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return old_value;
+
+                         }
+        case OP_PRE_DEC:
+            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand - 1;
+        case OP_PRE_INC:
+            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand + 1;
         default:
             yyerror("Unknown unary operator for float");
             return 0.0f;
@@ -439,6 +456,23 @@ double evaluate_expression_double(ASTNode *node)
         {
         case OP_NEG:
             return -operand;
+        case OP_POST_DEC:{
+            double old_value =operand;
+            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return old_value;
+                         }
+        case OP_POST_INC:{
+            double old_value =operand;
+            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return old_value;
+
+                         }
+        case OP_PRE_DEC:
+            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand - 1;
+        case OP_PRE_INC:
+            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand + 1;
         default:
             yyerror("Unknown unary operator for double");
             return 0.0L;
@@ -554,6 +588,7 @@ int evaluate_expression_int(ASTNode *node)
         int left = evaluate_expression_int(node->data.op.left);
         int right = evaluate_expression_int(node->data.op.right);
 
+
         switch (node->data.op.op)
         {
         case OP_PLUS:
@@ -607,6 +642,23 @@ int evaluate_expression_int(ASTNode *node)
         {
         case OP_NEG:
             return -operand;
+        case OP_POST_DEC:{
+            int old_value =operand;
+            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return old_value;
+                         }
+        case OP_POST_INC:{
+            int old_value =operand;
+            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return old_value;
+
+                         }
+        case OP_PRE_DEC:
+            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand - 1;
+        case OP_PRE_INC:
+            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand + 1;
         default:
             yyerror("Unknown unary operator");
             return 0;
@@ -1532,3 +1584,4 @@ void execute_chill_call(ArgumentList *args)
 
     chill(formatNode->data.ivalue);
 }
+

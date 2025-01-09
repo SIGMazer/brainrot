@@ -92,6 +92,8 @@ extern int yylineno;
 "*"              { return TIMES; }
 "/"              { return DIVIDE; }
 "%"              { return MOD; }
+"++"             { return INC; }
+"--"             { return DEC; }
 
 "("              { return LPAREN; }
 ")"              { return RPAREN; }

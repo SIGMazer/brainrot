@@ -198,6 +198,14 @@ Brainrot supports common arithmetic and logical operators:
 - `&&` Logical AND
 - `||` Logical OR
 - `!` Logical NOT (depending on grammar rules)
+- `++` Increment:
+  - Pre-Increment (`++i`): Increments the value of `i` by 1 before it is used in an expression.
+  - Post-Increment (`i++`): Uses the current value of `i`, then increments it by 1.
+  
+- `--` Decrement: 
+  - Pre-Decrement (`--i`): Decrements the value of `i` by 1 before it is used in an expression.
+  - Post-Decrement (`i--`): Uses the current value of `i`, then decrements it by 1.
+
 
 ### 7.3. Control Flow
 

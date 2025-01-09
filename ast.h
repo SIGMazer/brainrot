@@ -67,7 +67,11 @@ typedef enum
     OP_NE,
     OP_AND,
     OP_OR,
-    OP_NEG
+    OP_NEG,
+    OP_POST_INC,
+    OP_POST_DEC,
+    OP_PRE_INC,
+    OP_PRE_DEC,
 } OperatorType;
 
 /* AST node types */

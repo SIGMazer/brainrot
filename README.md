@@ -175,7 +175,6 @@ The language supports basic arithmetic operators:
 
 Current limitations include:
 
-- No support for increment/decrement operators (++/--)
 - Limited support for complex expressions
 - No support for functions other than main
 - Basic error reporting
