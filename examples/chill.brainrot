@@ -1,0 +1,6 @@
+skibidi main {
+    yapping("I'll chill for a 2 seconds ...");
+    chill(2); 🚽 sleep for 2 seconds
+    yapping("Ok imma head out");
+    bussin 0;
+}

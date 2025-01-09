@@ -277,6 +277,29 @@ In the example above:
 - If i == 1, the program prints the message and exits with code 1.
 - If the condition fails, the program exits with code 0.
 
+## 9.5. chill
+
+**Prototype**
+
+```c
+void chill(unsigned int seconds);
+```
+
+**Key Points**
+
+- Sleeps for a specified number of seconds (must be an unsigned integer)
+
+### Example
+
+```c
+skibidi main {
+    yapping("I'll chill for a 2 seconds ...");
+    chill(2); 🚽 sleep for 2 seconds
+    yapping("Ok imma head out");
+    bussin 0;
+}
+```
+
 ---
 
 # 10. Example Program

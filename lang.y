@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 int yylex(void);
 void yyerror(const char *s);
@@ -389,6 +390,10 @@ void yyerror(const char *s) {
 
 void ragequit(int exit_code) {
     exit(exit_code);
+}
+
+void chill(unsigned int seconds) {
+    sleep(seconds);
 }
 
 void yapping(const char* format, ...) {

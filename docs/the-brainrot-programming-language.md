@@ -22,6 +22,7 @@ A Meme-Fueled Journey into Compiler Design, Internet Slang, and Skibidi Toilets
    - 8.2. `yappin`
    - 8.3. `baka`
    - 8.4. `ragequit`
+   - 8.5. `chill`
 9. **Limitations**
 10. **Known Issues**
 11. **Cultural Context: The Rise of ‘Brain Rot’**
@@ -318,6 +319,20 @@ void ragequit(int exit_code);
 
 ```c
 ragequit(1);
+```
+
+### 8.5. `chill`
+
+```c
+void chill(unsigned int seconds);
+```
+
+- Sleeps for a specified number of seconds (must be an unsigned integer)
+
+**Example**:
+
+```c
+chill(2);
 ```
 
 ---
