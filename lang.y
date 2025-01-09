@@ -9,6 +9,7 @@
 
 int yylex(void);
 void yyerror(const char *s);
+void ragequit(int exit_code);
 void yapping(const char* format, ...);
 void yappin(const char* format, ...);
 void baka(const char* format, ...);
@@ -384,6 +385,10 @@ int main(void) {
 void yyerror(const char *s) {
     extern char *yytext;
     fprintf(stderr, "Error: %s at line %d\n", s, yylineno - 1);
+}
+
+void ragequit(int exit_code) {
+    exit(exit_code);
 }
 
 void yapping(const char* format, ...) {
