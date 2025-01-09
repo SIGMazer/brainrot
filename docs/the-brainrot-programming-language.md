@@ -16,11 +16,12 @@ A Meme-Fueled Journey into Compiler Design, Internet Slang, and Skibidi Toilets
    - 7.3. Control Flow (if, for, while, switch)
    - 7.4. Declarations and Variables (`rizz`)
    - 7.5. Return Statements (`bussin`)
-   - 7.6. Built-In Print and Error Functions
+   - 7.6. Built-In Functions
 8. **Extended User Documentation**
    - 8.1. `yapping`
    - 8.2. `yappin`
    - 8.3. `baka`
+   - 8.4. `ragequit`
 9. **Limitations**
 10. **Known Issues**
 11. **Cultural Context: The Rise of ‘Brain Rot’**
@@ -244,11 +245,12 @@ Brainrot supports common arithmetic and logical operators:
   bussin 0;
   ```
 
-### 7.6. Built-In Print & Error Functions
+### 7.6. Built-In Functions
 
 - **`yapping`**: prints text **and** automatically appends a newline.
 - **`yappin`**: prints text **without** adding a newline.
 - **`baka`**: prints to `stderr`, typically used for errors/warnings.
+- **`ragequit`**: terminates program execution immediately with the provided exit code.
 
 ---
 
@@ -301,6 +303,21 @@ void baka(const char* format, ...);
 
 ```c
 baka("Error: undefined variable %s\n", varName);
+```
+
+### 8.4. `ragequit`
+
+```c
+void ragequit(int exit_code);
+```
+
+- Terminates program execution immediately with the provided exit code.
+- No additional output is printed unless explicitly added before the ragequit call.
+
+**Example**:
+
+```c
+ragequit(1);
 ```
 
 ---

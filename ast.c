@@ -112,6 +112,7 @@ TypeModifiers get_current_modifiers(void)
 extern bool set_variable(char *name, int value, TypeModifiers mod);
 extern int get_variable(char *name);
 extern void yyerror(const char *s);
+extern void ragequit(int exit_code);
 extern void yapping(const char *format, ...);
 extern void yappin(const char *format, ...);
 extern void baka(const char *format, ...);
@@ -969,6 +970,10 @@ void execute_statement(ASTNode *node)
         {
             execute_baka_call(node->data.func_call.arguments);
         }
+        else if (strcmp(node->data.func_call.function_name, "ragequit") == 0)
+        {
+            execute_ragequit_call(node->data.func_call.arguments);
+        }
         break;
     case NODE_FOR_STATEMENT:
         execute_for_statement(node);
@@ -1315,4 +1320,21 @@ void execute_baka_call(ArgumentList *args)
     // parse the first argument as a format string
     // parse subsequent arguments as integers, etc.
     // call "baka(formatString, val, ...)"
+}
+
+void execute_ragequit_call(ArgumentList *args)
+{
+    if (!args)
+    {
+        return;
+    }
+
+    ASTNode *formatNode = args->expr;
+    if (formatNode->type != NODE_INT)
+    {
+        yyerror("First argument to ragequit must be a integer");
+        return;
+    }
+
+    ragequit(formatNode->data.ivalue);
 }

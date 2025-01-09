@@ -155,8 +155,7 @@ Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
 
 ### Builtin functions
 
-- `yapping(string)`: equivalent to `puts(const char *str)`
-- `baka(string)`: equivalent to `fprintf(stderr, const char *format, ...)`
+Check the [user documentation](docs/the-brainrot-programming-language.md).
 
 ### Operators
 
