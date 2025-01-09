@@ -14,7 +14,7 @@ A valid program must contain at least one **main function** defined by:
 
 ```c
 skibidi main {
-    // ... statements ...
+    🚽 ... statements ...
 }
 ```
 
@@ -25,7 +25,7 @@ skibidi main {
 
 ```c
 skibidi main {
-    // This is a simple program
+    🚽 This is a simple program
     yapping("Hello from Brainrot!");
 }
 ```
@@ -173,13 +173,14 @@ _(If your grammar doesn’t define actual multi-function usage beyond `main`, `b
 
 # 9. Built-In Functions for Printing
 
-Your language includes **three** built-in print/error functions for convenience:
+Brainrot includes some built-in functions for convenience:
 
-| Function    | Destination | Auto Newline | Typical Usage                                       |
-| ----------- | ----------- | ------------ | --------------------------------------------------- |
-| **yapping** | `stdout`    | Yes, always  | Quick line-based printing (adds `\n` automatically) |
-| **yappin**  | `stdout`    | No           | Precise control over spacing/newlines               |
-| **baka**    | `stderr`    | No           | Log errors or warnings, typically no extra newline  |
+| Function     | Destination | Auto Newline | Typical Usage                                                         |
+| ------------ | ----------- | ------------ | --------------------------------------------------------------------- |
+| **yapping**  | `stdout`    | Yes, always  | Quick line-based printing (adds `\n` automatically)                   |
+| **yappin**   | `stdout`    | No           | Precise control over spacing/newlines                                 |
+| **baka**     | `stderr`    | No           | Log errors or warnings, typically no extra newline                    |
+| **ragequit** | -           | -            | Terminates program execution immediately with the provided exit code. |
 
 ## 9.1. yapping
 
@@ -198,7 +199,7 @@ void yapping(const char* format, ...);
 
 ```c
 yapping("Hello %s", "User");
-// Prints => "Hello User" + newline
+🚽 Prints => "Hello User" + newline
 ```
 
 ## 9.2. yappin
@@ -218,8 +219,8 @@ void yappin(const char* format, ...);
 
 ```c
 yappin("Hello ");
-// Still on same line
-yappin("World!\n");  // One newline here
+🚽 Still on same line
+yappin("World!\n");  🚽 One newline here
 ```
 
 ## 9.3. baka
@@ -243,6 +244,39 @@ baka("Error: something went wrong at %s\n", location);
 
 _(This prints to stderr, not stdout.)_
 
+## 9.4. ragequit
+
+**Prototype**
+
+```c
+void ragequit(int exit_code);
+```
+
+**Key Points**
+
+- Terminates program execution immediately with the provided exit code.
+- Behaves like exit(exit_code);, but uses the custom ragequit keyword for dramatic exits.
+- No additional output is printed unless explicitly added before the ragequit call.
+
+### Example
+
+```c
+rizz i = 1;
+
+edgy (i == 1) {
+    yapping("Exiting with ragequit(1)");
+    ragequit(1);  🚽 Program ends here with exit code 1
+}
+amogus {
+    ragequit(0);  🚽 Exit code 0
+}
+```
+
+In the example above:
+
+- If i == 1, the program prints the message and exits with code 1.
+- If the condition fails, the program exits with code 0.
+
 ---
 
 # 10. Example Program
@@ -251,31 +285,31 @@ Below is a short **full** example showing variable declarations, loops, conditio
 
 ```c
 skibidi main {
-    // Declare a variable and initialize
+    🚽 Declare a variable and initialize
     rizz i = 1;
 
-    // While loop (goon) runs while i < 5
+    🚽 While loop (goon) runs while i < 5
     goon (i < 5) {
-        // Print a message with a newline automatically
+        🚽 Print a message with a newline automatically
         yapping("AAAAAH A GOONIN LOOP, i=%d", i);
 
-        // Alternatively, print precisely (no auto newline)
+        🚽 Alternatively, print precisely (no auto newline)
         yappin("Just i => %d\n", i);
 
-        // Increment i
+        🚽 Increment i
         i = i + 1;
     }
 
     edgy (i == 5) {
-        // If i is exactly 5, print a message
+        🚽 If i is exactly 5, print a message
         yapping("We ended with i=5");
     }
     amogus {
-        // Otherwise, do something else
+        🚽 Otherwise, do something else
         baka("Unexpected i value: %d\n", i);
     }
 
-    // Return from main
+    🚽 Return from main
     bussin 0;
 }
 ```
