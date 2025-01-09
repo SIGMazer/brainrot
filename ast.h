@@ -221,6 +221,7 @@ void execute_yapping_call(ArgumentList *args);
 void execute_yappin_call(ArgumentList *args);
 void execute_baka_call(ArgumentList *args);
 void execute_ragequit_call(ArgumentList *args);
+void execute_chill_call(ArgumentList *args);
 void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);

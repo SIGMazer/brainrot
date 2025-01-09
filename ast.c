@@ -113,6 +113,7 @@ extern bool set_variable(char *name, int value, TypeModifiers mod);
 extern int get_variable(char *name);
 extern void yyerror(const char *s);
 extern void ragequit(int exit_code);
+extern void chill(unsigned int seconds);
 extern void yapping(const char *format, ...);
 extern void yappin(const char *format, ...);
 extern void baka(const char *format, ...);
@@ -974,6 +975,10 @@ void execute_statement(ASTNode *node)
         {
             execute_ragequit_call(node->data.func_call.arguments);
         }
+        else if (strcmp(node->data.func_call.function_name, "chill") == 0)
+        {
+            execute_chill_call(node->data.func_call.arguments);
+        }
         break;
     case NODE_FOR_STATEMENT:
         execute_for_statement(node);
@@ -1158,8 +1163,8 @@ void execute_yapping_call(ArgumentList *args)
 {
     if (!args)
     {
-        yapping("\n");
-        return;
+        yyerror("No arguments provided for yapping function call");
+        exit(EXIT_FAILURE);
     }
 
     ASTNode *formatNode = args->expr;
@@ -1256,15 +1261,15 @@ void execute_yappin_call(ArgumentList *args)
 {
     if (!args)
     {
-        yappin("\n");
-        return;
+        yyerror("No arguments provided for yappin function call");
+        exit(EXIT_FAILURE);
     }
 
     ASTNode *formatNode = args->expr;
     if (formatNode->type != NODE_STRING_LITERAL)
     {
         yyerror("First argument to yappin must be a string literal");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     ArgumentList *cur = args->next;
@@ -1326,15 +1331,34 @@ void execute_ragequit_call(ArgumentList *args)
 {
     if (!args)
     {
-        return;
+        yyerror("No arguments provided for ragequit function call");
+        exit(EXIT_FAILURE);
     }
 
     ASTNode *formatNode = args->expr;
     if (formatNode->type != NODE_INT)
     {
         yyerror("First argument to ragequit must be a integer");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     ragequit(formatNode->data.ivalue);
+}
+
+void execute_chill_call(ArgumentList *args)
+{
+    if (!args)
+    {
+        yyerror("No arguments provided for chill function call");
+        exit(EXIT_FAILURE);
+    }
+
+    ASTNode *formatNode = args->expr;
+    if (formatNode->type != NODE_INT && !formatNode->modifiers.is_unsigned)
+    {
+        yyerror("First argument to chill must be a unsigned integer");
+        exit(EXIT_FAILURE);
+    }
+
+    chill(formatNode->data.ivalue);
 }
