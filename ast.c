@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <float.h>
 #include <stdint.h> 
+#include <stdio.h>
 
 static jmp_buf break_env;
 
@@ -459,15 +460,15 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     switch (promoted_type)
     {
         case VAR_INT:
-            left_value = malloc(sizeof(int));
-            right_value = malloc(sizeof(int));
+            left_value = calloc(1,sizeof(int));
+            right_value = calloc(1,sizeof(int));
             *(int *)left_value = evaluate_expression_int(node->data.op.left);
             *(int *)right_value = evaluate_expression_int(node->data.op.right);
             break;
 
         case VAR_FLOAT:
-            left_value = malloc(sizeof(float));
-            right_value = malloc(sizeof(float));
+            left_value = calloc(1,sizeof(float));
+            right_value = calloc(1,sizeof(float));
             *(float *)left_value = (left_type == VAR_INT)
                 ? (float)evaluate_expression_int(node->data.op.left)
                 : evaluate_expression_float(node->data.op.left);
@@ -477,8 +478,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             break;
 
         case VAR_DOUBLE:
-            left_value = malloc(sizeof(double));
-            right_value = malloc(sizeof(double));
+            left_value = calloc(1,sizeof(double));
+            right_value = calloc(1,sizeof(double));
             *(double *)left_value = (left_type == VAR_INT)
                 ? (double)evaluate_expression_int(node->data.op.left)
                 : (left_type == VAR_FLOAT)
@@ -496,8 +497,9 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             return NULL;
     }
 
+
     // Perform the operation and allocate the result.
-    void *result = malloc((promoted_type == VAR_DOUBLE) ? sizeof(double)
+    void *result = calloc(1, (promoted_type == VAR_DOUBLE) ? sizeof(double)
             : (promoted_type == VAR_FLOAT)  ? sizeof(float)
             : sizeof(int));
     switch (node->data.op.op)
@@ -505,8 +507,9 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         case OP_PLUS:
             if (promoted_type == VAR_INT)
                 *(int *)result = *(int *)left_value + *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
+            else if (promoted_type == VAR_FLOAT){
                 *(float *)result = *(float *)left_value + *(float *)right_value;
+            }
             else if (promoted_type == VAR_DOUBLE)
                 *(double *)result = *(double *)left_value + *(double *)right_value;
             break;
@@ -514,10 +517,16 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         case OP_MINUS:
             if (promoted_type == VAR_INT)
                 *(int *)result = *(int *)left_value - *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
+            else if (promoted_type == VAR_FLOAT){
                 *(float *)result = *(float *)left_value - *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value - *(double *)right_value;
+
+            }
+            else if (promoted_type == VAR_DOUBLE){
+                volatile double res = *(double *)left_value - *(double *)right_value;
+                *(double *)result = res;
+
+            }
+
             break;
 
         case OP_TIMES:
@@ -1565,95 +1574,132 @@ void execute_yapping_call(ArgumentList *args)
         return;
     }
 
+    const char *format = formatNode->data.name; // The format string
+    char buffer[1024]; // Buffer for the final formatted output
+    int buffer_offset = 0;
+
     ArgumentList *cur = args->next;
-    if (!cur)
-    {
-        yapping("%s", formatNode->data.name);
-        return;
-    }
 
-    ASTNode *expr = cur->expr;
-
-    // Handle float expressions
-    if (is_float_expression(expr))
+    while (*format != '\0')
     {
-        float val = evaluate_expression_float(expr);
-        yapping(formatNode->data.name, val);
-        return;
-    }
-
-    // Handle double expressions
-    if (is_double_expression(expr))
-    {
-        double val = evaluate_expression_double(expr);
-        yapping(formatNode->data.name, val);
-        return;
-    }
-
-    // Check if we're dealing with an unsigned value
-    bool is_unsigned = false;
-    bool is_bool = false;
-
-    if (expr->type == NODE_BOOLEAN)
-    {
-        is_bool = true;
-    }
-    if (expr->type == NODE_IDENTIFIER)
-    {
-        TypeModifiers mods = get_variable_modifiers(expr->data.name);
-        is_unsigned = mods.is_unsigned;
-        if (expr->var_type == VAR_BOOL)
+        if (*format == '%' && cur != NULL)
         {
-            is_bool = true;
-        }
-    }
-    else
-    {
-        // Check if the node itself has unsigned modifier
-        is_unsigned = expr->modifiers.is_unsigned;
-    }
+            // Start extracting the format specifier
+            const char *start = format;
+            format++; // Move past '%'
 
-    if (strstr(formatNode->data.name, "%b") != NULL)
-    {
-        bool val = evaluate_expression_bool(expr);
+            // Extract until a valid specifier character is found
+            while (strchr("diouxXfFeEgGaAcspnb%", *format) == NULL && *format != '\0')
+            {
+                format++;
+            }
 
-        // 1) Build a new format string that changes "%b" -> "%s"
-        char newFormat[256];
-        strncpy(newFormat, formatNode->data.name, sizeof(newFormat));
-        newFormat[sizeof(newFormat) - 1] = '\0';
+            if (*format == '\0')
+            {
+                yyerror("Invalid format specifier");
+                exit(EXIT_FAILURE);
+            }
 
-        // replace the first "%B" with "%s"
-        char *pos = strstr(newFormat, "%b");
-        if (pos)
-        {
-            pos[1] = 's'; // i.e. 'b' -> 's'
-        }
+            // Copy the format specifier into a temporary buffer
+            char specifier[32];
+            int length = format - start + 1;
+            strncpy(specifier, start, length);
+            specifier[length] = '\0';
 
-        // 2) Call yapping with that new format & "W"/"L"
-        yapping(newFormat, val ? "W" : "L");
-        return;
-    }
-    if (is_unsigned)
-    {
-        unsigned int val = (unsigned int)evaluate_expression_int(expr);
-        if (strstr(formatNode->data.name, "%lu") != NULL)
-        {
-            yapping(formatNode->data.name, (unsigned long)val);
-        }
-        else if (strstr(formatNode->data.name, "%u") != NULL)
-        {
-            yapping(formatNode->data.name, val);
+            // Process the argument based on the format specifier
+            ASTNode *expr = cur->expr;
+            if (!expr)
+            {
+                yyerror("Invalid argument in yapping call");
+                exit(EXIT_FAILURE);
+            }
+
+            if (*format == 'b')
+            {
+                // Handle boolean values
+                bool val = evaluate_expression_bool(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, "%s", val ? "W" : "L");
+            }
+            else if (strchr("diouxX", *format))
+            {
+                // Integer or unsigned integer
+                bool is_unsigned = expr->modifiers.is_unsigned || 
+                                   (expr->type == NODE_IDENTIFIER && 
+                                    get_variable_modifiers(expr->data.name).is_unsigned);
+
+                if (is_unsigned)
+                {
+                    unsigned int val = (unsigned int)evaluate_expression_int(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    int val = evaluate_expression_int(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+            }
+            else if (strchr("fFeEgGa", *format))
+            {
+                // Floating-point numbers
+                if (is_float_expression(expr))
+                {
+                    float val = evaluate_expression_float(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else if (is_double_expression(expr))
+                {
+                    double val = evaluate_expression_double(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    yyerror("Invalid argument type for floating-point format specifier");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else if (*format == 'c')
+            {
+                // Character
+                int val = evaluate_expression_int(expr); 
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+            }
+            else if (*format == 's')
+            {
+                // String
+                if (expr->type != NODE_STRING_LITERAL)
+                {
+                    yyerror("Invalid argument type for %s");
+                    exit(EXIT_FAILURE);
+                }
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
+            }
+            else
+            {
+                yyerror("Unsupported format specifier");
+                exit(EXIT_FAILURE);
+            }
+
+            cur = cur->next; // Move to the next argument
+            format++; // Move past the format specifier
         }
         else
         {
-            yapping("%u", val);
+            // Copy non-format characters to the buffer
+            buffer[buffer_offset++] = *format++;
         }
-        return;
+
+        // Check for buffer overflow
+        if (buffer_offset >= sizeof(buffer))
+        {
+            yyerror("Buffer overflow in yapping call");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    // Handle regular integers
-    int val = evaluate_expression_int(expr);
-    yapping(formatNode->data.name, val);
+    buffer[buffer_offset] = '\0'; // Null-terminate the string
+
+    // Print the final formatted output
+    yapping("%s", buffer);
 }
 
 void execute_yappin_call(ArgumentList *args)
@@ -1671,47 +1717,120 @@ void execute_yappin_call(ArgumentList *args)
         exit(EXIT_FAILURE);
     }
 
+    const char *format = formatNode->data.name; // The format string
+    char buffer[1024]; // Buffer for the final formatted output
+    int buffer_offset = 0;
+
     ArgumentList *cur = args->next;
-    if (!cur)
-    {
-        yappin("%s", formatNode->data.name);
-        return;
-    }
 
-    ASTNode *expr = cur->expr;
-
-    // Check if it's a boolean value
-    if (expr->type == NODE_BOOLEAN ||
-        (expr->type == NODE_IDENTIFIER && expr->var_type == VAR_BOOL))
+    while (*format != '\0')
     {
-        int val = evaluate_expression_int(expr);
-        if (strstr(formatNode->data.name, "%d") != NULL)
+        if (*format == '%' && cur != NULL)
         {
-            yappin(formatNode->data.name, val);
+            // Start extracting the format specifier
+            const char *start = format;
+            format++; // Move past '%'
+
+            // Extract until a valid specifier character is found
+            while (strchr("diouxXfFeEgGaAcspnb%", *format) == NULL && *format != '\0')
+            {
+                format++;
+            }
+
+            if (*format == '\0')
+            {
+                yyerror("Invalid format specifier");
+                exit(EXIT_FAILURE);
+            }
+
+            // Copy the format specifier into a temporary buffer
+            char specifier[32];
+            int length = format - start + 1;
+            strncpy(specifier, start, length);
+            specifier[length] = '\0';
+
+            // Process the argument based on the format specifier
+            ASTNode *expr = cur->expr;
+            if (!expr)
+            {
+                yyerror("Invalid argument in yappin call");
+                exit(EXIT_FAILURE);
+            }
+
+            if (*format == 'b')
+            {
+                // Handle boolean values
+                bool val = evaluate_expression_bool(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, "%s", val ? "W" : "L");
+            }
+            else if (strchr("diouxX", *format))
+            {
+                // Handle integer or unsigned integer values
+                int val = evaluate_expression_int(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+            }
+            else if (strchr("fFeEgGa", *format))
+            {
+                // Handle floating-point numbers
+                if (is_float_expression(expr))
+                {
+                    float val = evaluate_expression_float(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else if (is_double_expression(expr))
+                {
+                    double val = evaluate_expression_double(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    yyerror("Invalid argument type for floating-point format specifier");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else if (*format == 'c')
+            {
+                // Handle character values
+                int val = evaluate_expression_int(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+            }
+            else if (*format == 's')
+            {
+                // Handle string literals
+                if (expr->type != NODE_STRING_LITERAL)
+                {
+                    yyerror("Invalid argument type for %s");
+                    exit(EXIT_FAILURE);
+                }
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
+            }
+            else
+            {
+                yyerror("Unsupported format specifier");
+                exit(EXIT_FAILURE);
+            }
+
+            cur = cur->next; // Move to the next argument
+            format++; // Move past the format specifier
         }
         else
         {
-            yappin(val ? "W" : "L");
+            // Copy non-format characters to the buffer
+            buffer[buffer_offset++] = *format++;
         }
-        return;
+
+        // Check for buffer overflow
+        if (buffer_offset >= sizeof(buffer))
+        {
+            yyerror("Buffer overflow in yappin call");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    if (is_float_expression(expr))
-    {
-        float val = evaluate_expression_float(expr);
-        yappin(formatNode->data.name, val);
-        return;
-    }
+    buffer[buffer_offset] = '\0'; // Null-terminate the string
 
-    if (is_double_expression(expr))
-    {
-        double val = evaluate_expression_double(expr);
-        yappin(formatNode->data.name, val);
-        return;
-    }
-
-    int val = evaluate_expression_int(expr);
-    yappin(formatNode->data.name, val);
+    // Print the final formatted output
+    yappin("%s", buffer);
 }
 
 void execute_baka_call(ArgumentList *args)
