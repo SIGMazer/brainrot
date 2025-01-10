@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -51,6 +50,14 @@ typedef struct
     TypeModifiers modifiers;
     VarType var_type;
 } Variable;
+
+typedef union
+{
+    int ivalue;
+    bool bvalue;
+    float fvalue;
+    double dvalue;
+} Value;
 
 /* Operator types */
 typedef enum

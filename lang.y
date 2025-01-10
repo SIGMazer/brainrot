@@ -19,13 +19,27 @@ extern TypeModifiers current_modifiers;
 extern VarType current_var_type;
 
 /* Fix get_variable function: */
-int get_variable(char *name) {
+Value get_variable(char *name) {
     for (int i = 0; i < var_count; i++) {
         if (strcmp(symbol_table[i].name, name) == 0) {
             if (symbol_table[i].modifiers.is_volatile) {
                 asm volatile("" ::: "memory");
             }
-            return symbol_table[i].value.ivalue;
+            switch (symbol_table[i].var_type) {
+                case VAR_INT:
+                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
+                case VAR_FLOAT:
+                    return (Value) { .fvalue = symbol_table[i].value.fvalue };
+                case VAR_DOUBLE:
+                    return (Value) { .dvalue = symbol_table[i].value.dvalue };
+                case VAR_BOOL:
+                    return (Value) { .bvalue = symbol_table[i].value.bvalue };
+                case VAR_CHAR:
+                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
+                case VAR_SHORT:
+                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
+            }
+
         }
     }
     yyerror("Undefined variable");
