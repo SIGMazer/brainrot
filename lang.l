@@ -64,7 +64,7 @@ extern int yylineno;
 "edgy"           { return IF; }
 "amogus"         { return ELSE; }
 "giga"           { return LONG; }
-"soy"            { return SHORT; }
+"smol"           { return SMOL; }
 "nut"            { return SIGNED; }
 "maxxing"        { return SIZEOF; }
 "salty"          { return STATIC; }
@@ -118,7 +118,7 @@ extern int yylineno;
 }
 [0-9]+           { yylval.ival = atoi(yytext); return INT_LITERAL; }
 '.' { yylval.ival = yytext[1]; return CHAR; }
-[a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = strdup(yytext); return IDENTIFIER; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.strval = strdup(yytext); return IDENTIFIER; }
 \"([^\\\"]|\\.)*\" {
     // Strip the leading and trailing quotes:
     char *raw = strdup(yytext + 1);
@@ -128,7 +128,7 @@ extern int yylineno;
     char *unescaped = unescape_string(raw);
     free(raw);
 
-    yylval.sval = unescaped;  // Now it has real newlines, etc.
+    yylval.strval = unescaped;  // Now it has real newlines, etc.
     return STRING_LITERAL;
 }
 \'([^\\\']|\\.)\' {

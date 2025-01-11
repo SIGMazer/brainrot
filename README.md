@@ -141,7 +141,7 @@ Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
 | whopper    | extern       | ❌           |
 | cringe     | goto         | ❌           |
 | giga       | long         | ❌           |
-| soy        | short        | ❌           |
+| smol       | short        | ✅           |
 | nut        | signed       | ✅           |
 | maxxing    | sizeof       | ✅           |
 | salty      | static       | ❌           |
