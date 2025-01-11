@@ -18,44 +18,28 @@ TypeModifiers get_variable_modifiers(const char* name);
 extern TypeModifiers current_modifiers;
 extern VarType current_var_type;
 
-/* Function to add or update variables in the symbol table */
-bool set_variable(char *name, int value, TypeModifiers mods) {
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(symbol_table[i].name, name) == 0) {
-            if (mods.is_unsigned) {
-                symbol_table[i].value.ivalue = (unsigned int)value;
-            } else if (mods.is_signed) {
-                symbol_table[i].value.ivalue = value;
-            } else {
-                symbol_table[i].value.ivalue = value;
-            }
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
-    
-    if (var_count < MAX_VARS) {
-        symbol_table[var_count].name = strdup(name);
-        if (mods.is_unsigned) {
-            symbol_table[var_count].value.ivalue = (unsigned int)value;
-        } else {
-            symbol_table[var_count].value.ivalue = value;
-        }
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
-}
-
 /* Fix get_variable function: */
-int get_variable(char *name) {
+Value get_variable(char *name) {
     for (int i = 0; i < var_count; i++) {
         if (strcmp(symbol_table[i].name, name) == 0) {
             if (symbol_table[i].modifiers.is_volatile) {
                 asm volatile("" ::: "memory");
             }
-            return symbol_table[i].value.ivalue;
+            switch (symbol_table[i].var_type) {
+                case VAR_INT:
+                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
+                case VAR_FLOAT:
+                    return (Value) { .fvalue = symbol_table[i].value.fvalue };
+                case VAR_DOUBLE:
+                    return (Value) { .dvalue = symbol_table[i].value.dvalue };
+                case VAR_BOOL:
+                    return (Value) { .bvalue = symbol_table[i].value.bvalue };
+                case VAR_CHAR:
+                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
+                case VAR_SHORT:
+                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
+            }
+
         }
     }
     yyerror("Undefined variable");

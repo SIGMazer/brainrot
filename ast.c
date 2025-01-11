@@ -3,9 +3,11 @@
 #include "ast.h"
 #include <stdbool.h>
 #include <setjmp.h>
-#include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <float.h>
+#include <stdint.h> 
+#include <stdio.h>
 
 static jmp_buf break_env;
 
@@ -16,104 +18,86 @@ Variable symbol_table[MAX_VARS];
 int var_count = 0;
 
 // Symbol table functions
-bool set_int_variable(char *name, int value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_INT;
-            symbol_table[i].value.ivalue = value;
+bool set_variable(char *name, void *value, VarType type, TypeModifiers mods) {
+    // Search for an existing variable
+    for (int i = 0; i < var_count; i++) {
+        if (strcmp(symbol_table[i].name, name) == 0) {
+            symbol_table[i].var_type = type;
             symbol_table[i].modifiers = mods;
+
+            switch (type) {
+                case VAR_INT:
+                    symbol_table[i].value.ivalue = *(int *)value;
+                    break;
+                case VAR_FLOAT:
+                    symbol_table[i].value.fvalue = *(float *)value;
+                    break;
+                case VAR_DOUBLE:
+                    symbol_table[i].value.dvalue = *(double *)value;
+                    break;
+                case VAR_BOOL:
+                    symbol_table[i].value.bvalue = *(bool *)value;
+                    break;
+                case VAR_CHAR:
+                    symbol_table[i].value.ivalue = *(char *)value;
+                    break;
+                case VAR_SHORT: //TODO add short type
+                    symbol_table[i].value.ivalue = *(short *)value;
+                    break;
+            }
             return true;
         }
     }
 
-    if (var_count < MAX_VARS)
-    {
+    // Add a new variable if it doesn't exist
+    if (var_count < MAX_VARS) {
         symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_INT;
-        symbol_table[var_count].value.ivalue = value;
+        symbol_table[var_count].var_type = type;
         symbol_table[var_count].modifiers = mods;
+
+        switch (type) {
+            case VAR_INT:
+                symbol_table[var_count].value.ivalue = *(int *)value;
+                break;
+            case VAR_FLOAT:
+                symbol_table[var_count].value.fvalue = *(float *)value;
+                break;
+            case VAR_DOUBLE:
+                symbol_table[var_count].value.dvalue = *(double *)value;
+                break;
+            case VAR_BOOL:
+                symbol_table[var_count].value.bvalue = *(bool *)value;
+                break;
+            case VAR_CHAR:
+                symbol_table[var_count].value.ivalue = *(char *)value;
+                break;
+            case VAR_SHORT:
+                symbol_table[var_count].value.ivalue = *(short *)value;
+                break;
+            default:   
+                break;
+
+        }
         var_count++;
         return true;
     }
-    return false;
+    return false; // Symbol table is full
 }
 
-bool set_bool_variable(char *name, bool value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_BOOL;
-            symbol_table[i].value.bvalue = value;
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
-
-    if (var_count < MAX_VARS)
-    {
-        symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_BOOL;
-        symbol_table[var_count].value.bvalue = value;
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
+bool set_int_variable(char *name, int value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_INT, mods);
 }
 
-bool set_float_variable(char *name, float value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_FLOAT;
-            symbol_table[i].value.fvalue = value;
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
-
-    if (var_count < MAX_VARS)
-    {
-        symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_FLOAT;
-        symbol_table[var_count].value.fvalue = value;
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
+bool set_float_variable(char *name, float value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_FLOAT, mods);
 }
 
-bool set_double_variable(char *name, double value, TypeModifiers mods)
-{
-    for (int i = 0; i < var_count; i++)
-    {
-        if (strcmp(symbol_table[i].name, name) == 0)
-        {
-            symbol_table[i].var_type = VAR_DOUBLE;
-            symbol_table[i].value.dvalue = value;
-            symbol_table[i].modifiers = mods;
-            return true;
-        }
-    }
+bool set_double_variable(char *name, double value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_DOUBLE, mods);
+}
 
-    if (var_count < MAX_VARS)
-    {
-        symbol_table[var_count].name = strdup(name);
-        symbol_table[var_count].var_type = VAR_DOUBLE;
-        symbol_table[var_count].value.dvalue = value;
-        symbol_table[var_count].modifiers = mods;
-        var_count++;
-        return true;
-    }
-    return false;
+bool set_bool_variable(char *name, bool value, TypeModifiers mods) {
+    return set_variable(name, &value, VAR_BOOL, mods);
 }
 
 void reset_modifiers(void)
@@ -131,7 +115,6 @@ TypeModifiers get_current_modifiers(void)
 }
 
 /* Include the symbol table functions */
-extern bool set_variable(char *name, int value, TypeModifiers mod);
 extern int get_variable(char *name);
 extern void yyerror(const char *s);
 extern void ragequit(int exit_code);
@@ -208,33 +191,643 @@ void execute_switch_statement(ASTNode *node)
     }
 }
 
-ASTNode *create_int_node(int value)
+static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_INT;
-    node->data.ivalue = value;
-    node->modifiers.is_unsigned = current_modifiers.is_unsigned;
-    node->var_type = current_var_type;
+    if (!node)
+    {
+        yyerror("Error: Memory allocation failed for ASTNode.\n");
+        exit(EXIT_FAILURE);
+    }
+    node->type = type;
+    node->var_type = var_type;
+    node->modifiers = modifiers;
+    node->alreadyChecked = false;
+    node->isValidSymbol = false;
+    return node;
+}
+
+
+ASTNode *create_int_node(int value)
+{
+    ASTNode *node = create_node(NODE_INT, VAR_INT, current_modifiers);
+    SET_DATA_INT(node, value);
     return node;
 }
 
 ASTNode *create_float_node(float value)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_FLOAT;
-    node->data.fvalue = value;
-    node->var_type = current_var_type;
+    ASTNode *node = create_node(NODE_FLOAT, VAR_FLOAT, current_modifiers);
+    SET_DATA_FLOAT(node, value);
+    return node;
+}
+
+ASTNode *create_char_node(char value)
+{
+    ASTNode *node = create_node(NODE_CHAR, VAR_CHAR, current_modifiers);
+    SET_DATA_INT(node, value); // Store char as integer
+    return node;
+}
+
+ASTNode *create_boolean_node(bool value)
+{
+    ASTNode *node = create_node(NODE_BOOLEAN, VAR_BOOL, current_modifiers);
+    SET_DATA_BOOL(node, value);
+    return node;
+}
+
+ASTNode *create_identifier_node(char *name)
+{
+    ASTNode *node = create_node(NODE_IDENTIFIER, NONE, current_modifiers);
+    SET_DATA_NAME(node, name);
+    return node;
+}
+
+ASTNode *create_assignment_node(char *name, ASTNode *expr)
+{
+    ASTNode *node = create_node(NODE_ASSIGNMENT, NONE, get_current_modifiers());
+    SET_DATA_OP(node, create_identifier_node(name), expr, OP_ASSIGN);
+    return node;
+}
+
+ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = create_node(NODE_OPERATION, NONE, current_modifiers);
+    SET_DATA_OP(node, left, right, op);
+    return node;
+}
+
+ASTNode *create_unary_operation_node(OperatorType op, ASTNode *operand)
+{
+    ASTNode *node = create_node(NODE_UNARY_OPERATION, NONE, current_modifiers);
+    SET_DATA_UNARY_OP(node, operand, op);
+    return node;
+}
+
+ASTNode *create_for_statement_node(ASTNode *init, ASTNode *cond, ASTNode *incr, ASTNode *body)
+{
+    ASTNode *node = create_node(NODE_FOR_STATEMENT, NONE, current_modifiers);
+    SET_DATA_FOR(node, init, cond, incr, body);
+    return node;
+}
+
+ASTNode *create_while_statement_node(ASTNode *cond, ASTNode *body)
+{
+    ASTNode *node = create_node(NODE_WHILE_STATEMENT, NONE, current_modifiers);
+    SET_DATA_WHILE(node, cond, body);
+    return node;
+}
+
+ASTNode *create_function_call_node(char *func_name, ArgumentList *args)
+{
+    ASTNode *node = create_node(NODE_FUNC_CALL, NONE, current_modifiers);
+    SET_DATA_FUNC_CALL(node, func_name, args);
     return node;
 }
 
 ASTNode *create_double_node(double value)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_DOUBLE;
-    node->data.dvalue = value;
-    node->var_type = current_var_type;
+    ASTNode *node = create_node(NODE_DOUBLE, VAR_DOUBLE, current_modifiers);
+    SET_DATA_DOUBLE(node, value);
     return node;
 }
+
+ASTNode *create_sizeof_node(char *name)
+{
+    ASTNode *node = create_node(NODE_SIZEOF, NONE, current_modifiers);
+    SET_DATA_NAME(node, name);
+    return node;
+}
+
+// @param promotion: 0 for no promotion, 1 for promotion to double 2 for promotion to float
+void *handle_identifier(ASTNode* node, const char* contextErrorMessage, int promote)
+{
+    if (!check_and_mark_identifier(node, contextErrorMessage))
+        exit(1);
+
+    char *name = node->data.name;
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            static Value promoted_value; // Static variable for holding promoted value.
+            if (promote == 1)
+            {
+
+                switch (symbol_table[i].var_type)
+                {
+                case VAR_DOUBLE:
+                    return &symbol_table[i].value.dvalue;
+                case VAR_FLOAT:
+                    promoted_value.dvalue = (double)symbol_table[i].value.fvalue;
+                    return &promoted_value;
+                case VAR_INT:
+                case VAR_CHAR:
+                case VAR_SHORT:
+                case VAR_BOOL:
+                    promoted_value.dvalue = (double)symbol_table[i].value.ivalue;
+                    return &promoted_value;
+                default:
+                    yyerror("Unsupported variable type");
+                    return NULL;
+                }
+            }
+            else if(promote ==2){
+                switch (symbol_table[i].var_type)
+                {
+                case VAR_DOUBLE:
+                    promoted_value.fvalue = (float)symbol_table[i].value.dvalue;
+                    return &promoted_value;
+                case VAR_FLOAT:
+                    return &symbol_table[i].value.fvalue; 
+                case VAR_INT:
+                case VAR_CHAR:
+                case VAR_SHORT:
+                case VAR_BOOL:
+                    promoted_value.fvalue = (float)symbol_table[i].value.ivalue;
+                    return &promoted_value;
+                default:
+                    yyerror("Unsupported variable type");
+                    return NULL;
+                }
+            }
+            else
+            {
+                switch (symbol_table[i].var_type)
+                {
+                case VAR_DOUBLE:
+                    return &symbol_table[i].value.dvalue;
+                case VAR_FLOAT:
+                    return &symbol_table[i].value.fvalue;
+                case VAR_INT:
+                case VAR_CHAR:
+                case VAR_SHORT:
+                case VAR_BOOL:
+                    return &symbol_table[i].value.ivalue;
+                default:
+                    yyerror("Unsupported variable type");
+                    return NULL;
+                }
+
+            }
+        }
+    }
+    yyerror("Undefined variable");
+    return NULL;
+}
+
+int get_expression_type(ASTNode *node)
+{
+    if (!node)
+    {
+        yyerror("Null node in get_expression_type");
+        return NONE; // Return an unknown type if the node is null
+    }
+
+    switch (node->type)
+    {
+    case NODE_INT:
+        return VAR_INT;
+    case NODE_FLOAT:
+        return VAR_FLOAT;
+    case NODE_DOUBLE:
+        return VAR_DOUBLE;
+    case NODE_BOOLEAN:
+        return VAR_BOOL;
+    case NODE_CHAR:
+        return VAR_INT; 
+    case NODE_IDENTIFIER:
+    {
+        // Look up the variable type in the symbol table
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, node->data.name) == 0)
+            {
+                return symbol_table[i].var_type;
+            }
+        }
+        yyerror("Undefined variable in get_expression_type");
+        return NONE;
+    }
+    case NODE_OPERATION:
+    {
+        // For binary operations, evaluate both operands to determine the highest type
+        int left_type = get_expression_type(node->data.op.left);
+        int right_type = get_expression_type(node->data.op.right);
+
+        // Promote to the highest type (int -> float -> double)
+        if (left_type == VAR_DOUBLE || right_type == VAR_DOUBLE)
+            return VAR_DOUBLE;
+        else if (left_type == VAR_FLOAT || right_type == VAR_FLOAT)
+            return VAR_FLOAT;
+        else
+            return VAR_INT;
+    }
+    case NODE_UNARY_OPERATION:
+    {
+        return get_expression_type(node->data.unary.operand);
+    }
+    default:
+        yyerror("Unknown node type in get_expression_type");
+        return NONE; 
+    }
+}
+
+void *handle_binary_operation(ASTNode *node, int result_type)
+{
+    if (!node || node->type != NODE_OPERATION)
+    {
+        yyerror("Invalid binary operation node");
+        return NULL;
+    }
+
+    // Evaluate left and right operands.
+    void *left_value = NULL;
+    void *right_value = NULL;
+
+    // Determine the actual types of the operands.
+    int left_type = get_expression_type(node->data.op.left);
+    int right_type = get_expression_type(node->data.op.right);
+
+    // Promote types if necessary (int -> float -> double).
+    int promoted_type = VAR_INT;
+    if (left_type == VAR_DOUBLE || right_type == VAR_DOUBLE)
+        promoted_type = VAR_DOUBLE;
+    else if (left_type == VAR_FLOAT || right_type == VAR_FLOAT)
+        promoted_type = VAR_FLOAT;
+
+    // Allocate and evaluate operands based on promoted type.
+    switch (promoted_type)
+    {
+        case VAR_INT:
+            left_value = calloc(1,sizeof(int));
+            right_value = calloc(1,sizeof(int));
+            *(int *)left_value = evaluate_expression_int(node->data.op.left);
+            *(int *)right_value = evaluate_expression_int(node->data.op.right);
+            break;
+
+        case VAR_FLOAT:
+            left_value = calloc(1,sizeof(float));
+            right_value = calloc(1,sizeof(float));
+            *(float *)left_value = (left_type == VAR_INT)
+                ? (float)evaluate_expression_int(node->data.op.left)
+                : evaluate_expression_float(node->data.op.left);
+            *(float *)right_value = (right_type == VAR_INT)
+                ? (float)evaluate_expression_int(node->data.op.right)
+                : evaluate_expression_float(node->data.op.right);
+            break;
+
+        case VAR_DOUBLE:
+            left_value = calloc(1,sizeof(double));
+            right_value = calloc(1,sizeof(double));
+            *(double *)left_value = (left_type == VAR_INT)
+                ? (double)evaluate_expression_int(node->data.op.left)
+                : (left_type == VAR_FLOAT)
+                ? (double)evaluate_expression_float(node->data.op.left)
+                : evaluate_expression_double(node->data.op.left);
+            *(double *)right_value = (right_type == VAR_INT)
+                ? (double)evaluate_expression_int(node->data.op.right)
+                : (right_type == VAR_FLOAT)
+                ? (double)evaluate_expression_float(node->data.op.right)
+                : evaluate_expression_double(node->data.op.right);
+            break;
+
+        default:
+            yyerror("Unsupported type promotion");
+            return NULL;
+    }
+
+
+    // Perform the operation and allocate the result.
+    void *result = calloc(1, (promoted_type == VAR_DOUBLE) ? sizeof(double)
+            : (promoted_type == VAR_FLOAT)  ? sizeof(float)
+            : sizeof(int));
+    switch (node->data.op.op)
+    {
+        case OP_PLUS:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value + *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT){
+                *(float *)result = *(float *)left_value + *(float *)right_value;
+            }
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value + *(double *)right_value;
+            break;
+
+        case OP_MINUS:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value - *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT){
+                *(float *)result = *(float *)left_value - *(float *)right_value;
+
+            }
+            else if (promoted_type == VAR_DOUBLE){
+                volatile double res = *(double *)left_value - *(double *)right_value;
+                *(double *)result = res;
+
+            }
+
+            break;
+
+        case OP_TIMES:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value * *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value * *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value * *(double *)right_value;
+            break;
+
+        case OP_DIVIDE:
+            if (promoted_type == VAR_INT)
+            {
+                if (*(int *)right_value == 0)
+                {
+                    yyerror("Division by zero");
+                    *(int *)result = 0; // Define a fallback behavior for int division by zero
+                }
+                else
+                {
+                    *(int *)result = *(int *)left_value / *(int *)right_value;
+                }
+            }
+            else if (promoted_type == VAR_FLOAT)
+            {
+                float right = *(float *)right_value;
+                float left = *(float *)left_value;
+
+                if (fabsf(right) < __FLT_MIN__)
+                {
+                    if (fabsf(left) < __FLT_MIN__)
+                    {
+                        *(float *)result = 0.0f / 0.0f; // NaN
+                    }
+                    else
+                    {
+                        *(float *)result = left > 0 ? __FLT_MAX__ : -__FLT_MAX__;
+                    }
+                }
+                else
+                {
+                    *(float *)result = left / right;
+                }
+            }
+            else if (promoted_type == VAR_DOUBLE)
+            {
+                double right = *(double *)right_value;
+                double left = *(double *)left_value;
+
+                if (fabs(right) < __DBL_MIN__)
+                {
+                    if (fabs(left) < __DBL_MIN__)
+                    {
+                        *(double *)result = 0.0 / 0.0; // NaN
+                    }
+                    else
+                    {
+                        *(double *)result = left > 0 ? __DBL_MAX__ : -__DBL_MAX__;
+                    }
+                }
+                else
+                {
+                    *(double *)result = left / right;
+                }
+            }
+            break;
+        case OP_MOD:
+            if (promoted_type == VAR_INT)
+            {
+                int left = *(int *)left_value;
+                int right = *(int *)right_value;
+
+                if (right == 0)
+                {
+                    yyerror("Modulo by zero");
+                    *(int *)result = 0; // Define fallback for modulo by zero
+                }
+                else if (node->modifiers.is_unsigned)
+                {
+                    // Explicitly handle unsigned modulo
+                    unsigned int ul = (unsigned int)left;
+                    unsigned int ur = (unsigned int)right;
+                    *(int *)result = (int)(ul % ur);
+                }
+                else
+                {
+                    *(int *)result = left % right;
+                }
+            }
+            else
+            {
+                yyerror("Modulo operation is only supported for integers");
+                *(int *)result = 0;
+            }
+            break;
+        case OP_LT:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value < *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value < *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value < *(double *)right_value;
+            break;
+
+        case OP_GT:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value > *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value > *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value > *(double *)right_value;
+            break;
+
+        case OP_LE:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value <= *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value <= *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value <= *(double *)right_value;
+            break;
+
+        case OP_GE:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value >= *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value >= *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value >= *(double *)right_value;
+            break;
+
+        case OP_EQ:
+
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value == *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value == *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value == *(double *)right_value;
+            break;
+
+        case OP_NE:
+            if (promoted_type == VAR_INT)
+                *(int *)result = *(int *)left_value != *(int *)right_value;
+            else if (promoted_type == VAR_FLOAT)
+                *(float *)result = *(float *)left_value != *(float *)right_value;
+            else if (promoted_type == VAR_DOUBLE)
+                *(double *)result = *(double *)left_value != *(double *)right_value;
+            break;
+
+    default:
+        yyerror("Unsupported binary operator");
+        free(result);
+        result = NULL;
+    }
+
+    free(left_value);
+    free(right_value);
+
+    return result;
+}
+
+void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_type)
+{
+    switch (node->data.unary.op)
+    {
+        case OP_NEG:
+            if (operand_type == VAR_INT)
+            {
+                int *result = malloc(sizeof(int));
+                *result = -(*(int *)operand_value);
+                return result;
+            }
+            else if (operand_type == VAR_FLOAT)
+            {
+                float *result = malloc(sizeof(float));
+                *result = -(*(float *)operand_value);
+                return result;
+            }
+            else if (operand_type == VAR_DOUBLE)
+            {
+                double *result = malloc(sizeof(double));
+                *result = -(*(double *)operand_value);
+                return result;
+            }else if (operand_type == VAR_BOOL)
+            {
+                bool *result = malloc(sizeof(bool));
+                *result = !(*(bool *)operand_value);
+                return result;
+            }
+            else
+            {
+                yyerror("Invalid type for unary negation");
+                return NULL;
+            }
+
+        case OP_PRE_INC:
+            if (operand_type == VAR_INT)
+            {
+                int old_value = *(int *)operand_value;
+                set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+
+            }
+            else if (operand_type == VAR_FLOAT)
+            {
+                float old_value = *(float *)operand_value;
+                set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_DOUBLE)
+            {
+                double old_value = *(double *)operand_value;
+                set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else
+            {
+                yyerror("Invalid type for pre-increment");
+                return NULL;
+            }
+        case OP_PRE_DEC:
+            if (operand_type == VAR_INT)
+            {
+                int old_value = *(int *)operand_value;
+                set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_FLOAT)
+            {
+                float old_value = *(float *)operand_value;
+                set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_DOUBLE)
+            {
+                double old_value = *(double *)operand_value;
+                set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else
+            {
+                yyerror("Invalid type for pre-decrement");
+                return NULL;
+            }
+        case OP_POST_INC:
+            if (operand_type == VAR_INT)
+            {
+                int old_value = *(int *)operand_value;
+                set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_FLOAT)
+            {
+                float old_value = *(float *)operand_value;
+                set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_DOUBLE)
+            {
+                double old_value = *(double *)operand_value;
+                set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else
+            {
+                yyerror("Invalid type for post-increment");
+                return NULL;
+            }
+        case OP_POST_DEC:
+            if (operand_type == VAR_INT)
+            {
+                int old_value = *(int *)operand_value;
+                set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_FLOAT)
+            {
+                float old_value = *(float *)operand_value;
+                set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else if (operand_type == VAR_DOUBLE)
+            {
+                double old_value = *(double *)operand_value;
+                set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+                return operand_value;
+            }
+            else
+            {
+                yyerror("Invalid type for post-decrement");
+                return NULL;
+            }
+        default:
+            yyerror("Unknown unary operator");
+            return NULL;
+
+    }
+}
+
 
 float evaluate_expression_float(ASTNode *node)
 {
@@ -251,114 +844,35 @@ float evaluate_expression_float(ASTNode *node)
         return (float)node->data.ivalue;
     case NODE_IDENTIFIER:
     {
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return (float)symbol_table[i].value.dvalue;
-                }
-                else if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return symbol_table[i].value.fvalue;
-                }
-                else
-                {
-                    return (float)symbol_table[i].value.ivalue;
-                }
-            }
-        }
-        yyerror("Undefined variable");
-        return 0.0f;
+        return *(float *)handle_identifier(node, "Undefined variable", 1);
     }
     case NODE_OPERATION:
     {
-        float left = evaluate_expression_float(node->data.op.left);
-        float right = evaluate_expression_float(node->data.op.right);
+        int result_type = get_expression_type(node);
+        void *result = handle_binary_operation(node, result_type);
+        float result_float = 0.0f;
+        result_float = (result_type == VAR_INT)
+                           ? (float)(*(int *)result)
+                           : (result_type == VAR_FLOAT)
+                                 ? *(float *)result
+                                 : (float)(*(double *)result);
+        free(result);
+        return result_float;
 
-        switch (node->data.op.op)
-        {
-        case OP_PLUS:
-            return left + right;
-        case OP_MINUS:
-            return left - right;
-        case OP_TIMES:
-            return left * right;
-        case OP_DIVIDE:
-            if (fabsf(right) < __FLT_MIN__)
-            {
-                if (fabsf(left) < __FLT_MIN__)
-                {
-                    return 0.0f / 0.0f; // NaN
-                }
-                return left > 0 ? __FLT_MAX__ : -__FLT_MAX__;
-            }
-            return left / right;
-        case OP_LT:
-        {
-            return (left - right) < -__FLT_EPSILON__ ? 1.0f : 0.0f;
-        }
-        case OP_GT:
-        {
-            return (left - right) > __FLT_EPSILON__ ? 1.0f : 0.0f;
-        }
-        case OP_LE:
-        {
-            return (left - right) <= __FLT_EPSILON__ ? 1.0f : 0.0f;
-        }
-        case OP_GE:
-        {
-            return (left - right) >= -__FLT_EPSILON__ ? 1.0f : 0.0f;
-        }
-        case OP_EQ:
-        {
-            return fabsf(left - right) <= __FLT_EPSILON__ ? 1.0f : 0.0f;
-        }
-        case OP_NE:
-        {
-            return fabsf(left - right) > __FLT_EPSILON__ ? 1.0f : 0.0f;
-        }
-        default:
-            yyerror("Invalid operator for float operation");
-            return 0.0f;
-        }
     }
     case NODE_UNARY_OPERATION:
     {
         float operand = evaluate_expression_float(node->data.unary.operand);
-        switch (node->data.unary.op)
-        {
-        case OP_NEG:
-            return -operand;
-        case OP_POST_DEC:{
-            float old_value =operand;
-            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return old_value;
-                         }
-        case OP_POST_INC:{
-            float old_value =operand;
-            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return old_value;
-
-                         }
-        case OP_PRE_DEC:
-            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand - 1;
-        case OP_PRE_INC:
-            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand + 1;
-        default:
-            yyerror("Unknown unary operator for float");
-            return 0.0f;
-        }
+        float *result = (float *)handle_unary_expression(node, &operand, VAR_FLOAT);
+        return *result;
     }
     default:
         yyerror("Invalid float expression");
         return 0.0f;
     }
 }
+
+
 
 double evaluate_expression_double(ASTNode *node)
 {
@@ -375,108 +889,26 @@ double evaluate_expression_double(ASTNode *node)
         return (double)node->data.ivalue;
     case NODE_IDENTIFIER:
     {
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return symbol_table[i].value.dvalue;
-                }
-                else if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return (double)symbol_table[i].value.fvalue;
-                }
-                else
-                {
-                    return (double)symbol_table[i].value.ivalue;
-                }
-            }
-        }
-        yyerror("Undefined variable");
-        return 0.0L;
+        return *(double *)handle_identifier(node, "Undefined variable", 1);
     }
     case NODE_OPERATION:
     {
-        double left = evaluate_expression_double(node->data.op.left);
-        double right = evaluate_expression_double(node->data.op.right);
-
-        switch (node->data.op.op)
-        {
-        case OP_PLUS:
-            return left + right;
-        case OP_MINUS:
-            return left - right;
-        case OP_TIMES:
-            return left * right;
-        case OP_DIVIDE:
-            if (fabs(right) < __DBL_MIN__)
-            {
-                if (fabs(left) < __DBL_MIN__)
-                {
-                    return 0.0 / 0.0; // NaN
-                }
-                return left > 0 ? __DBL_MAX__ : -__DBL_MAX__;
-            }
-            return left / right;
-        case OP_LT:
-        {
-            return (left - right) < -__FLT_EPSILON__ ? 1.0L : 0.0L;
-        }
-        case OP_GT:
-        {
-            return (left - right) > __DBL_EPSILON__ ? 1.0L : 0.0L;
-        }
-        case OP_LE:
-        {
-            return (left - right) <= __DBL_EPSILON__ ? 1.0L : 0.0L;
-        }
-        case OP_GE:
-        {
-            return (left - right) >= -__DBL_EPSILON__ ? 1.0L : 0.0L;
-        }
-        case OP_EQ:
-        {
-            return fabs(left - right) <= __DBL_EPSILON__ ? 1.0L : 0.0L;
-        }
-        case OP_NE:
-        {
-            return fabs(left - right) > __DBL_EPSILON__ ? 1.0L : 0.0L;
-        }
-        default:
-            yyerror("Invalid operator for double operation");
-            return 0.0L;
-        }
+        int result_type = get_expression_type(node);
+        void *result = handle_binary_operation(node, result_type);
+        double result_double = 0.0L;
+        result_double = (result_type == VAR_INT)
+                           ? (double)(*(int *)result)
+                           : (result_type == VAR_FLOAT)
+                                 ? (double)(*(float *)result)
+                                 : *(double *)result;
+        free(result);
+        return result_double;
     }
     case NODE_UNARY_OPERATION:
     {
-        float operand = evaluate_expression_double(node->data.unary.operand);
-        switch (node->data.unary.op)
-        {
-        case OP_NEG:
-            return -operand;
-        case OP_POST_DEC:{
-            double old_value =operand;
-            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return old_value;
-                         }
-        case OP_POST_INC:{
-            double old_value =operand;
-            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return old_value;
-
-                         }
-        case OP_PRE_DEC:
-            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand - 1;
-        case OP_PRE_INC:
-            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand + 1;
-        default:
-            yyerror("Unknown unary operator for double");
-            return 0.0L;
-        }
+        double operand = evaluate_expression_double(node->data.unary.operand);
+        double *result = (double *)handle_unary_expression(node, &operand, VAR_DOUBLE);
+        return *result;
     }
     default:
         yyerror("Invalid double expression");
@@ -541,29 +973,7 @@ int evaluate_expression_int(ASTNode *node)
     }
     case NODE_IDENTIFIER:
     {
-        if (!check_and_mark_identifier(node, "Undefined variable"))
-            exit(1);
-
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    yyerror("Cannot use float variable in integer context");
-                    return (int)symbol_table[i].value.fvalue;
-                }
-                if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    yyerror("Cannot use double variable in integer context");
-                    return (int)symbol_table[i].value.dvalue;
-                }
-                return symbol_table[i].value.ivalue;
-            }
-        }
-        yyerror("Undefined variable");
-        return 0;
+        return *(int *)handle_identifier(node, "Undefined variable", 0);
     }
     case NODE_OPERATION:
     {
@@ -585,84 +995,23 @@ int evaluate_expression_int(ASTNode *node)
         }
 
         // Regular integer operations
-        int left = evaluate_expression_int(node->data.op.left);
-        int right = evaluate_expression_int(node->data.op.right);
+        int result_type = get_expression_type(node);
+        void *result = handle_binary_operation(node, result_type);
+        int result_int = 0;
+        result_int = (result_type == VAR_INT)
+                         ? *(int *)result
+                         : (result_type == VAR_FLOAT)
+                               ? (int)(*(float *)result)
+                               : (int)(*(double *)result);
+        free(result);
+        return result_int;
 
-
-        switch (node->data.op.op)
-        {
-        case OP_PLUS:
-            return left + right;
-        case OP_MINUS:
-            return left - right;
-        case OP_TIMES:
-            return left * right;
-        case OP_DIVIDE:
-            if (right == 0)
-            {
-                yyerror("Division by zero");
-                return 0;
-            }
-            return left / right;
-        case OP_MOD:
-            if (right == 0)
-            {
-                yyerror("Division by zero");
-                return 0;
-            }
-            // Explicitly handle unsigned modulo
-            if (node->modifiers.is_unsigned)
-            {
-                unsigned int ul = (unsigned int)left;
-                unsigned int ur = (unsigned int)right;
-                return ul % ur;
-            }
-            return left % right;
-        case OP_LT:
-            return left < right;
-        case OP_GT:
-            return left > right;
-        case OP_LE:
-            return left <= right;
-        case OP_GE:
-            return left >= right;
-        case OP_EQ:
-            return left == right;
-        case OP_NE:
-            return left != right;
-        default:
-            yyerror("Unknown operator");
-            return 0;
-        }
     }
     case NODE_UNARY_OPERATION:
     {
         int operand = evaluate_expression_int(node->data.unary.operand);
-        switch (node->data.unary.op)
-        {
-        case OP_NEG:
-            return -operand;
-        case OP_POST_DEC:{
-            int old_value =operand;
-            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return old_value;
-                         }
-        case OP_POST_INC:{
-            int old_value =operand;
-            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return old_value;
-
-                         }
-        case OP_PRE_DEC:
-            set_variable(node->data.unary.operand->data.name,operand - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand - 1;
-        case OP_PRE_INC:
-            set_variable(node->data.unary.operand->data.name,operand + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand + 1;
-        default:
-            yyerror("Unknown unary operator");
-            return 0;
-        }
+        int *result = (int *)handle_unary_expression(node, &operand, VAR_INT);
+        return *result;
     }
     default:
         yyerror("Invalid integer expression");
@@ -689,31 +1038,7 @@ bool evaluate_expression_bool(ASTNode *node)
         return (bool)node->data.dvalue;
     case NODE_IDENTIFIER:
     {
-        if (!check_and_mark_identifier(node, "Undefined variable"))
-            exit(1);
-
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_INT)
-                {
-                    return (bool)symbol_table[i].value.ivalue;
-                }
-                if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return (bool)symbol_table[i].value.fvalue;
-                }
-                if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return (bool)symbol_table[i].value.dvalue;
-                }
-                return symbol_table[i].value.bvalue;
-            }
-        }
-        yyerror("Undefined variable");
-        return 0;
+        return *(bool *)handle_identifier(node, "Undefined variable", 0);
     }
     case NODE_OPERATION:
     {
@@ -735,166 +1060,27 @@ bool evaluate_expression_bool(ASTNode *node)
         }
 
         // Regular integer operations
-        bool left = evaluate_expression_bool(node->data.op.left);
-        bool right = evaluate_expression_bool(node->data.op.right);
-
-        switch (node->data.op.op)
-        {
-        case OP_PLUS:
-            return left + right;
-        case OP_MINUS:
-            return left - right;
-        case OP_TIMES:
-            return left * right;
-        case OP_DIVIDE:
-            if (right == 0)
-            {
-                yyerror("Division by zero");
-                return 0;
-            }
-            return left / right;
-        case OP_MOD:
-            if (right == 0)
-            {
-                yyerror("Division by zero");
-                return 0;
-            }
-            return left % right;
-        case OP_LT:
-            return left < right;
-        case OP_GT:
-            return left > right;
-        case OP_LE:
-            return left <= right;
-        case OP_GE:
-            return left >= right;
-        case OP_EQ:
-            return left == right;
-        case OP_NE:
-            return left != right;
-        default:
-            yyerror("Unknown operator");
-            return 0;
-        }
+        int result_type = get_expression_type(node);
+        void *result = handle_binary_operation(node, result_type);
+        bool result_bool = 0;
+        result_bool = (result_type == VAR_INT)
+                          ? (bool)(*(int *)result)
+                          : (result_type == VAR_FLOAT)
+                                ? (bool)(*(float *)result)
+                                : (bool)(*(double *)result);
+        free(result);
+        return result_bool;
     }
     case NODE_UNARY_OPERATION:
     {
         bool operand = evaluate_expression_bool(node->data.unary.operand);
-        switch (node->data.unary.op)
-        {
-        case OP_NEG:
-            return -operand;
-        default:
-            yyerror("Unknown unary operator");
-            return 0;
-        }
+        bool *result = (bool *)handle_unary_expression(node, &operand, VAR_BOOL);
+        return *result;
     }
     default:
         yyerror("Invalid boolean expression");
         return 0;
     }
-}
-
-ASTNode *create_char_node(char value)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_CHAR;
-    node->data.ivalue = value;
-    node->var_type = current_var_type;
-    return node;
-}
-
-ASTNode *create_boolean_node(bool value)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_BOOLEAN;
-    node->data.bvalue = value ? 1 : 0;
-    node->var_type = current_var_type;
-    return node;
-}
-
-ASTNode *create_sizeof_node(char *identifier)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_SIZEOF;
-    node->data.name = strdup(identifier);
-    return node;
-}
-
-ASTNode *create_identifier_node(char *name)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_IDENTIFIER;
-    node->data.name = strdup(name);
-    return node;
-}
-
-ASTNode *create_assignment_node(char *name, ASTNode *expr)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_ASSIGNMENT;
-    node->modifiers = get_current_modifiers();
-    if (expr->type == NODE_BOOLEAN)
-    {
-        node->var_type = VAR_BOOL;
-    }
-    node->data.op.left = create_identifier_node(name);
-    node->data.op.right = expr;
-    node->data.op.op = '=';
-    return node;
-}
-
-ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_OPERATION;
-    node->data.op.left = left;
-    node->data.op.right = right;
-    node->data.op.op = op;
-
-    node->modifiers.is_unsigned = left->modifiers.is_unsigned || right->modifiers.is_unsigned;
-    node->modifiers.is_signed = false;
-    node->modifiers.is_volatile = left->modifiers.is_volatile || right->modifiers.is_volatile;
-
-    return node;
-}
-
-ASTNode *create_unary_operation_node(OperatorType op, ASTNode *operand)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_UNARY_OPERATION;
-    node->data.unary.operand = operand;
-    node->data.unary.op = op;
-    return node;
-}
-
-ASTNode *create_for_statement_node(ASTNode *init, ASTNode *cond, ASTNode *incr, ASTNode *body)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_FOR_STATEMENT;
-    node->data.for_stmt.init = init;
-    node->data.for_stmt.cond = cond;
-    node->data.for_stmt.incr = incr;
-    node->data.for_stmt.body = body;
-    return node;
-}
-
-ASTNode *create_while_statement_node(ASTNode *cond, ASTNode *body)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_WHILE_STATEMENT;
-    node->data.while_stmt.cond = cond;
-    node->data.while_stmt.body = body;
-    return node;
-}
-
-ASTNode *create_function_call_node(char *func_name, ArgumentList *args)
-{
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_FUNC_CALL;
-    node->data.func_call.function_name = strdup(func_name);
-    node->data.func_call.arguments = args;
-    return node;
 }
 
 ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list)
@@ -1388,95 +1574,132 @@ void execute_yapping_call(ArgumentList *args)
         return;
     }
 
+    const char *format = formatNode->data.name; // The format string
+    char buffer[1024]; // Buffer for the final formatted output
+    int buffer_offset = 0;
+
     ArgumentList *cur = args->next;
-    if (!cur)
-    {
-        yapping("%s", formatNode->data.name);
-        return;
-    }
 
-    ASTNode *expr = cur->expr;
-
-    // Handle float expressions
-    if (is_float_expression(expr))
+    while (*format != '\0')
     {
-        float val = evaluate_expression_float(expr);
-        yapping(formatNode->data.name, val);
-        return;
-    }
-
-    // Handle double expressions
-    if (is_double_expression(expr))
-    {
-        double val = evaluate_expression_double(expr);
-        yapping(formatNode->data.name, val);
-        return;
-    }
-
-    // Check if we're dealing with an unsigned value
-    bool is_unsigned = false;
-    bool is_bool = false;
-
-    if (expr->type == NODE_BOOLEAN)
-    {
-        is_bool = true;
-    }
-    if (expr->type == NODE_IDENTIFIER)
-    {
-        TypeModifiers mods = get_variable_modifiers(expr->data.name);
-        is_unsigned = mods.is_unsigned;
-        if (expr->var_type == VAR_BOOL)
+        if (*format == '%' && cur != NULL)
         {
-            is_bool = true;
-        }
-    }
-    else
-    {
-        // Check if the node itself has unsigned modifier
-        is_unsigned = expr->modifiers.is_unsigned;
-    }
+            // Start extracting the format specifier
+            const char *start = format;
+            format++; // Move past '%'
 
-    if (strstr(formatNode->data.name, "%b") != NULL)
-    {
-        bool val = evaluate_expression_bool(expr);
+            // Extract until a valid specifier character is found
+            while (strchr("diouxXfFeEgGaAcspnb%", *format) == NULL && *format != '\0')
+            {
+                format++;
+            }
 
-        // 1) Build a new format string that changes "%b" -> "%s"
-        char newFormat[256];
-        strncpy(newFormat, formatNode->data.name, sizeof(newFormat));
-        newFormat[sizeof(newFormat) - 1] = '\0';
+            if (*format == '\0')
+            {
+                yyerror("Invalid format specifier");
+                exit(EXIT_FAILURE);
+            }
 
-        // replace the first "%B" with "%s"
-        char *pos = strstr(newFormat, "%b");
-        if (pos)
-        {
-            pos[1] = 's'; // i.e. 'b' -> 's'
-        }
+            // Copy the format specifier into a temporary buffer
+            char specifier[32];
+            int length = format - start + 1;
+            strncpy(specifier, start, length);
+            specifier[length] = '\0';
 
-        // 2) Call yapping with that new format & "W"/"L"
-        yapping(newFormat, val ? "W" : "L");
-        return;
-    }
-    if (is_unsigned)
-    {
-        unsigned int val = (unsigned int)evaluate_expression_int(expr);
-        if (strstr(formatNode->data.name, "%lu") != NULL)
-        {
-            yapping(formatNode->data.name, (unsigned long)val);
-        }
-        else if (strstr(formatNode->data.name, "%u") != NULL)
-        {
-            yapping(formatNode->data.name, val);
+            // Process the argument based on the format specifier
+            ASTNode *expr = cur->expr;
+            if (!expr)
+            {
+                yyerror("Invalid argument in yapping call");
+                exit(EXIT_FAILURE);
+            }
+
+            if (*format == 'b')
+            {
+                // Handle boolean values
+                bool val = evaluate_expression_bool(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, "%s", val ? "W" : "L");
+            }
+            else if (strchr("diouxX", *format))
+            {
+                // Integer or unsigned integer
+                bool is_unsigned = expr->modifiers.is_unsigned || 
+                                   (expr->type == NODE_IDENTIFIER && 
+                                    get_variable_modifiers(expr->data.name).is_unsigned);
+
+                if (is_unsigned)
+                {
+                    unsigned int val = (unsigned int)evaluate_expression_int(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    int val = evaluate_expression_int(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+            }
+            else if (strchr("fFeEgGa", *format))
+            {
+                // Floating-point numbers
+                if (is_float_expression(expr))
+                {
+                    float val = evaluate_expression_float(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else if (is_double_expression(expr))
+                {
+                    double val = evaluate_expression_double(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    yyerror("Invalid argument type for floating-point format specifier");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else if (*format == 'c')
+            {
+                // Character
+                int val = evaluate_expression_int(expr); 
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+            }
+            else if (*format == 's')
+            {
+                // String
+                if (expr->type != NODE_STRING_LITERAL)
+                {
+                    yyerror("Invalid argument type for %s");
+                    exit(EXIT_FAILURE);
+                }
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
+            }
+            else
+            {
+                yyerror("Unsupported format specifier");
+                exit(EXIT_FAILURE);
+            }
+
+            cur = cur->next; // Move to the next argument
+            format++; // Move past the format specifier
         }
         else
         {
-            yapping("%u", val);
+            // Copy non-format characters to the buffer
+            buffer[buffer_offset++] = *format++;
         }
-        return;
+
+        // Check for buffer overflow
+        if (buffer_offset >= sizeof(buffer))
+        {
+            yyerror("Buffer overflow in yapping call");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    // Handle regular integers
-    int val = evaluate_expression_int(expr);
-    yapping(formatNode->data.name, val);
+    buffer[buffer_offset] = '\0'; // Null-terminate the string
+
+    // Print the final formatted output
+    yapping("%s", buffer);
 }
 
 void execute_yappin_call(ArgumentList *args)
@@ -1494,47 +1717,120 @@ void execute_yappin_call(ArgumentList *args)
         exit(EXIT_FAILURE);
     }
 
+    const char *format = formatNode->data.name; // The format string
+    char buffer[1024]; // Buffer for the final formatted output
+    int buffer_offset = 0;
+
     ArgumentList *cur = args->next;
-    if (!cur)
-    {
-        yappin("%s", formatNode->data.name);
-        return;
-    }
 
-    ASTNode *expr = cur->expr;
-
-    // Check if it's a boolean value
-    if (expr->type == NODE_BOOLEAN ||
-        (expr->type == NODE_IDENTIFIER && expr->var_type == VAR_BOOL))
+    while (*format != '\0')
     {
-        int val = evaluate_expression_int(expr);
-        if (strstr(formatNode->data.name, "%d") != NULL)
+        if (*format == '%' && cur != NULL)
         {
-            yappin(formatNode->data.name, val);
+            // Start extracting the format specifier
+            const char *start = format;
+            format++; // Move past '%'
+
+            // Extract until a valid specifier character is found
+            while (strchr("diouxXfFeEgGaAcspnb%", *format) == NULL && *format != '\0')
+            {
+                format++;
+            }
+
+            if (*format == '\0')
+            {
+                yyerror("Invalid format specifier");
+                exit(EXIT_FAILURE);
+            }
+
+            // Copy the format specifier into a temporary buffer
+            char specifier[32];
+            int length = format - start + 1;
+            strncpy(specifier, start, length);
+            specifier[length] = '\0';
+
+            // Process the argument based on the format specifier
+            ASTNode *expr = cur->expr;
+            if (!expr)
+            {
+                yyerror("Invalid argument in yappin call");
+                exit(EXIT_FAILURE);
+            }
+
+            if (*format == 'b')
+            {
+                // Handle boolean values
+                bool val = evaluate_expression_bool(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, "%s", val ? "W" : "L");
+            }
+            else if (strchr("diouxX", *format))
+            {
+                // Handle integer or unsigned integer values
+                int val = evaluate_expression_int(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+            }
+            else if (strchr("fFeEgGa", *format))
+            {
+                // Handle floating-point numbers
+                if (is_float_expression(expr))
+                {
+                    float val = evaluate_expression_float(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else if (is_double_expression(expr))
+                {
+                    double val = evaluate_expression_double(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    yyerror("Invalid argument type for floating-point format specifier");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else if (*format == 'c')
+            {
+                // Handle character values
+                int val = evaluate_expression_int(expr);
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+            }
+            else if (*format == 's')
+            {
+                // Handle string literals
+                if (expr->type != NODE_STRING_LITERAL)
+                {
+                    yyerror("Invalid argument type for %s");
+                    exit(EXIT_FAILURE);
+                }
+                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
+            }
+            else
+            {
+                yyerror("Unsupported format specifier");
+                exit(EXIT_FAILURE);
+            }
+
+            cur = cur->next; // Move to the next argument
+            format++; // Move past the format specifier
         }
         else
         {
-            yappin(val ? "W" : "L");
+            // Copy non-format characters to the buffer
+            buffer[buffer_offset++] = *format++;
         }
-        return;
+
+        // Check for buffer overflow
+        if (buffer_offset >= sizeof(buffer))
+        {
+            yyerror("Buffer overflow in yappin call");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    if (is_float_expression(expr))
-    {
-        float val = evaluate_expression_float(expr);
-        yappin(formatNode->data.name, val);
-        return;
-    }
+    buffer[buffer_offset] = '\0'; // Null-terminate the string
 
-    if (is_double_expression(expr))
-    {
-        double val = evaluate_expression_double(expr);
-        yappin(formatNode->data.name, val);
-        return;
-    }
-
-    int val = evaluate_expression_int(expr);
-    yappin(formatNode->data.name, val);
+    // Print the final formatted output
+    yappin("%s", buffer);
 }
 
 void execute_baka_call(ArgumentList *args)

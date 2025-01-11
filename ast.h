@@ -5,8 +5,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define MAX_VARS 100
 
@@ -51,6 +51,14 @@ typedef struct
     VarType var_type;
 } Variable;
 
+typedef union
+{
+    int ivalue;
+    bool bvalue;
+    float fvalue;
+    double dvalue;
+} Value;
+
 /* Operator types */
 typedef enum
 {
@@ -72,6 +80,7 @@ typedef enum
     OP_POST_DEC,
     OP_PRE_INC,
     OP_PRE_DEC,
+    OP_ASSIGN,
 } OperatorType;
 
 /* AST node types */
@@ -244,5 +253,44 @@ void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 
 extern TypeModifiers current_modifiers;
+
+/* Macros for assigning specific fields to a node */
+#define SET_DATA_INT(node, value)      ((node)->data.ivalue = (value))
+#define SET_DATA_FLOAT(node, value)    ((node)->data.fvalue = (value))
+#define SET_DATA_DOUBLE(node, value)   ((node)->data.dvalue = (value))
+#define SET_DATA_BOOL(node, value)     ((node)->data.bvalue = (value) ? 1 : 0)
+#define SET_DATA_NAME(node, n)      ((node)->data.name = strdup(n))
+#define SET_DATA_OP(node, l, r, opr) \
+    do {                                  \
+        (node)->data.op.left = (l);    \
+        (node)->data.op.right = (r);  \
+        (node)->data.op.op = (opr);        \
+    } while (0)
+
+#define SET_DATA_UNARY_OP(node, o, opr) \
+    do {                                     \
+        (node)->data.unary.operand = (o); \
+        (node)->data.unary.op = (opr);        \
+    } while (0)
+
+#define SET_DATA_FOR(node, i, c, inc, b) \
+    do {                                          \
+        (node)->data.for_stmt.init = (i);      \
+        (node)->data.for_stmt.cond = (c);      \
+        (node)->data.for_stmt.incr = (inc);      \
+        (node)->data.for_stmt.body = (b);      \
+    } while (0)
+
+#define SET_DATA_WHILE(node, c, b) \
+    do {                                 \
+        (node)->data.while_stmt.cond = (c); \
+        (node)->data.while_stmt.body = (b); \
+    } while (0)
+
+#define SET_DATA_FUNC_CALL(node, func_name, args) \
+    do {                                         \
+        (node)->data.func_call.function_name = strdup(func_name); \
+        (node)->data.func_call.arguments = (args); \
+    } while (0)
 
 #endif /* AST_H */
