@@ -5,6 +5,8 @@
 #include "ast.h"
 #include "lang.tab.h"
 
+VarType current_var_type = NONE;
+
 char *unescape_string(const char *src) {
     // Allocate a buffer big enough for the worst case
     // (same length as src, since we only shrink on escapes)
@@ -47,24 +49,24 @@ extern int yylineno;
 "skibidi"        { return SKIBIDI; }
 "bussin"         { return BUSSIN; }
 "flex"           { return FLEX; }
-"rizz"           { return RIZZ; }
+"rizz"           { current_var_type = VAR_INT; return RIZZ; }
 "main"           { return MAIN; }
 "bruh"           { return BREAK; }
 "sigma rule"     { return CASE; }
-"yap"            { return YAP; }
+"yap"            { current_var_type = VAR_CHAR; return YAP; }
 "grimace"        { return CONST; }
 "grind"          { return CONTINUE; }
 "based"          { return DEFAULT; }
 "mewing"         { return DO; }
-"gigachad"       { return GIGACHAD; }
+"gigachad"       { current_var_type = VAR_DOUBLE; return GIGACHAD; }
 "gyatt"          { return ENUM; }
 "whopper"        { return EXTERN; }
-"chad"           { return CHAD; }
+"chad"           { current_var_type = VAR_FLOAT; return CHAD; }
 "cringe"         { return GOTO; }
 "edgy"           { return IF; }
 "amogus"         { return ELSE; }
 "giga"           { return LONG; }
-"soy"            { return SHORT; }
+"smol"           { current_var_type = VAR_SHORT; return SMOL; }
 "nut"            { return SIGNED; }
 "maxxing"        { return SIZEOF; }
 "salty"          { return STATIC; }
@@ -75,7 +77,7 @@ extern int yylineno;
 "schizo"         { return VOLATILE; }
 "goon"           { return GOON; }
 "baka"           { return BAKA; }
-"cap"            { return CAP; }
+"cap"            { current_var_type = VAR_BOOL; return CAP; }
 
 "=="             { return EQ; }
 "!="             { return NE; }
@@ -116,9 +118,26 @@ extern int yylineno;
         return DOUBLE_LITERAL;
     }
 }
-[0-9]+           { yylval.ival = atoi(yytext); return INT_LITERAL; }
+[0-9]+ {
+    if (current_var_type == VAR_SHORT) {
+        yylval.sval = (short)atoi(yytext);
+        return SHORT_LITERAL;
+    } else if (current_var_type == VAR_INT) {
+        yylval.ival = atoi(yytext);
+        return INT_LITERAL;
+    } else if (current_var_type == VAR_FLOAT) {
+        yylval.fval = atof(yytext);
+        return FLOAT_LITERAL;
+    } else if (current_var_type == VAR_DOUBLE) {
+        yylval.dval = (double)atof(yytext);
+        return DOUBLE_LITERAL;
+    } else {
+        yylval.ival = atoi(yytext);
+        return INT_LITERAL;
+    }
+}
 '.' { yylval.ival = yytext[1]; return CHAR; }
-[a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = strdup(yytext); return IDENTIFIER; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.strval = strdup(yytext); return IDENTIFIER; }
 \"([^\\\"]|\\.)*\" {
     // Strip the leading and trailing quotes:
     char *raw = strdup(yytext + 1);
@@ -128,7 +147,7 @@ extern int yylineno;
     char *unescaped = unescape_string(raw);
     free(raw);
 
-    yylval.sval = unescaped;  // Now it has real newlines, etc.
+    yylval.strval = unescaped;  // Now it has real newlines, etc.
     return STRING_LITERAL;
 }
 \'([^\\\']|\\.)\' {

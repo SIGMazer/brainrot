@@ -1,13 +1,22 @@
 skibidi main {
+    smol u = 69;
+    chad v = 3.1415f;
+    gigachad w = 3.141592;
     rizz x = 42;
     nonut rizz y = 100;
     cap z = W;
     
     rizz size1 = maxxing(x);
     rizz size2 = maxxing(y);
-    rizz size3 = maxxing(z); 
+    rizz size3 = maxxing(z);
+    rizz size4 = maxxing(u); 
+    rizz size5 = maxxing(v);
+    rizz size6 = maxxing(w);
     
     yapping("%lu", size1);
     yapping("%lu", size2);
     yapping("%lu", size3);
+    yapping("%lu", size4);
+    yapping("%lu", size5);
+    yapping("%lu", size6);
 }
