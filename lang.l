@@ -47,24 +47,24 @@ extern int yylineno;
 "skibidi"        { return SKIBIDI; }
 "bussin"         { return BUSSIN; }
 "flex"           { return FLEX; }
-"rizz"           { return RIZZ; }
+"rizz"           { current_var_type = VAR_INT; return RIZZ; }
 "main"           { return MAIN; }
 "bruh"           { return BREAK; }
 "sigma rule"     { return CASE; }
-"yap"            { return YAP; }
+"yap"            { current_var_type = VAR_CHAR; return YAP; }
 "grimace"        { return CONST; }
 "grind"          { return CONTINUE; }
 "based"          { return DEFAULT; }
 "mewing"         { return DO; }
-"gigachad"       { return GIGACHAD; }
+"gigachad"       { current_var_type = VAR_DOUBLE; return GIGACHAD; }
 "gyatt"          { return ENUM; }
 "whopper"        { return EXTERN; }
-"chad"           { return CHAD; }
+"chad"           { current_var_type = VAR_FLOAT; return CHAD; }
 "cringe"         { return GOTO; }
 "edgy"           { return IF; }
 "amogus"         { return ELSE; }
 "giga"           { return LONG; }
-"smol"           { return SMOL; }
+"smol"           { current_var_type = VAR_SHORT; return SMOL; }
 "nut"            { return SIGNED; }
 "maxxing"        { return SIZEOF; }
 "salty"          { return STATIC; }
@@ -75,7 +75,7 @@ extern int yylineno;
 "schizo"         { return VOLATILE; }
 "goon"           { return GOON; }
 "baka"           { return BAKA; }
-"cap"            { return CAP; }
+"cap"            { current_var_type = VAR_BOOL; return CAP; }
 
 "=="             { return EQ; }
 "!="             { return NE; }
@@ -116,7 +116,19 @@ extern int yylineno;
         return DOUBLE_LITERAL;
     }
 }
-[0-9]+           { yylval.ival = atoi(yytext); return INT_LITERAL; }
+[0-9]+ {
+    if (current_var_type == VAR_SHORT) {  // If it's a short
+        yylval.sval = (short)atoi(yytext);
+        return SHORT_LITERAL;
+    } else if (current_var_type== VAR_INT) {  // If it's an int
+        yylval.ival = atoi(yytext);
+        return INT_LITERAL;
+    } else {
+        yylval.ival = atoi(yytext);
+        return INT_LITERAL;
+    }
+}
+
 '.' { yylval.ival = yytext[1]; return CHAR; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.strval = strdup(yytext); return IDENTIFIER; }
 \"([^\\\"]|\\.)*\" {

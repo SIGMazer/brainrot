@@ -16,7 +16,6 @@ void yappin(const char* format, ...);
 void baka(const char* format, ...);
 TypeModifiers get_variable_modifiers(const char* name);
 extern TypeModifiers current_modifiers;
-extern VarType current_var_type;
 
 /* Fix get_variable function: */
 Value get_variable(char *name) {
@@ -190,62 +189,50 @@ if_statement:
 declaration:
     optional_modifiers RIZZ IDENTIFIER
         { 
-            current_var_type = VAR_INT;
             $$ = create_assignment_node($3, create_int_node(0)); 
         }
     | optional_modifiers RIZZ IDENTIFIER EQUALS expression
         { 
-            current_var_type = VAR_INT;
             $$ = create_assignment_node($3, $5); 
         }
     | optional_modifiers SMOL IDENTIFIER
         { 
-            current_var_type = VAR_SHORT;
             $$ = create_assignment_node($3, create_short_node(0)); 
         }
     | optional_modifiers SMOL IDENTIFIER EQUALS expression
         { 
-            current_var_type = VAR_SHORT;
             $$ = create_assignment_node($3, $5); 
         }
     | optional_modifiers CHAD IDENTIFIER
         { 
-            current_var_type = VAR_FLOAT;
             $$ = create_assignment_node($3, create_float_node(0.0f)); 
         }
     | optional_modifiers CHAD IDENTIFIER EQUALS expression
         { 
-            current_var_type = VAR_FLOAT;
             $$ = create_assignment_node($3, $5); 
         }
     | optional_modifiers GIGACHAD IDENTIFIER
         { 
-            current_var_type = VAR_DOUBLE;
             $$ = create_assignment_node($3, create_double_node(0.0L)); 
         }
     | optional_modifiers GIGACHAD IDENTIFIER EQUALS expression
         { 
-            current_var_type = VAR_DOUBLE;
             $$ = create_assignment_node($3, $5); 
         }
     |  optional_modifiers YAP IDENTIFIER
         { 
-            current_var_type = VAR_CHAR;
             $$ = create_assignment_node($3, create_char_node(0)); 
         }
     | optional_modifiers YAP IDENTIFIER EQUALS expression
         { 
-            current_var_type = VAR_CHAR;
             $$ = create_assignment_node($3, $5); 
         }
     | optional_modifiers CAP IDENTIFIER
         { 
-            current_var_type = VAR_BOOL; 
             $$ = create_assignment_node($3, create_boolean_node(0)); 
         }
     | optional_modifiers CAP IDENTIFIER EQUALS expression
         { 
-            current_var_type = VAR_BOOL;  
             $$ = create_assignment_node($3, $5); 
         }
     ;

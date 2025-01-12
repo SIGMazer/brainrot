@@ -260,6 +260,7 @@ void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 
 extern TypeModifiers current_modifiers;
+extern VarType current_var_type;
 
 /* Macros for assigning specific fields to a node */
 #define SET_DATA_INT(node, value) ((node)->data.ivalue = (value))
