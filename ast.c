@@ -11,14 +11,14 @@
 
 static jmp_buf break_env;
 
-TypeModifiers current_modifiers = {false, false, false, false};
+TypeModifiers current_modifiers = {false, false, false, false, false};
 extern VarType current_var_type;
 
 Variable symbol_table[MAX_VARS];
 int var_count = 0;
 
 // Symbol table functions
-bool set_variable(char *name, void *value, VarType type, TypeModifiers mods)
+bool set_variable(const char *name, void *value, VarType type, TypeModifiers mods)
 {
     // Search for an existing variable
     for (int i = 0; i < var_count; i++)
@@ -89,27 +89,27 @@ bool set_variable(char *name, void *value, VarType type, TypeModifiers mods)
     return false; // Symbol table is full
 }
 
-bool set_int_variable(char *name, int value, TypeModifiers mods)
+bool set_int_variable(const char *name, int value, TypeModifiers mods)
 {
     return set_variable(name, &value, VAR_INT, mods);
 }
 
-bool set_short_variable(char *name, short value, TypeModifiers mods)
+bool set_short_variable(const char *name, short value, TypeModifiers mods)
 {
     return set_variable(name, &value, VAR_SHORT, mods);
 }
 
-bool set_float_variable(char *name, float value, TypeModifiers mods)
+bool set_float_variable(const char *name, float value, TypeModifiers mods)
 {
     return set_variable(name, &value, VAR_FLOAT, mods);
 }
 
-bool set_double_variable(char *name, double value, TypeModifiers mods)
+bool set_double_variable(const char *name, double value, TypeModifiers mods)
 {
     return set_variable(name, &value, VAR_DOUBLE, mods);
 }
 
-bool set_bool_variable(char *name, bool value, TypeModifiers mods)
+bool set_bool_variable(const char *name, bool value, TypeModifiers mods)
 {
     return set_variable(name, &value, VAR_BOOL, mods);
 }
@@ -119,6 +119,7 @@ void reset_modifiers(void)
     current_modifiers.is_volatile = false;
     current_modifiers.is_signed = false;
     current_modifiers.is_unsigned = false;
+    current_modifiers.is_const = false;
 }
 
 TypeModifiers get_current_modifiers(void)
@@ -1326,6 +1327,28 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
     }
 }
 
+bool is_const_variable(const char *name)
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            return symbol_table[i].modifiers.is_const;
+        }
+    }
+    return false;
+}
+
+void check_const_assignment(const char *name)
+{
+    if (is_const_variable(name))
+    {
+        yylineno = yylineno - 2;
+        yyerror("Cannot modify const variable");
+        exit(EXIT_FAILURE);
+    }
+}
+
 bool is_short_expression(ASTNode *node)
 {
     if (!node)
@@ -1468,6 +1491,8 @@ void execute_assignment(ASTNode *node)
     }
 
     char *name = node->data.op.left->data.name;
+    check_const_assignment(name);
+
     ASTNode *value_node = node->data.op.right;
     TypeModifiers mods = node->modifiers;
 
@@ -1534,6 +1559,8 @@ void execute_statement(ASTNode *node)
     case NODE_ASSIGNMENT:
     {
         char *name = node->data.op.left->data.name;
+        check_const_assignment(name);
+
         ASTNode *value_node = node->data.op.right;
         TypeModifiers mods = node->modifiers;
 
@@ -1588,6 +1615,9 @@ void execute_statement(ASTNode *node)
     case NODE_OPERATION:
     case NODE_UNARY_OPERATION:
     case NODE_INT:
+    case NODE_SHORT:
+    case NODE_FLOAT:
+    case NODE_DOUBLE:
     case NODE_CHAR:
     case NODE_IDENTIFIER:
         evaluate_expression(node);

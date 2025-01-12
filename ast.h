@@ -23,6 +23,7 @@ typedef struct
     bool is_signed;
     bool is_unsigned;
     bool is_sizeof;
+    bool is_const;
 } TypeModifiers;
 
 typedef enum
@@ -201,10 +202,10 @@ extern Variable symbol_table[MAX_VARS];
 extern int var_count;
 
 /* Function prototypes */
-bool set_int_variable(char *name, int value, TypeModifiers mods);
-bool set_short_variable(char *name, short value, TypeModifiers mods);
-bool set_float_variable(char *name, float value, TypeModifiers mods);
-bool set_double_variable(char *name, double value, TypeModifiers mods);
+bool set_int_variable(const char *name, int value, TypeModifiers mods);
+bool set_short_variable(const char *name, short value, TypeModifiers mods);
+bool set_float_variable(const char *name, float value, TypeModifiers mods);
+bool set_double_variable(const char *name, double value, TypeModifiers mods);
 TypeModifiers get_variable_modifiers(const char *name);
 void reset_modifiers(void);
 TypeModifiers get_current_modifiers(void);
@@ -245,6 +246,8 @@ bool evaluate_expression_bool(ASTNode *node);
 int evaluate_expression(ASTNode *node);
 bool is_double_expression(ASTNode *node);
 bool is_float_expression(ASTNode *node);
+bool is_const_variable(const char *name);
+void check_const_assignment(const char *name);
 void execute_statement(ASTNode *node);
 void execute_statements(ASTNode *node);
 void execute_assignment(ASTNode *node);

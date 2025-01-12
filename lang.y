@@ -69,7 +69,7 @@ ASTNode *root = NULL;
 %token PLUS MINUS TIMES DIVIDE MOD SEMICOLON COLON COMMA
 %token LPAREN RPAREN LBRACE RBRACE
 %token LT GT LE GE EQ NE EQUALS AND OR DEC INC
-%token BREAK CASE CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM
+%token BREAK CASE DEADASS CONTINUE DEFAULT DO DOUBLE ELSE ENUM
 %token EXTERN CHAD GIGACHAD FOR GOTO IF LONG SMOL SIGNED
 %token SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE GOON
 %token <strval> IDENTIFIER
@@ -264,6 +264,8 @@ modifier:
         { current_modifiers.is_signed = true; }
     | UNSIGNED 
         { current_modifiers.is_unsigned = true; }
+    | DEADASS
+        { current_modifiers.is_const = true; }
     | CAP
         { current_var_type = VAR_BOOL; } 
     ;

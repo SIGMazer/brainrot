@@ -1,0 +1,7 @@
+skibidi main {
+    deadass rizz i = 1;
+    yapping("%d", i);
+    i = 2;
+    yapping("%d", i);
+    bussin 0;
+}

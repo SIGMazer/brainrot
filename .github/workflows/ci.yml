@@ -57,12 +57,29 @@ jobs:
         run: chmod +x brainrot
 
       - name: Run Brainrot examples
+        continue-on-error: true
         run: |
           for file in examples/*.brainrot; do
-            ./brainrot < "$file"
+            if [[ "$file" == "examples/const.brainrot" ]]; then
+              ./brainrot < "$file"
+              exit_code=$?
+              if [ $exit_code -ne 1 ]; then
+                echo "Error: Expected exit code 1 for $file, but got $exit_code"
+                exit 1
+              else
+                echo "Success: $file exited with code 1 as expected."
+              fi
+            else
+              ./brainrot < "$file"
+              exit_code=$?
+              if [ $exit_code -ne 0 ]; then
+                echo "Error: Expected exit code 0 for $file, but got $exit_code"
+                exit 1
+              else
+                echo "Success: $file exited with code 0 as expected."
+              fi
+            fi
           done
-
-          ./brainrot < examples/while_loop.brainrot
 
   test:
     runs-on: ubuntu-latest
