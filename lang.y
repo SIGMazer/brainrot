@@ -28,6 +28,8 @@ Value get_variable(char *name) {
             switch (symbol_table[i].var_type) {
                 case VAR_INT:
                     return (Value) { .ivalue = symbol_table[i].value.ivalue };
+                case VAR_SHORT:
+                    return (Value) { .svalue = symbol_table[i].value.svalue };
                 case VAR_FLOAT:
                     return (Value) { .fvalue = symbol_table[i].value.fvalue };
                 case VAR_DOUBLE:
@@ -35,8 +37,6 @@ Value get_variable(char *name) {
                 case VAR_BOOL:
                     return (Value) { .bvalue = symbol_table[i].value.bvalue };
                 case VAR_CHAR:
-                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
-                case VAR_SHORT:
                     return (Value) { .ivalue = symbol_table[i].value.ivalue };
             }
 
@@ -54,10 +54,11 @@ ASTNode *root = NULL;
 
 %union {
     int ival;
+    short sval;
     float fval;
     double dval;
     char cval;
-    char *sval;
+    char *strval;
     ASTNode *node;
     CaseNode *case_node;
     ArgumentList *args;
@@ -69,11 +70,12 @@ ASTNode *root = NULL;
 %token LPAREN RPAREN LBRACE RBRACE
 %token LT GT LE GE EQ NE EQUALS AND OR DEC INC
 %token BREAK CASE CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM
-%token EXTERN CHAD GIGACHAD FOR GOTO IF LONG SHORT SIGNED
+%token EXTERN CHAD GIGACHAD FOR GOTO IF LONG SMOL SIGNED
 %token SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE GOON
-%token <sval> IDENTIFIER
+%token <strval> IDENTIFIER
 %token <ival> INT_LITERAL
-%token <sval> STRING_LITERAL
+%token <sval> SHORT_LITERAL
+%token <strval> STRING_LITERAL
 %token <cval> CHAR
 %token <ival> BOOLEAN
 %token <fval> FLOAT_LITERAL
@@ -194,6 +196,16 @@ declaration:
     | optional_modifiers RIZZ IDENTIFIER EQUALS expression
         { 
             current_var_type = VAR_INT;
+            $$ = create_assignment_node($3, $5); 
+        }
+    | optional_modifiers SMOL IDENTIFIER
+        { 
+            current_var_type = VAR_SHORT;
+            $$ = create_assignment_node($3, create_short_node(0)); 
+        }
+    | optional_modifiers SMOL IDENTIFIER EQUALS expression
+        { 
+            current_var_type = VAR_SHORT;
             $$ = create_assignment_node($3, $5); 
         }
     | optional_modifiers CHAD IDENTIFIER
@@ -341,6 +353,8 @@ expression:
         { $$ = create_double_node($1); } 
     | CHAR
         { $$ = create_char_node($1); }
+    | SHORT_LITERAL
+        { $$ = create_short_node($1); }
     | BOOLEAN
         { $$ = create_boolean_node($1); }
     | IDENTIFIER

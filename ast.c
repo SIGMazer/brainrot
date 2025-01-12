@@ -6,77 +6,82 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
-#include <stdint.h> 
+#include <stdint.h>
 #include <stdio.h>
 
 static jmp_buf break_env;
 
 TypeModifiers current_modifiers = {false, false, false, false};
-VarType current_var_type = NONE;
+extern VarType current_var_type;
 
 Variable symbol_table[MAX_VARS];
 int var_count = 0;
 
 // Symbol table functions
-bool set_variable(char *name, void *value, VarType type, TypeModifiers mods) {
+bool set_variable(char *name, void *value, VarType type, TypeModifiers mods)
+{
     // Search for an existing variable
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(symbol_table[i].name, name) == 0) {
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
             symbol_table[i].var_type = type;
             symbol_table[i].modifiers = mods;
 
-            switch (type) {
-                case VAR_INT:
-                    symbol_table[i].value.ivalue = *(int *)value;
-                    break;
-                case VAR_FLOAT:
-                    symbol_table[i].value.fvalue = *(float *)value;
-                    break;
-                case VAR_DOUBLE:
-                    symbol_table[i].value.dvalue = *(double *)value;
-                    break;
-                case VAR_BOOL:
-                    symbol_table[i].value.bvalue = *(bool *)value;
-                    break;
-                case VAR_CHAR:
-                    symbol_table[i].value.ivalue = *(char *)value;
-                    break;
-                case VAR_SHORT: //TODO add short type
-                    symbol_table[i].value.ivalue = *(short *)value;
-                    break;
+            switch (type)
+            {
+            case VAR_INT:
+                symbol_table[i].value.ivalue = *(int *)value;
+                break;
+            case VAR_SHORT:
+                symbol_table[i].value.svalue = *(short *)value;
+                break;
+            case VAR_FLOAT:
+                symbol_table[i].value.fvalue = *(float *)value;
+                break;
+            case VAR_DOUBLE:
+                symbol_table[i].value.dvalue = *(double *)value;
+                break;
+            case VAR_BOOL:
+                symbol_table[i].value.bvalue = *(bool *)value;
+                break;
+            case VAR_CHAR:
+                symbol_table[i].value.ivalue = *(char *)value;
+                break;
             }
             return true;
         }
     }
 
     // Add a new variable if it doesn't exist
-    if (var_count < MAX_VARS) {
+    if (var_count < MAX_VARS)
+    {
         symbol_table[var_count].name = strdup(name);
         symbol_table[var_count].var_type = type;
         symbol_table[var_count].modifiers = mods;
 
-        switch (type) {
-            case VAR_INT:
-                symbol_table[var_count].value.ivalue = *(int *)value;
-                break;
-            case VAR_FLOAT:
-                symbol_table[var_count].value.fvalue = *(float *)value;
-                break;
-            case VAR_DOUBLE:
-                symbol_table[var_count].value.dvalue = *(double *)value;
-                break;
-            case VAR_BOOL:
-                symbol_table[var_count].value.bvalue = *(bool *)value;
-                break;
-            case VAR_CHAR:
-                symbol_table[var_count].value.ivalue = *(char *)value;
-                break;
-            case VAR_SHORT:
-                symbol_table[var_count].value.ivalue = *(short *)value;
-                break;
-            default:   
-                break;
-
+        switch (type)
+        {
+        case VAR_INT:
+            symbol_table[var_count].value.ivalue = *(int *)value;
+            break;
+        case VAR_SHORT:
+            symbol_table[var_count].value.svalue = *(short *)value;
+            break;
+        case VAR_FLOAT:
+            symbol_table[var_count].value.fvalue = *(float *)value;
+            break;
+        case VAR_DOUBLE:
+            symbol_table[var_count].value.dvalue = *(double *)value;
+            break;
+        case VAR_BOOL:
+            symbol_table[var_count].value.bvalue = *(bool *)value;
+            break;
+        case VAR_CHAR:
+            symbol_table[var_count].value.ivalue = *(char *)value;
+            break;
+        default:
+            break;
         }
         var_count++;
         return true;
@@ -84,19 +89,28 @@ bool set_variable(char *name, void *value, VarType type, TypeModifiers mods) {
     return false; // Symbol table is full
 }
 
-bool set_int_variable(char *name, int value, TypeModifiers mods) {
+bool set_int_variable(char *name, int value, TypeModifiers mods)
+{
     return set_variable(name, &value, VAR_INT, mods);
 }
 
-bool set_float_variable(char *name, float value, TypeModifiers mods) {
+bool set_short_variable(char *name, short value, TypeModifiers mods)
+{
+    return set_variable(name, &value, VAR_SHORT, mods);
+}
+
+bool set_float_variable(char *name, float value, TypeModifiers mods)
+{
     return set_variable(name, &value, VAR_FLOAT, mods);
 }
 
-bool set_double_variable(char *name, double value, TypeModifiers mods) {
+bool set_double_variable(char *name, double value, TypeModifiers mods)
+{
     return set_variable(name, &value, VAR_DOUBLE, mods);
 }
 
-bool set_bool_variable(char *name, bool value, TypeModifiers mods) {
+bool set_bool_variable(char *name, bool value, TypeModifiers mods)
+{
     return set_variable(name, &value, VAR_BOOL, mods);
 }
 
@@ -207,11 +221,17 @@ static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modif
     return node;
 }
 
-
 ASTNode *create_int_node(int value)
 {
     ASTNode *node = create_node(NODE_INT, VAR_INT, current_modifiers);
     SET_DATA_INT(node, value);
+    return node;
+}
+
+ASTNode *create_short_node(short value)
+{
+    ASTNode *node = create_node(NODE_SHORT, VAR_SHORT, current_modifiers);
+    SET_DATA_SHORT(node, value);
     return node;
 }
 
@@ -300,7 +320,7 @@ ASTNode *create_sizeof_node(char *name)
 }
 
 // @param promotion: 0 for no promotion, 1 for promotion to double 2 for promotion to float
-void *handle_identifier(ASTNode* node, const char* contextErrorMessage, int promote)
+void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int promote)
 {
     if (!check_and_mark_identifier(node, contextErrorMessage))
         exit(1);
@@ -324,6 +344,8 @@ void *handle_identifier(ASTNode* node, const char* contextErrorMessage, int prom
                 case VAR_INT:
                 case VAR_CHAR:
                 case VAR_SHORT:
+                    promoted_value.dvalue = (double)symbol_table[i].value.svalue;
+                    return &promoted_value;
                 case VAR_BOOL:
                     promoted_value.dvalue = (double)symbol_table[i].value.ivalue;
                     return &promoted_value;
@@ -332,17 +354,19 @@ void *handle_identifier(ASTNode* node, const char* contextErrorMessage, int prom
                     return NULL;
                 }
             }
-            else if(promote ==2){
+            else if (promote == 2)
+            {
                 switch (symbol_table[i].var_type)
                 {
                 case VAR_DOUBLE:
                     promoted_value.fvalue = (float)symbol_table[i].value.dvalue;
                     return &promoted_value;
                 case VAR_FLOAT:
-                    return &symbol_table[i].value.fvalue; 
+                    return &symbol_table[i].value.fvalue;
                 case VAR_INT:
                 case VAR_CHAR:
                 case VAR_SHORT:
+                    promoted_value.fvalue = (float)symbol_table[i].value.svalue;
                 case VAR_BOOL:
                     promoted_value.fvalue = (float)symbol_table[i].value.ivalue;
                     return &promoted_value;
@@ -362,13 +386,13 @@ void *handle_identifier(ASTNode* node, const char* contextErrorMessage, int prom
                 case VAR_INT:
                 case VAR_CHAR:
                 case VAR_SHORT:
+                    return &symbol_table[i].value.svalue;
                 case VAR_BOOL:
                     return &symbol_table[i].value.ivalue;
                 default:
                     yyerror("Unsupported variable type");
                     return NULL;
                 }
-
             }
         }
     }
@@ -388,6 +412,8 @@ int get_expression_type(ASTNode *node)
     {
     case NODE_INT:
         return VAR_INT;
+    case NODE_SHORT:
+        return VAR_SHORT;
     case NODE_FLOAT:
         return VAR_FLOAT;
     case NODE_DOUBLE:
@@ -395,7 +421,7 @@ int get_expression_type(ASTNode *node)
     case NODE_BOOLEAN:
         return VAR_BOOL;
     case NODE_CHAR:
-        return VAR_INT; 
+        return VAR_INT;
     case NODE_IDENTIFIER:
     {
         // Look up the variable type in the symbol table
@@ -429,7 +455,7 @@ int get_expression_type(ASTNode *node)
     }
     default:
         yyerror("Unknown node type in get_expression_type");
-        return NONE; 
+        return NONE;
     }
 }
 
@@ -449,7 +475,7 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     int left_type = get_expression_type(node->data.op.left);
     int right_type = get_expression_type(node->data.op.right);
 
-    // Promote types if necessary (int -> float -> double).
+    // Promote types if necessary (short -> int -> float -> double).
     int promoted_type = VAR_INT;
     if (left_type == VAR_DOUBLE || right_type == VAR_DOUBLE)
         promoted_type = VAR_DOUBLE;
@@ -459,224 +485,225 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     // Allocate and evaluate operands based on promoted type.
     switch (promoted_type)
     {
-        case VAR_INT:
-            left_value = calloc(1,sizeof(int));
-            right_value = calloc(1,sizeof(int));
-            *(int *)left_value = evaluate_expression_int(node->data.op.left);
-            *(int *)right_value = evaluate_expression_int(node->data.op.right);
-            break;
+    case VAR_INT:
+        left_value = calloc(1, sizeof(int));
+        right_value = calloc(1, sizeof(int));
+        *(int *)left_value = evaluate_expression_int(node->data.op.left);
+        *(int *)right_value = evaluate_expression_int(node->data.op.right);
+        break;
 
-        case VAR_FLOAT:
-            left_value = calloc(1,sizeof(float));
-            right_value = calloc(1,sizeof(float));
-            *(float *)left_value = (left_type == VAR_INT)
-                ? (float)evaluate_expression_int(node->data.op.left)
-                : evaluate_expression_float(node->data.op.left);
-            *(float *)right_value = (right_type == VAR_INT)
-                ? (float)evaluate_expression_int(node->data.op.right)
-                : evaluate_expression_float(node->data.op.right);
-            break;
+    case VAR_FLOAT:
+        left_value = calloc(1, sizeof(float));
+        right_value = calloc(1, sizeof(float));
+        *(float *)left_value = (left_type == VAR_INT)
+                                   ? (float)evaluate_expression_int(node->data.op.left)
+                                   : evaluate_expression_float(node->data.op.left);
+        *(float *)right_value = (right_type == VAR_INT)
+                                    ? (float)evaluate_expression_int(node->data.op.right)
+                                    : evaluate_expression_float(node->data.op.right);
+        break;
 
-        case VAR_DOUBLE:
-            left_value = calloc(1,sizeof(double));
-            right_value = calloc(1,sizeof(double));
-            *(double *)left_value = (left_type == VAR_INT)
-                ? (double)evaluate_expression_int(node->data.op.left)
-                : (left_type == VAR_FLOAT)
-                ? (double)evaluate_expression_float(node->data.op.left)
-                : evaluate_expression_double(node->data.op.left);
-            *(double *)right_value = (right_type == VAR_INT)
-                ? (double)evaluate_expression_int(node->data.op.right)
-                : (right_type == VAR_FLOAT)
-                ? (double)evaluate_expression_float(node->data.op.right)
-                : evaluate_expression_double(node->data.op.right);
-            break;
+    case VAR_DOUBLE:
+        left_value = calloc(1, sizeof(double));
+        right_value = calloc(1, sizeof(double));
+        *(double *)left_value = (left_type == VAR_INT)
+                                    ? (double)evaluate_expression_int(node->data.op.left)
+                                : (left_type == VAR_FLOAT)
+                                    ? (double)evaluate_expression_float(node->data.op.left)
+                                    : evaluate_expression_double(node->data.op.left);
+        *(double *)right_value = (right_type == VAR_INT)
+                                     ? (double)evaluate_expression_int(node->data.op.right)
+                                 : (right_type == VAR_FLOAT)
+                                     ? (double)evaluate_expression_float(node->data.op.right)
+                                     : evaluate_expression_double(node->data.op.right);
+        break;
 
-        default:
-            yyerror("Unsupported type promotion");
-            return NULL;
+    default:
+        yyerror("Unsupported type promotion");
+        return NULL;
     }
 
-
     // Perform the operation and allocate the result.
-    void *result = calloc(1, (promoted_type == VAR_DOUBLE) ? sizeof(double)
-            : (promoted_type == VAR_FLOAT)  ? sizeof(float)
-            : sizeof(int));
+    void *result = calloc(1, (promoted_type == VAR_DOUBLE)  ? sizeof(double)
+                             : (promoted_type == VAR_FLOAT) ? sizeof(float)
+                             : (promoted_type == VAR_SHORT) ? sizeof(short)
+                                                            : sizeof(int));
     switch (node->data.op.op)
     {
-        case OP_PLUS:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value + *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT){
-                *(float *)result = *(float *)left_value + *(float *)right_value;
-            }
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value + *(double *)right_value;
-            break;
+    case OP_PLUS:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value + *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+        {
+            *(float *)result = *(float *)left_value + *(float *)right_value;
+        }
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value + *(double *)right_value;
+        break;
 
-        case OP_MINUS:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value - *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT){
-                *(float *)result = *(float *)left_value - *(float *)right_value;
+    case OP_MINUS:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value - *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+        {
+            *(float *)result = *(float *)left_value - *(float *)right_value;
+        }
+        else if (promoted_type == VAR_DOUBLE)
+        {
+            volatile double res = *(double *)left_value - *(double *)right_value;
+            *(double *)result = res;
+        }
 
-            }
-            else if (promoted_type == VAR_DOUBLE){
-                volatile double res = *(double *)left_value - *(double *)right_value;
-                *(double *)result = res;
+        break;
 
-            }
+    case OP_TIMES:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value * *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value * *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value * *(double *)right_value;
+        break;
 
-            break;
-
-        case OP_TIMES:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value * *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value * *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value * *(double *)right_value;
-            break;
-
-        case OP_DIVIDE:
-            if (promoted_type == VAR_INT)
+    case OP_DIVIDE:
+        if (promoted_type == VAR_INT)
+        {
+            if (*(int *)right_value == 0)
             {
-                if (*(int *)right_value == 0)
+                yyerror("Division by zero");
+                *(int *)result = 0; // Define a fallback behavior for int division by zero
+            }
+            else
+            {
+                *(int *)result = *(int *)left_value / *(int *)right_value;
+            }
+        }
+        else if (promoted_type == VAR_FLOAT)
+        {
+            float right = *(float *)right_value;
+            float left = *(float *)left_value;
+
+            if (fabsf(right) < __FLT_MIN__)
+            {
+                if (fabsf(left) < __FLT_MIN__)
                 {
-                    yyerror("Division by zero");
-                    *(int *)result = 0; // Define a fallback behavior for int division by zero
+                    *(float *)result = 0.0f / 0.0f; // NaN
                 }
                 else
                 {
-                    *(int *)result = *(int *)left_value / *(int *)right_value;
-                }
-            }
-            else if (promoted_type == VAR_FLOAT)
-            {
-                float right = *(float *)right_value;
-                float left = *(float *)left_value;
-
-                if (fabsf(right) < __FLT_MIN__)
-                {
-                    if (fabsf(left) < __FLT_MIN__)
-                    {
-                        *(float *)result = 0.0f / 0.0f; // NaN
-                    }
-                    else
-                    {
-                        *(float *)result = left > 0 ? __FLT_MAX__ : -__FLT_MAX__;
-                    }
-                }
-                else
-                {
-                    *(float *)result = left / right;
-                }
-            }
-            else if (promoted_type == VAR_DOUBLE)
-            {
-                double right = *(double *)right_value;
-                double left = *(double *)left_value;
-
-                if (fabs(right) < __DBL_MIN__)
-                {
-                    if (fabs(left) < __DBL_MIN__)
-                    {
-                        *(double *)result = 0.0 / 0.0; // NaN
-                    }
-                    else
-                    {
-                        *(double *)result = left > 0 ? __DBL_MAX__ : -__DBL_MAX__;
-                    }
-                }
-                else
-                {
-                    *(double *)result = left / right;
-                }
-            }
-            break;
-        case OP_MOD:
-            if (promoted_type == VAR_INT)
-            {
-                int left = *(int *)left_value;
-                int right = *(int *)right_value;
-
-                if (right == 0)
-                {
-                    yyerror("Modulo by zero");
-                    *(int *)result = 0; // Define fallback for modulo by zero
-                }
-                else if (node->modifiers.is_unsigned)
-                {
-                    // Explicitly handle unsigned modulo
-                    unsigned int ul = (unsigned int)left;
-                    unsigned int ur = (unsigned int)right;
-                    *(int *)result = (int)(ul % ur);
-                }
-                else
-                {
-                    *(int *)result = left % right;
+                    *(float *)result = left > 0 ? __FLT_MAX__ : -__FLT_MAX__;
                 }
             }
             else
             {
-                yyerror("Modulo operation is only supported for integers");
-                *(int *)result = 0;
+                *(float *)result = left / right;
             }
-            break;
-        case OP_LT:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value < *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value < *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value < *(double *)right_value;
-            break;
+        }
+        else if (promoted_type == VAR_DOUBLE)
+        {
+            double right = *(double *)right_value;
+            double left = *(double *)left_value;
 
-        case OP_GT:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value > *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value > *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value > *(double *)right_value;
-            break;
+            if (fabs(right) < __DBL_MIN__)
+            {
+                if (fabs(left) < __DBL_MIN__)
+                {
+                    *(double *)result = 0.0 / 0.0; // NaN
+                }
+                else
+                {
+                    *(double *)result = left > 0 ? __DBL_MAX__ : -__DBL_MAX__;
+                }
+            }
+            else
+            {
+                *(double *)result = left / right;
+            }
+        }
+        break;
+    case OP_MOD:
+        if (promoted_type == VAR_INT)
+        {
+            int left = *(int *)left_value;
+            int right = *(int *)right_value;
 
-        case OP_LE:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value <= *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value <= *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value <= *(double *)right_value;
-            break;
+            if (right == 0)
+            {
+                yyerror("Modulo by zero");
+                *(int *)result = 0; // Define fallback for modulo by zero
+            }
+            else if (node->modifiers.is_unsigned)
+            {
+                // Explicitly handle unsigned modulo
+                unsigned int ul = (unsigned int)left;
+                unsigned int ur = (unsigned int)right;
+                *(int *)result = (int)(ul % ur);
+            }
+            else
+            {
+                *(int *)result = left % right;
+            }
+        }
+        else
+        {
+            yyerror("Modulo operation is only supported for integers");
+            *(int *)result = 0;
+        }
+        break;
+    case OP_LT:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value < *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value < *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value < *(double *)right_value;
+        break;
 
-        case OP_GE:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value >= *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value >= *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value >= *(double *)right_value;
-            break;
+    case OP_GT:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value > *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value > *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value > *(double *)right_value;
+        break;
 
-        case OP_EQ:
+    case OP_LE:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value <= *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value <= *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value <= *(double *)right_value;
+        break;
 
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value == *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value == *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value == *(double *)right_value;
-            break;
+    case OP_GE:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value >= *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value >= *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value >= *(double *)right_value;
+        break;
 
-        case OP_NE:
-            if (promoted_type == VAR_INT)
-                *(int *)result = *(int *)left_value != *(int *)right_value;
-            else if (promoted_type == VAR_FLOAT)
-                *(float *)result = *(float *)left_value != *(float *)right_value;
-            else if (promoted_type == VAR_DOUBLE)
-                *(double *)result = *(double *)left_value != *(double *)right_value;
-            break;
+    case OP_EQ:
+
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value == *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value == *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value == *(double *)right_value;
+        break;
+
+    case OP_NE:
+        if (promoted_type == VAR_INT)
+            *(int *)result = *(int *)left_value != *(int *)right_value;
+        else if (promoted_type == VAR_FLOAT)
+            *(float *)result = *(float *)left_value != *(float *)right_value;
+        else if (promoted_type == VAR_DOUBLE)
+            *(double *)result = *(double *)left_value != *(double *)right_value;
+        break;
 
     default:
         yyerror("Unsupported binary operator");
@@ -694,140 +721,168 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
 {
     switch (node->data.unary.op)
     {
-        case OP_NEG:
-            if (operand_type == VAR_INT)
-            {
-                int *result = malloc(sizeof(int));
-                *result = -(*(int *)operand_value);
-                return result;
-            }
-            else if (operand_type == VAR_FLOAT)
-            {
-                float *result = malloc(sizeof(float));
-                *result = -(*(float *)operand_value);
-                return result;
-            }
-            else if (operand_type == VAR_DOUBLE)
-            {
-                double *result = malloc(sizeof(double));
-                *result = -(*(double *)operand_value);
-                return result;
-            }else if (operand_type == VAR_BOOL)
-            {
-                bool *result = malloc(sizeof(bool));
-                *result = !(*(bool *)operand_value);
-                return result;
-            }
-            else
-            {
-                yyerror("Invalid type for unary negation");
-                return NULL;
-            }
-
-        case OP_PRE_INC:
-            if (operand_type == VAR_INT)
-            {
-                int old_value = *(int *)operand_value;
-                set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-
-            }
-            else if (operand_type == VAR_FLOAT)
-            {
-                float old_value = *(float *)operand_value;
-                set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_DOUBLE)
-            {
-                double old_value = *(double *)operand_value;
-                set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else
-            {
-                yyerror("Invalid type for pre-increment");
-                return NULL;
-            }
-        case OP_PRE_DEC:
-            if (operand_type == VAR_INT)
-            {
-                int old_value = *(int *)operand_value;
-                set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_FLOAT)
-            {
-                float old_value = *(float *)operand_value;
-                set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_DOUBLE)
-            {
-                double old_value = *(double *)operand_value;
-                set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else
-            {
-                yyerror("Invalid type for pre-decrement");
-                return NULL;
-            }
-        case OP_POST_INC:
-            if (operand_type == VAR_INT)
-            {
-                int old_value = *(int *)operand_value;
-                set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_FLOAT)
-            {
-                float old_value = *(float *)operand_value;
-                set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_DOUBLE)
-            {
-                double old_value = *(double *)operand_value;
-                set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else
-            {
-                yyerror("Invalid type for post-increment");
-                return NULL;
-            }
-        case OP_POST_DEC:
-            if (operand_type == VAR_INT)
-            {
-                int old_value = *(int *)operand_value;
-                set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_FLOAT)
-            {
-                float old_value = *(float *)operand_value;
-                set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else if (operand_type == VAR_DOUBLE)
-            {
-                double old_value = *(double *)operand_value;
-                set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-                return operand_value;
-            }
-            else
-            {
-                yyerror("Invalid type for post-decrement");
-                return NULL;
-            }
-        default:
-            yyerror("Unknown unary operator");
+    case OP_NEG:
+        if (operand_type == VAR_INT)
+        {
+            int *result = malloc(sizeof(int));
+            *result = -(*(int *)operand_value);
+            return result;
+        }
+        else if (operand_type == VAR_SHORT)
+        {
+            short *result = malloc(sizeof(short));
+            *result = !(*(short *)operand_value);
+            return result;
+        }
+        else if (operand_type == VAR_FLOAT)
+        {
+            float *result = malloc(sizeof(float));
+            *result = -(*(float *)operand_value);
+            return result;
+        }
+        else if (operand_type == VAR_DOUBLE)
+        {
+            double *result = malloc(sizeof(double));
+            *result = -(*(double *)operand_value);
+            return result;
+        }
+        else if (operand_type == VAR_BOOL)
+        {
+            bool *result = malloc(sizeof(bool));
+            *result = !(*(bool *)operand_value);
+            return result;
+        }
+        else
+        {
+            yyerror("Invalid type for unary negation");
             return NULL;
+        }
 
+    case OP_PRE_INC:
+        if (operand_type == VAR_INT)
+        {
+            int old_value = *(int *)operand_value;
+            set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_SHORT)
+        {
+            short old_value = *(short *)operand_value;
+            set_short_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_FLOAT)
+        {
+            float old_value = *(float *)operand_value;
+            set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_DOUBLE)
+        {
+            double old_value = *(double *)operand_value;
+            set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else
+        {
+            yyerror("Invalid type for pre-increment");
+            return NULL;
+        }
+    case OP_PRE_DEC:
+        if (operand_type == VAR_INT)
+        {
+            int old_value = *(int *)operand_value;
+            set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_SHORT)
+        {
+            short old_value = *(short *)operand_value;
+            set_short_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_FLOAT)
+        {
+            float old_value = *(float *)operand_value;
+            set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_DOUBLE)
+        {
+            double old_value = *(double *)operand_value;
+            set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else
+        {
+            yyerror("Invalid type for pre-decrement");
+            return NULL;
+        }
+    case OP_POST_INC:
+        if (operand_type == VAR_INT)
+        {
+            int old_value = *(int *)operand_value;
+            set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_SHORT)
+        {
+            short old_value = *(short *)operand_value;
+            set_short_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_FLOAT)
+        {
+            float old_value = *(float *)operand_value;
+            set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_DOUBLE)
+        {
+            double old_value = *(double *)operand_value;
+            set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else
+        {
+            yyerror("Invalid type for post-increment");
+            return NULL;
+        }
+    case OP_POST_DEC:
+        if (operand_type == VAR_INT)
+        {
+            int old_value = *(int *)operand_value;
+            set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_SHORT)
+        {
+            short old_value = *(short *)operand_value;
+            set_short_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_FLOAT)
+        {
+            float old_value = *(float *)operand_value;
+            set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else if (operand_type == VAR_DOUBLE)
+        {
+            double old_value = *(double *)operand_value;
+            set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return operand_value;
+        }
+        else
+        {
+            yyerror("Invalid type for post-decrement");
+            return NULL;
+        }
+    default:
+        yyerror("Unknown unary operator");
+        return NULL;
     }
 }
-
 
 float evaluate_expression_float(ASTNode *node)
 {
@@ -853,12 +908,11 @@ float evaluate_expression_float(ASTNode *node)
         float result_float = 0.0f;
         result_float = (result_type == VAR_INT)
                            ? (float)(*(int *)result)
-                           : (result_type == VAR_FLOAT)
-                                 ? *(float *)result
-                                 : (float)(*(double *)result);
+                       : (result_type == VAR_FLOAT)
+                           ? *(float *)result
+                           : (float)(*(double *)result);
         free(result);
         return result_float;
-
     }
     case NODE_UNARY_OPERATION:
     {
@@ -871,8 +925,6 @@ float evaluate_expression_float(ASTNode *node)
         return 0.0f;
     }
 }
-
-
 
 double evaluate_expression_double(ASTNode *node)
 {
@@ -897,10 +949,10 @@ double evaluate_expression_double(ASTNode *node)
         void *result = handle_binary_operation(node, result_type);
         double result_double = 0.0L;
         result_double = (result_type == VAR_INT)
-                           ? (double)(*(int *)result)
-                           : (result_type == VAR_FLOAT)
-                                 ? (double)(*(float *)result)
-                                 : *(double *)result;
+                            ? (double)(*(int *)result)
+                        : (result_type == VAR_FLOAT)
+                            ? (double)(*(float *)result)
+                            : *(double *)result;
         free(result);
         return result_double;
     }
@@ -913,6 +965,118 @@ double evaluate_expression_double(ASTNode *node)
     default:
         yyerror("Invalid double expression");
         return 0.0L;
+    }
+}
+
+short evaluate_expression_short(ASTNode *node)
+{
+    if (!node)
+        return 0;
+
+    switch (node->type)
+    {
+    case NODE_INT:
+        return (short)node->data.ivalue;
+    case NODE_BOOLEAN:
+        return (short)node->data.bvalue; // Already 1 or 0
+    case NODE_CHAR:                      // Add explicit handling for characters
+        return (short)node->data.ivalue;
+    case NODE_SHORT:
+        return node->data.svalue;
+    case NODE_FLOAT:
+        yyerror("Cannot use float in integer context");
+        return (short)node->data.fvalue;
+    case NODE_DOUBLE:
+        yyerror("Cannot use double in integer context");
+        return (short)node->data.dvalue;
+    case NODE_SIZEOF:
+    {
+        char *name = node->data.name;
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, name) == 0)
+            {
+                if (symbol_table[i].var_type == VAR_FLOAT)
+                {
+                    return sizeof(float);
+                }
+                else if (symbol_table[i].var_type == VAR_DOUBLE)
+                {
+                    return sizeof(double);
+                }
+                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
+                {
+                    return sizeof(unsigned int);
+                }
+                else if (symbol_table[i].var_type == VAR_BOOL)
+                {
+                    return sizeof(bool);
+                }
+                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
+                {
+                    return sizeof(unsigned short);
+                }
+                else if (symbol_table[i].var_type == VAR_SHORT)
+                {
+                    return sizeof(short);
+                }
+                else if (symbol_table[i].var_type == VAR_INT)
+                {
+                    return sizeof(int);
+                }
+                else
+                {
+                    yyerror("Undefined variable in sizeof");
+                }
+            }
+        }
+        yyerror("Undefined variable in sizeof");
+        return 0;
+    }
+    case NODE_IDENTIFIER:
+    {
+        return *(short *)handle_identifier(node, "Undefined variable", 0);
+    }
+    case NODE_OPERATION:
+    {
+        // Special handling for logical operations
+        if (node->data.op.op == OP_AND || node->data.op.op == OP_OR)
+        {
+            short left = evaluate_expression_short(node->data.op.left);
+            short right = evaluate_expression_short(node->data.op.right);
+
+            switch (node->data.op.op)
+            {
+            case OP_AND:
+                return left && right;
+            case OP_OR:
+                return left || right;
+            default:
+                break;
+            }
+        }
+
+        // Regular integer operations
+        int result_type = get_expression_type(node);
+        void *result = handle_binary_operation(node, result_type);
+        short result_short = 0;
+        result_short = (result_type == VAR_SHORT)
+                           ? *(short *)result
+                       : (result_type == VAR_FLOAT)
+                           ? (short)(*(float *)result)
+                           : (short)(*(double *)result);
+        free(result);
+        return result_short;
+    }
+    case NODE_UNARY_OPERATION:
+    {
+        short operand = evaluate_expression_short(node->data.unary.operand);
+        short *result = (short *)handle_unary_expression(node, &operand, VAR_SHORT);
+        return *result;
+    }
+    default:
+        yyerror("Invalid short expression");
+        return 0;
     }
 }
 
@@ -929,6 +1093,8 @@ int evaluate_expression_int(ASTNode *node)
         return node->data.bvalue; // Already 1 or 0
     case NODE_CHAR:               // Add explicit handling for characters
         return node->data.ivalue;
+    case NODE_SHORT:
+        return node->data.svalue;
     case NODE_FLOAT:
         yyerror("Cannot use float in integer context");
         return (int)node->data.fvalue;
@@ -957,6 +1123,14 @@ int evaluate_expression_int(ASTNode *node)
                 else if (symbol_table[i].var_type == VAR_BOOL)
                 {
                     return sizeof(bool);
+                }
+                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
+                {
+                    return sizeof(unsigned short);
+                }
+                else if (symbol_table[i].var_type == VAR_SHORT)
+                {
+                    return sizeof(short);
                 }
                 else if (symbol_table[i].var_type == VAR_INT)
                 {
@@ -1000,12 +1174,11 @@ int evaluate_expression_int(ASTNode *node)
         int result_int = 0;
         result_int = (result_type == VAR_INT)
                          ? *(int *)result
-                         : (result_type == VAR_FLOAT)
-                               ? (int)(*(float *)result)
-                               : (int)(*(double *)result);
+                     : (result_type == VAR_FLOAT)
+                         ? (int)(*(float *)result)
+                         : (int)(*(double *)result);
         free(result);
         return result_int;
-
     }
     case NODE_UNARY_OPERATION:
     {
@@ -1028,6 +1201,8 @@ bool evaluate_expression_bool(ASTNode *node)
     {
     case NODE_INT:
         return (bool)node->data.ivalue;
+    case NODE_SHORT:
+        return (bool)node->data.svalue;
     case NODE_BOOLEAN:
         return node->data.bvalue;
     case NODE_CHAR:
@@ -1065,9 +1240,9 @@ bool evaluate_expression_bool(ASTNode *node)
         bool result_bool = 0;
         result_bool = (result_type == VAR_INT)
                           ? (bool)(*(int *)result)
-                          : (result_type == VAR_FLOAT)
-                                ? (bool)(*(float *)result)
-                                : (bool)(*(double *)result);
+                      : (result_type == VAR_FLOAT)
+                          ? (bool)(*(float *)result)
+                          : (bool)(*(double *)result);
         free(result);
         return result_bool;
     }
@@ -1151,6 +1326,46 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
     }
 }
 
+bool is_short_expression(ASTNode *node)
+{
+    if (!node)
+        return false;
+
+    switch (node->type)
+    {
+    case NODE_SHORT:
+        return true;
+    case NODE_FLOAT:
+        return false;
+    case NODE_INT:
+        return false;
+    case NODE_DOUBLE:
+        return false;
+    case NODE_IDENTIFIER:
+    {
+        if (!check_and_mark_identifier(node, "Undefined variable in type check"))
+            exit(1);
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, node->data.name) == 0)
+            {
+                return symbol_table[i].var_type == VAR_SHORT;
+            }
+        }
+        yyerror("Undefined variable in type check");
+        return false;
+    }
+    case NODE_OPERATION:
+    {
+        // If either operand is short, result is short
+        return is_short_expression(node->data.op.left) ||
+               is_short_expression(node->data.op.right);
+    }
+    default:
+        return false;
+    }
+}
+
 bool is_float_expression(ASTNode *node)
 {
     if (!node)
@@ -1229,6 +1444,10 @@ bool is_double_expression(ASTNode *node)
 
 int evaluate_expression(ASTNode *node)
 {
+    if (is_short_expression(node))
+    {
+        return (short)evaluate_expression_short(node);
+    }
     if (is_float_expression(node))
     {
         return (int)evaluate_expression_float(node);
@@ -1288,6 +1507,14 @@ void execute_assignment(ASTNode *node)
             yyerror("Failed to set double variable");
         }
     }
+    else if (is_short_expression(value_node))
+    {
+        short value = evaluate_expression_short(value_node);
+        if (!set_short_variable(name, value, mods))
+        {
+            yyerror("Failed to set short variable");
+        }
+    }
     else
     {
         int value = evaluate_expression_int(value_node);
@@ -1323,6 +1550,13 @@ void execute_statement(ASTNode *node)
             if (!set_bool_variable(name, value_node->data.bvalue, mods))
             {
                 yyerror("Failed to set boolean variable");
+            }
+        }
+        else if (value_node->type == NODE_SHORT)
+        {
+            if (!set_short_variable(name, value_node->data.svalue, mods))
+            {
+                yyerror("Failed to set short variable");
             }
         }
         else if (is_float_expression(value_node))
@@ -1575,7 +1809,7 @@ void execute_yapping_call(ArgumentList *args)
     }
 
     const char *format = formatNode->data.name; // The format string
-    char buffer[1024]; // Buffer for the final formatted output
+    char buffer[1024];                          // Buffer for the final formatted output
     int buffer_offset = 0;
 
     ArgumentList *cur = args->next;
@@ -1623,19 +1857,35 @@ void execute_yapping_call(ArgumentList *args)
             else if (strchr("diouxX", *format))
             {
                 // Integer or unsigned integer
-                bool is_unsigned = expr->modifiers.is_unsigned || 
-                                   (expr->type == NODE_IDENTIFIER && 
+                bool is_unsigned = expr->modifiers.is_unsigned ||
+                                   (expr->type == NODE_IDENTIFIER &&
                                     get_variable_modifiers(expr->data.name).is_unsigned);
 
                 if (is_unsigned)
                 {
-                    unsigned int val = (unsigned int)evaluate_expression_int(expr);
-                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                    if (is_short_expression(expr))
+                    {
+                        unsigned short val = evaluate_expression_short(expr);
+                        buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                    }
+                    else
+                    {
+                        unsigned int val = (unsigned int)evaluate_expression_int(expr);
+                        buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                    }
                 }
                 else
                 {
-                    int val = evaluate_expression_int(expr);
-                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                    if (is_short_expression(expr))
+                    {
+                        short val = evaluate_expression_short(expr);
+                        buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                    }
+                    else
+                    {
+                        int val = evaluate_expression_int(expr);
+                        buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                    }
                 }
             }
             else if (strchr("fFeEgGa", *format))
@@ -1660,7 +1910,7 @@ void execute_yapping_call(ArgumentList *args)
             else if (*format == 'c')
             {
                 // Character
-                int val = evaluate_expression_int(expr); 
+                int val = evaluate_expression_int(expr);
                 buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
             }
             else if (*format == 's')
@@ -1680,7 +1930,7 @@ void execute_yapping_call(ArgumentList *args)
             }
 
             cur = cur->next; // Move to the next argument
-            format++; // Move past the format specifier
+            format++;        // Move past the format specifier
         }
         else
         {
@@ -1718,7 +1968,7 @@ void execute_yappin_call(ArgumentList *args)
     }
 
     const char *format = formatNode->data.name; // The format string
-    char buffer[1024]; // Buffer for the final formatted output
+    char buffer[1024];                          // Buffer for the final formatted output
     int buffer_offset = 0;
 
     ArgumentList *cur = args->next;
@@ -1765,9 +2015,16 @@ void execute_yappin_call(ArgumentList *args)
             }
             else if (strchr("diouxX", *format))
             {
-                // Handle integer or unsigned integer values
-                int val = evaluate_expression_int(expr);
-                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                if (is_short_expression(expr))
+                {
+                    short val = evaluate_expression_short(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
+                else
+                {
+                    int val = evaluate_expression_int(expr);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
+                }
             }
             else if (strchr("fFeEgGa", *format))
             {
@@ -1811,7 +2068,7 @@ void execute_yappin_call(ArgumentList *args)
             }
 
             cur = cur->next; // Move to the next argument
-            format++; // Move past the format specifier
+            format++;        // Move past the format specifier
         }
         else
         {
@@ -1880,4 +2137,3 @@ void execute_chill_call(ArgumentList *args)
 
     chill(formatNode->data.ivalue);
 }
-

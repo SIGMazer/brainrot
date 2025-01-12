@@ -28,9 +28,9 @@ typedef struct
 typedef enum
 {
     VAR_INT,
+    VAR_SHORT,
     VAR_FLOAT,
     VAR_DOUBLE,
-    VAR_SHORT,
     VAR_BOOL,
     VAR_CHAR,
     NONE,
@@ -43,6 +43,7 @@ typedef struct
     union
     {
         int ivalue;
+        short svalue;
         bool bvalue;
         float fvalue;
         double dvalue;
@@ -54,6 +55,7 @@ typedef struct
 typedef union
 {
     int ivalue;
+    short svalue;
     bool bvalue;
     float fvalue;
     double dvalue;
@@ -87,6 +89,7 @@ typedef enum
 typedef enum
 {
     NODE_INT,
+    NODE_SHORT,
     NODE_FLOAT,
     NODE_DOUBLE,
     NODE_CHAR,
@@ -147,6 +150,7 @@ struct ASTNode
     bool isValidSymbol;
     union
     {
+        short svalue;
         bool bvalue;
         int ivalue;
         float fvalue;
@@ -198,6 +202,7 @@ extern int var_count;
 
 /* Function prototypes */
 bool set_int_variable(char *name, int value, TypeModifiers mods);
+bool set_short_variable(char *name, short value, TypeModifiers mods);
 bool set_float_variable(char *name, float value, TypeModifiers mods);
 bool set_double_variable(char *name, double value, TypeModifiers mods);
 TypeModifiers get_variable_modifiers(const char *name);
@@ -206,6 +211,7 @@ TypeModifiers get_current_modifiers(void);
 
 /* Node creation functions */
 ASTNode *create_int_node(int value);
+ASTNode *create_short_node(short value);
 ASTNode *create_float_node(float value);
 ASTNode *create_double_node(double value);
 ASTNode *create_char_node(char value);
@@ -234,6 +240,7 @@ ASTNode *create_break_node(void);
 double evaluate_expression_double(ASTNode *node);
 float evaluate_expression_float(ASTNode *node);
 int evaluate_expression_int(ASTNode *node);
+short evaluate_expression_short(ASTNode *node);
 bool evaluate_expression_bool(ASTNode *node);
 int evaluate_expression(ASTNode *node);
 bool is_double_expression(ASTNode *node);
@@ -255,42 +262,48 @@ bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 extern TypeModifiers current_modifiers;
 
 /* Macros for assigning specific fields to a node */
-#define SET_DATA_INT(node, value)      ((node)->data.ivalue = (value))
-#define SET_DATA_FLOAT(node, value)    ((node)->data.fvalue = (value))
-#define SET_DATA_DOUBLE(node, value)   ((node)->data.dvalue = (value))
-#define SET_DATA_BOOL(node, value)     ((node)->data.bvalue = (value) ? 1 : 0)
-#define SET_DATA_NAME(node, n)      ((node)->data.name = strdup(n))
+#define SET_DATA_INT(node, value) ((node)->data.ivalue = (value))
+#define SET_DATA_SHORT(node, value) ((node)->data.svalue = (value))
+#define SET_DATA_FLOAT(node, value) ((node)->data.fvalue = (value))
+#define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
+#define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
+#define SET_DATA_NAME(node, n) ((node)->data.name = strdup(n))
 #define SET_DATA_OP(node, l, r, opr) \
-    do {                                  \
-        (node)->data.op.left = (l);    \
-        (node)->data.op.right = (r);  \
-        (node)->data.op.op = (opr);        \
+    do                               \
+    {                                \
+        (node)->data.op.left = (l);  \
+        (node)->data.op.right = (r); \
+        (node)->data.op.op = (opr);  \
     } while (0)
 
-#define SET_DATA_UNARY_OP(node, o, opr) \
-    do {                                     \
+#define SET_DATA_UNARY_OP(node, o, opr)   \
+    do                                    \
+    {                                     \
         (node)->data.unary.operand = (o); \
-        (node)->data.unary.op = (opr);        \
+        (node)->data.unary.op = (opr);    \
     } while (0)
 
-#define SET_DATA_FOR(node, i, c, inc, b) \
-    do {                                          \
-        (node)->data.for_stmt.init = (i);      \
-        (node)->data.for_stmt.cond = (c);      \
-        (node)->data.for_stmt.incr = (inc);      \
-        (node)->data.for_stmt.body = (b);      \
+#define SET_DATA_FOR(node, i, c, inc, b)    \
+    do                                      \
+    {                                       \
+        (node)->data.for_stmt.init = (i);   \
+        (node)->data.for_stmt.cond = (c);   \
+        (node)->data.for_stmt.incr = (inc); \
+        (node)->data.for_stmt.body = (b);   \
     } while (0)
 
-#define SET_DATA_WHILE(node, c, b) \
-    do {                                 \
+#define SET_DATA_WHILE(node, c, b)          \
+    do                                      \
+    {                                       \
         (node)->data.while_stmt.cond = (c); \
         (node)->data.while_stmt.body = (b); \
     } while (0)
 
-#define SET_DATA_FUNC_CALL(node, func_name, args) \
-    do {                                         \
+#define SET_DATA_FUNC_CALL(node, func_name, args)                 \
+    do                                                            \
+    {                                                             \
         (node)->data.func_call.function_name = strdup(func_name); \
-        (node)->data.func_call.arguments = (args); \
+        (node)->data.func_call.arguments = (args);                \
     } while (0)
 
 #endif /* AST_H */

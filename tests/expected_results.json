@@ -11,7 +11,7 @@
     "boolean": "It's valid!\nnocap: L\nnocap: W\n",
     "fizz_buzz": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n",
     "hello_world": "Hello, World!\n",
-    "sizeof": "4\n4\n1\n",
+    "sizeof": "4\n4\n1\n2\n4\n8\n",
     "char": "c\n",
     "float": "3.141592\n",
     "modulo": "2\n",
@@ -25,5 +25,4 @@
 	"uint": "10\n9931737\n3\n647238965\n20\n245413032\n2\n1\n2\n1",
     "inc-dec": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n",
     "double_vs_float": "0.0 1.0\n"
-
 }

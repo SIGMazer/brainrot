@@ -141,7 +141,7 @@ Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
 | whopper    | extern       | ❌           |
 | cringe     | goto         | ❌           |
 | giga       | long         | ❌           |
-| soy        | short        | ❌           |
+| smol       | short        | ✅           |
 | nut        | signed       | ✅           |
 | maxxing    | sizeof       | ✅           |
 | salty      | static       | ❌           |
@@ -152,6 +152,8 @@ Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
 | schizo     | volatile     | ✅           |
 | W          | true         | ✅           |
 | L          | false        | ✅           |
+| thicc      | long long    | ❌           |
+| rant       | string type  | ❌           |
 
 ### Builtin functions
 
