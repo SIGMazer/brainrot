@@ -54,7 +54,7 @@ extern int yylineno;
 "bruh"           { return BREAK; }
 "sigma rule"     { return CASE; }
 "yap"            { current_var_type = VAR_CHAR; return YAP; }
-"grimace"        { return CONST; }
+"deadass"        { return DEADASS; }
 "grind"          { return CONTINUE; }
 "based"          { return DEFAULT; }
 "mewing"         { return DO; }

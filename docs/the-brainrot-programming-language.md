@@ -164,7 +164,7 @@ Brainrot replaces familiar C keywords with meme-inspired slang:
 | chad       | float        |
 | gigachad   | double       |
 | yap        | char         |
-| grimace    | const        |
+| deadass    | const        |
 | sigma rule | case         |
 | based      | default      |
 | mewing     | do           |

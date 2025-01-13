@@ -133,7 +133,7 @@ Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
 | chad       | float        | ✅           |
 | gigachad   | double       | ✅           |
 | yap        | char         | ✅           |
-| grimace    | const        | ❌           |
+| deadass    | const        | ✅           |
 | sigma rule | case         | ✅           |
 | based      | default      | ✅           |
 | mewing     | do           | ❌           |
