@@ -3,6 +3,11 @@ skibidi main {
     goon (i < 5) {
         yapping("AAAAAH A GOONIN LOOP");
         yapping("%d", i);
-        i++;
+        i = i + 1;
+        edgy (i == 2) {
+            yapping("ahhhhh exitinggggg");
+            bruh;
+        }
     }
+    bussin 0;
 }
