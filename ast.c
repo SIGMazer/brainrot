@@ -1723,43 +1723,49 @@ void execute_statements(ASTNode *node)
 
 void execute_for_statement(ASTNode *node)
 {
-    // Execute initialization once
-    if (node->data.for_stmt.init)
+    if (setjmp(break_env) == 0)
     {
-        execute_statement(node->data.for_stmt.init);
-    }
-
-    while (1)
-    {
-        // Evaluate condition
-        if (node->data.for_stmt.cond)
+        // Execute initialization once
+        if (node->data.for_stmt.init)
         {
-            int cond_result = evaluate_expression(node->data.for_stmt.cond);
-            if (!cond_result)
+            execute_statement(node->data.for_stmt.init);
+        }
+
+        while (1)
+        {
+            // Evaluate condition
+            if (node->data.for_stmt.cond)
             {
-                break;
+                int cond_result = evaluate_expression(node->data.for_stmt.cond);
+                if (!cond_result)
+                {
+                    break;
+                }
             }
-        }
 
-        // Execute body
-        if (node->data.for_stmt.body)
-        {
-            execute_statement(node->data.for_stmt.body);
-        }
+            // Execute body
+            if (node->data.for_stmt.body)
+            {
+                execute_statement(node->data.for_stmt.body);
+            }
 
-        // Execute increment
-        if (node->data.for_stmt.incr)
-        {
-            execute_statement(node->data.for_stmt.incr);
+            // Execute increment
+            if (node->data.for_stmt.incr)
+            {
+                execute_statement(node->data.for_stmt.incr);
+            }
         }
     }
 }
 
 void execute_while_statement(ASTNode *node)
 {
-    while (evaluate_expression(node->data.while_stmt.cond))
+    if (setjmp(break_env) == 0)
     {
-        execute_statement(node->data.while_stmt.body);
+        while (evaluate_expression(node->data.while_stmt.cond))
+        {
+            execute_statement(node->data.while_stmt.body);
+        }
     }
 }
 

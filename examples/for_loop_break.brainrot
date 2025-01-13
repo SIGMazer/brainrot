@@ -1,0 +1,11 @@
+skibidi main {
+    rizz i;
+    flex (i = 0; i < 6; i = i + 1) {
+        yapping("Skibidi toilet");
+        edgy (i == 2) {
+            yapping("AHHHHHHHHHHHHHHH");
+            bruh;
+        }
+    }
+    bussin 0;
+}
