@@ -72,6 +72,7 @@ ASTNode *root = NULL;
 %token BREAK CASE DEADASS CONTINUE DEFAULT DO DOUBLE ELSE ENUM
 %token EXTERN CHAD GIGACHAD FOR GOTO IF LONG SMOL SIGNED
 %token SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE GOON 
+%token LBRACKET RBRACKET
 %token <strval> IDENTIFIER
 %token <ival> INT_LITERAL
 %token <sval> SHORT_LITERAL
@@ -200,6 +201,42 @@ declaration:
         { 
             current_var_type = VAR_INT;
             $$ = create_assignment_node($3, $5); 
+        }
+    | optional_modifiers RIZZ IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+        {
+          current_var_type = VAR_INT;
+          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
+          $$ = create_array_declaration_node($3, $5, current_var_type);
+        }
+    | optional_modifiers CHAD IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+        {
+          current_var_type = VAR_FLOAT;
+          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
+          $$ = create_array_declaration_node($3, $5, current_var_type);
+        }
+    | optional_modifiers SMOL IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+        {
+          current_var_type = VAR_SHORT;
+          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
+          $$ = create_array_declaration_node($3, $5, current_var_type);
+        }
+    | optional_modifiers GIGACHAD IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+        {
+          current_var_type = VAR_DOUBLE;
+          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
+          $$ = create_array_declaration_node($3, $5, current_var_type);
+        }
+    | optional_modifiers YAP IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+        {
+          current_var_type = VAR_CHAR;
+          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
+          $$ = create_array_declaration_node($3, $5, current_var_type);
+        }
+    | optional_modifiers CAP IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+        {
+          current_var_type = VAR_BOOL;
+          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
+          $$ = create_array_declaration_node($3, $5, current_var_type);
         }
     | optional_modifiers SMOL IDENTIFIER
         { 
@@ -422,6 +459,24 @@ expression:
           {
               $$ = create_unary_operation_node(OP_PRE_DEC, $2);   // Pre-decrement
           }
+    | IDENTIFIER LBRACKET expression RBRACKET 
+        {
+           $$ = create_array_access_node($1, $3);
+        }
+    | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
+    {
+        ASTNode *access = create_array_access_node($1, $3);
+        ASTNode *node = malloc(sizeof(ASTNode));
+        if (!node) {
+            yyerror("Memory allocation failed");
+            exit(1);
+        }
+        node->type = NODE_ASSIGNMENT;
+        node->data.op.left = access;  // Keep the entire array access node
+        node->data.op.right = $6;
+        node->data.op.op = OP_ASSIGN;
+        $$ = node;
+    }
     ;
 
 

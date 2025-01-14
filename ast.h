@@ -27,7 +27,6 @@ typedef struct
     bool is_const;
 } TypeModifiers;
 
-
 typedef struct JumpBuffer
 {
     jmp_buf data;
@@ -56,9 +55,17 @@ typedef struct
         bool bvalue;
         float fvalue;
         double dvalue;
+        int *iarray;
+        short *sarray;
+        bool *barray;
+        float *farray;
+        double *darray;
+        char *carray;
     } value;
     TypeModifiers modifiers;
     VarType var_type;
+    bool is_array;
+    int array_length;
 } Variable;
 
 typedef union
@@ -120,7 +127,8 @@ typedef enum
     NODE_DEFAULT_CASE,
     NODE_BREAK_STATEMENT,
     NODE_FUNC_CALL,
-    NODE_SIZEOF
+    NODE_SIZEOF,
+    NODE_ARRAY_ACCESS,
 } NodeType;
 
 /* Rest of the structure definitions */
@@ -156,8 +164,10 @@ struct ASTNode
     NodeType type;
     TypeModifiers modifiers;
     VarType var_type;
-    bool alreadyChecked;
-    bool isValidSymbol;
+    bool already_checked;
+    bool is_valid_symbol;
+    bool is_array;
+    int array_length;
     union
     {
         short svalue;
@@ -166,6 +176,11 @@ struct ASTNode
         float fvalue;
         double dvalue;
         char *name;
+        struct
+        {
+            char *name;
+            ASTNode *index;
+        } array;
         struct
         {
             ASTNode *left;
@@ -212,6 +227,7 @@ extern int var_count;
 
 /* Function prototypes */
 bool set_int_variable(const char *name, int value, TypeModifiers mods);
+bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type);
 bool set_short_variable(const char *name, short value, TypeModifiers mods);
 bool set_float_variable(const char *name, float value, TypeModifiers mods);
 bool set_double_variable(const char *name, double value, TypeModifiers mods);
@@ -221,6 +237,8 @@ TypeModifiers get_current_modifiers(void);
 
 /* Node creation functions */
 ASTNode *create_int_node(int value);
+ASTNode *create_array_declaration_node(char *name, int length, VarType type);
+ASTNode *create_array_access_node(char *name, ASTNode *indexExpr);
 ASTNode *create_short_node(short value);
 ASTNode *create_float_node(float value);
 ASTNode *create_double_node(double value);
@@ -322,36 +340,35 @@ extern TypeModifiers current_modifiers;
         (node)->data.func_call.arguments = (args);                \
     } while (0)
 
-
 /* Macros for handling jump buffer */
-#define PUSH_JUMP_BUFFER() \
-    do                       \
-    {                        \
+#define PUSH_JUMP_BUFFER()                           \
+    do                                               \
+    {                                                \
         JumpBuffer *jb = malloc(sizeof(JumpBuffer)); \
-        jb->next = jump_buffer; \
-        jump_buffer = jb; \
+        jb->next = jump_buffer;                      \
+        jump_buffer = jb;                            \
     } while (0)
 
-#define POP_JUMP_BUFFER() \
-    do                      \
-    {                       \
-        JumpBuffer *jb = jump_buffer; \
+#define POP_JUMP_BUFFER()                \
+    do                                   \
+    {                                    \
+        JumpBuffer *jb = jump_buffer;    \
         jump_buffer = jump_buffer->next; \
-        free(jb); \
+        free(jb);                        \
     } while (0)
 
-#define LONGJMP() \
-    do                      \
-    {                       \
-        if (jump_buffer != NULL) \
-        { \
-            longjmp(jump_buffer->data, 1); \
-        } \
-        else \
-        { \
+#define LONGJMP()                                \
+    do                                           \
+    {                                            \
+        if (jump_buffer != NULL)                 \
+        {                                        \
+            longjmp(jump_buffer->data, 1);       \
+        }                                        \
+        else                                     \
+        {                                        \
             yyerror("No jump buffer available"); \
-            exit(1); \
-        } \
+            exit(1);                             \
+        }                                        \
     } while (0)
 
 #define CURRENT_JUMP_BUFFER() (jump_buffer->data)

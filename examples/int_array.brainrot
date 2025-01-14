@@ -1,0 +1,14 @@
+skibidi main {
+    rizz int_array[3];
+    rizz i;
+
+    flex (i = 1; i < 4; i = i + 1) {
+        int_array[i-1] = i;
+    }
+
+    flex (i = 0; i < 3; i = i + 1) {
+        yapping("%d", int_array[i]);
+    }
+    
+    bussin 0;
+}

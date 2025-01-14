@@ -104,6 +104,8 @@ extern int yylineno;
 ";"              { return SEMICOLON; }
 ","              { return COMMA; }
 ":"              { return COLON; }
+"["              { return LBRACKET; }
+"]"              { return RBRACKET; }
 
 "🚽"[^\n]*      ; /* Ignore single line comments */
 "W"              { yylval.ival = 1; return BOOLEAN; }
