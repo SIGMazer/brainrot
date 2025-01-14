@@ -1,7 +1,7 @@
 skibidi main {
     deadass rizz i = 1;
     yapping("%d", i);
-    i = 2;
+    🚽 i = 2; this will raise an error if uncommented
     yapping("%d", i);
     bussin 0;
 }
