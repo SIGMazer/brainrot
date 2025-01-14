@@ -1,0 +1,22 @@
+skibidi main {
+ 
+    flex(rizz i =0; i <= 3; i++){
+        yapping("%d",i);
+
+        rizz j = 0;
+        goon(j <=3){
+            yapping("goon");
+            edgy(j == 2){
+                yapping("break goon %d",j);
+            }
+            j++;
+        }
+
+        edgy( i ==2){
+            yapping("break flex");
+            bruh;
+        }
+    }
+
+    bussin 0;
+}

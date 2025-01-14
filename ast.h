@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <setjmp.h>
 
 #define MAX_VARS 100
 
@@ -25,6 +26,13 @@ typedef struct
     bool is_sizeof;
     bool is_const;
 } TypeModifiers;
+
+
+typedef struct JumpBuffer
+{
+    jmp_buf data;
+    struct JumpBuffer *next;
+} JumpBuffer;
 
 typedef enum
 {
@@ -265,6 +273,7 @@ void execute_chill_call(ArgumentList *args);
 void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
+void bruh();
 
 extern TypeModifiers current_modifiers;
 
@@ -312,5 +321,39 @@ extern TypeModifiers current_modifiers;
         (node)->data.func_call.function_name = strdup(func_name); \
         (node)->data.func_call.arguments = (args);                \
     } while (0)
+
+
+/* Macros for handling jump buffer */
+#define PUSH_JUMP_BUFFER() \
+    do                       \
+    {                        \
+        JumpBuffer *jb = malloc(sizeof(JumpBuffer)); \
+        jb->next = jump_buffer; \
+        jump_buffer = jb; \
+    } while (0)
+
+#define POP_JUMP_BUFFER() \
+    do                      \
+    {                       \
+        JumpBuffer *jb = jump_buffer; \
+        jump_buffer = jump_buffer->next; \
+        free(jb); \
+    } while (0)
+
+#define LONGJMP() \
+    do                      \
+    {                       \
+        if (jump_buffer != NULL) \
+        { \
+            longjmp(jump_buffer->data, 1); \
+        } \
+        else \
+        { \
+            yyerror("No jump buffer available"); \
+            exit(1); \
+        } \
+    } while (0)
+
+#define CURRENT_JUMP_BUFFER() (jump_buffer->data)
 
 #endif /* AST_H */
