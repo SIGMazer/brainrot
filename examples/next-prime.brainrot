@@ -1,0 +1,23 @@
+skibidi main {
+    rizz n = 7;
+    rizz num = n + 1;
+
+    mewing {
+        cap is_prime = W; 
+        flex (rizz i = 2; i * i <= num; i++) {
+            edgy (num % i == 0) {
+                is_prime = L;
+                bruh;        
+            }
+        }
+        edgy (is_prime) {
+            bruh; 
+        }
+        num++; 
+    } goon (W);
+
+    yapping("%d", num);
+
+    bussin 0;
+}
+

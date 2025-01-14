@@ -2,14 +2,13 @@
 
 #include "ast.h"
 #include <stdbool.h>
-#include <setjmp.h>
 #include <math.h>
 #include <limits.h>
 #include <float.h>
 #include <stdint.h>
 #include <stdio.h>
 
-static jmp_buf break_env;
+static JumpBuffer *jump_buffer = {0};
 
 TypeModifiers current_modifiers = {false, false, false, false, false};
 extern VarType current_var_type;
@@ -175,7 +174,8 @@ void execute_switch_statement(ASTNode *node)
     CaseNode *current_case = node->data.switch_stmt.cases;
     int matched = 0;
 
-    if (setjmp(break_env) == 0)
+    PUSH_JUMP_BUFFER();
+    if (setjmp(CURRENT_JUMP_BUFFER()) == 0)
     {
         while (current_case)
         {
@@ -204,6 +204,7 @@ void execute_switch_statement(ASTNode *node)
     {
         // Break encountered; do nothing
     }
+    POP_JUMP_BUFFER();
 }
 
 static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
@@ -1706,7 +1707,7 @@ void execute_statement(ASTNode *node)
         break;
     case NODE_BREAK_STATEMENT:
         // Signal to break out of the current loop/switch
-        longjmp(break_env, 1);
+        bruh();
         break;
     default:
         yyerror("Unknown statement type");
@@ -1733,7 +1734,8 @@ void execute_statements(ASTNode *node)
 
 void execute_for_statement(ASTNode *node)
 {
-    if (setjmp(break_env) == 0)
+    PUSH_JUMP_BUFFER();
+    if (setjmp(CURRENT_JUMP_BUFFER()) == 0)
     {
         // Execute initialization once
         if (node->data.for_stmt.init)
@@ -1749,6 +1751,7 @@ void execute_for_statement(ASTNode *node)
                 int cond_result = evaluate_expression(node->data.for_stmt.cond);
                 if (!cond_result)
                 {
+                    POP_JUMP_BUFFER();
                     break;
                 }
             }
@@ -1770,21 +1773,22 @@ void execute_for_statement(ASTNode *node)
 
 void execute_while_statement(ASTNode *node)
 {
-    if (setjmp(break_env) == 0)
+    PUSH_JUMP_BUFFER();
+    while (evaluate_expression(node->data.while_stmt.cond) && setjmp(CURRENT_JUMP_BUFFER()) == 0)
     {
-        while (evaluate_expression(node->data.while_stmt.cond))
-        {
-            execute_statement(node->data.while_stmt.body);
-        }
+        execute_statement(node->data.while_stmt.body);
     }
+    POP_JUMP_BUFFER();
 }
 
 void execute_do_while_statement(ASTNode *node)
 {
+    PUSH_JUMP_BUFFER();
     do
     {
         execute_statement(node->data.while_stmt.body);
-    } while (evaluate_expression(node->data.while_stmt.cond));
+    } while (evaluate_expression(node->data.while_stmt.cond) && setjmp(CURRENT_JUMP_BUFFER()) == 0);
+    POP_JUMP_BUFFER();
 }
 
 ASTNode *create_if_statement_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch)
@@ -2190,4 +2194,9 @@ void execute_chill_call(ArgumentList *args)
     }
 
     chill(formatNode->data.ivalue);
+}
+
+void bruh()
+{
+    LONGJMP();
 }
