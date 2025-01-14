@@ -238,7 +238,7 @@ TypeModifiers get_current_modifiers(void);
 /* Node creation functions */
 ASTNode *create_int_node(int value);
 ASTNode *create_array_declaration_node(char *name, int length, VarType type);
-ASTNode *create_array_access_node(char *name, ASTNode *indexExpr);
+ASTNode *create_array_access_node(char *name, ASTNode *index);
 ASTNode *create_short_node(short value);
 ASTNode *create_float_node(float value);
 ASTNode *create_double_node(double value);

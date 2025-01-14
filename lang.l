@@ -121,6 +121,16 @@ extern int yylineno;
     }
 }
 [0-9]+ {
+    int next_char = input();    // Peek at the next character
+    unput(next_char);           // Put it back into the input stream
+
+    if (next_char == ']') {
+        // If the next character is ']', treat this numeric literal as an integer.
+        yylval.ival = atoi(yytext);
+        return INT_LITERAL;
+    }
+
+    // Otherwise, follow the existing type-based logic.
     if (current_var_type == VAR_SHORT) {
         yylval.sval = (short)atoi(yytext);
         return SHORT_LITERAL;

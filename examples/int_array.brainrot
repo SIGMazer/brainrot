@@ -9,6 +9,16 @@ skibidi main {
     flex (i = 0; i < 3; i = i + 1) {
         yapping("%d", int_array[i]);
     }
-    
+
+    chad float_array[3];
+
+🚽    float_array[0] = 3.14f;
+🚽    float_array[1] = 3.1415f;
+🚽    float_array[2] = 3.141592f;
+
+🚽    flex (i = 0; i < 3; i = i + 1) {
+🚽        yapping("%f", float_array[i]);
+🚽    }
+
     bussin 0;
 }
