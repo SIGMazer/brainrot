@@ -2046,9 +2046,6 @@ void execute_statement(ASTNode *node)
         }
         break;
     }
-    case NODE_OPERATION:
-    case NODE_UNARY_OPERATION:
-    case NODE_INT:
     case NODE_ARRAY_ACCESS:
         if (node->data.array.name && node->data.array.index)
         {
@@ -2059,6 +2056,9 @@ void execute_statement(ASTNode *node)
             }
         }
         break;
+    case NODE_OPERATION:
+    case NODE_UNARY_OPERATION:
+    case NODE_INT:
     case NODE_SHORT:
     case NODE_FLOAT:
     case NODE_DOUBLE:
