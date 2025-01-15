@@ -336,9 +336,29 @@ ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
 ASTNode *create_array_access_node(char *name, ASTNode *index)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        yyerror("Memory allocation failed");
+        exit(EXIT_FAILURE);
+    }
+
     node->type = NODE_ARRAY_ACCESS;
     node->data.array.name = strdup(name);
     node->data.array.index = index;
+    node->is_array = true;
+
+    // Look up and set the array's type from the symbol table
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            node->var_type = symbol_table[i].var_type;
+            node->array_length = symbol_table[i].array_length;
+            node->modifiers = symbol_table[i].modifiers;
+            break;
+        }
+    }
+
     return node;
 }
 
@@ -543,6 +563,20 @@ int get_expression_type(ASTNode *node)
         return VAR_BOOL;
     case NODE_CHAR:
         return VAR_INT;
+    case NODE_ARRAY_ACCESS:
+    {
+        // Look up the array's type in the symbol table
+        const char *array_name = node->data.array.name;
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, array_name) == 0)
+            {
+                return symbol_table[i].var_type;
+            }
+        }
+        yyerror("Undefined array in expression");
+        return NONE;
+    }
     case NODE_IDENTIFIER:
     {
         // Look up the variable type in the symbol table
@@ -1012,6 +1046,50 @@ float evaluate_expression_float(ASTNode *node)
 
     switch (node->type)
     {
+    case NODE_ARRAY_ACCESS:
+    {
+        const char *array_name = node->data.array.name;
+        int idx = evaluate_expression_int(node->data.array.index);
+
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, array_name) == 0)
+            {
+                if (!symbol_table[i].is_array)
+                {
+                    yyerror("Not an array!");
+                    return 0.0f;
+                }
+                if (idx < 0 || idx >= symbol_table[i].array_length)
+                {
+                    yyerror("Array index out of bounds!");
+                    return 0.0f;
+                }
+
+                // Return the value based on the array's actual type
+                switch (symbol_table[i].var_type)
+                {
+                case VAR_FLOAT:
+                    return symbol_table[i].value.farray[idx];
+                case VAR_DOUBLE:
+                    return (float)symbol_table[i].value.darray[idx];
+                case VAR_INT:
+                    return (float)symbol_table[i].value.iarray[idx];
+                case VAR_SHORT:
+                    return (float)symbol_table[i].value.sarray[idx];
+                case VAR_BOOL:
+                    return (float)symbol_table[i].value.barray[idx];
+                case VAR_CHAR:
+                    return (float)symbol_table[i].value.carray[idx];
+                default:
+                    yyerror("Unsupported array type");
+                    return 0.0f;
+                }
+            }
+        }
+        yyerror("Undefined array variable!");
+        return 0.0f;
+    }
     case NODE_FLOAT:
         return node->data.fvalue;
     case NODE_DOUBLE:
@@ -1041,47 +1119,6 @@ float evaluate_expression_float(ASTNode *node)
         float *result = (float *)handle_unary_expression(node, &operand, VAR_FLOAT);
         return *result;
     }
-    case NODE_ARRAY_ACCESS:
-    {
-        // find the symbol
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, node->data.array.name) == 0)
-            {
-                if (!symbol_table[i].is_array)
-                {
-                    yyerror("Not an array!");
-                    return 0;
-                }
-                // Evaluate index
-                int idx = evaluate_expression_int(node->data.array.index);
-                if (idx < 0 || idx >= symbol_table[i].array_length)
-                {
-                    yyerror("Array index out of bounds!");
-                    return 0;
-                }
-                switch (node->var_type)
-                {
-                case VAR_INT:
-                    return (float)symbol_table[i].value.iarray[idx];
-                case VAR_SHORT:
-                    return (float)symbol_table[i].value.sarray[idx];
-                case VAR_FLOAT:
-                    return symbol_table[i].value.farray[idx];
-                case VAR_DOUBLE:
-                    return (float)symbol_table[i].value.darray[idx];
-                case VAR_BOOL:
-                    return (float)symbol_table[i].value.barray[idx];
-                case VAR_CHAR:
-                    return (float)symbol_table[i].value.carray[idx];
-                default:
-                    yyerror("Undefined array type!");
-                }
-            }
-        }
-        yyerror("Undefined array variable!");
-        return 0;
-    }
     default:
         yyerror("Invalid float expression");
         return 0.0f;
@@ -1095,6 +1132,50 @@ double evaluate_expression_double(ASTNode *node)
 
     switch (node->type)
     {
+    case NODE_ARRAY_ACCESS:
+    {
+        const char *array_name = node->data.array.name;
+        int idx = evaluate_expression_int(node->data.array.index);
+
+        for (int i = 0; i < var_count; i++)
+        {
+            if (strcmp(symbol_table[i].name, array_name) == 0)
+            {
+                if (!symbol_table[i].is_array)
+                {
+                    yyerror("Not an array!");
+                    return 0.0L;
+                }
+                if (idx < 0 || idx >= symbol_table[i].array_length)
+                {
+                    yyerror("Array index out of bounds!");
+                    return 0.0L;
+                }
+
+                // Return the value based on the array's actual type
+                switch (symbol_table[i].var_type)
+                {
+                case VAR_FLOAT:
+                    return (double)symbol_table[i].value.farray[idx];
+                case VAR_DOUBLE:
+                    return symbol_table[i].value.darray[idx];
+                case VAR_INT:
+                    return (double)symbol_table[i].value.iarray[idx];
+                case VAR_SHORT:
+                    return (double)symbol_table[i].value.sarray[idx];
+                case VAR_BOOL:
+                    return (double)symbol_table[i].value.barray[idx];
+                case VAR_CHAR:
+                    return (double)symbol_table[i].value.carray[idx];
+                default:
+                    yyerror("Unsupported array type");
+                    return 0.0L;
+                }
+            }
+        }
+        yyerror("Undefined array variable!");
+        return 0.0L;
+    }
     case NODE_DOUBLE:
         return node->data.dvalue;
     case NODE_FLOAT:
@@ -1123,47 +1204,6 @@ double evaluate_expression_double(ASTNode *node)
         double operand = evaluate_expression_double(node->data.unary.operand);
         double *result = (double *)handle_unary_expression(node, &operand, VAR_DOUBLE);
         return *result;
-    }
-    case NODE_ARRAY_ACCESS:
-    {
-        // find the symbol
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, node->data.array.name) == 0)
-            {
-                if (!symbol_table[i].is_array)
-                {
-                    yyerror("Not an array!");
-                    return 0;
-                }
-                // Evaluate index
-                int idx = evaluate_expression_int(node->data.array.index);
-                if (idx < 0 || idx >= symbol_table[i].array_length)
-                {
-                    yyerror("Array index out of bounds!");
-                    return 0;
-                }
-                switch (node->var_type)
-                {
-                case VAR_INT:
-                    return (double)symbol_table[i].value.iarray[idx];
-                case VAR_SHORT:
-                    return (double)symbol_table[i].value.sarray[idx];
-                case VAR_FLOAT:
-                    return (double)symbol_table[i].value.farray[idx];
-                case VAR_DOUBLE:
-                    return symbol_table[i].value.darray[idx];
-                case VAR_BOOL:
-                    return (double)symbol_table[i].value.barray[idx];
-                case VAR_CHAR:
-                    return (double)symbol_table[i].value.carray[idx];
-                default:
-                    yyerror("Undefined array type!");
-                }
-            }
-        }
-        yyerror("Undefined array variable!");
-        return 0;
     }
     default:
         yyerror("Invalid double expression");
@@ -1823,38 +1863,11 @@ void execute_assignment(ASTNode *node)
 
     if (node->data.op.left->type == NODE_ARRAY_ACCESS)
     {
-        // Evaluate the right side
-        typedef union
-        {
-            float f;
-            double d;
-            short s;
-            int i;
-        } value_union;
-
-        value_union val;
-
-        if (is_float_expression(node))
-        {
-            val.f = evaluate_expression_float(node->data.op.right);
-        }
-        else if (is_double_expression(node))
-        {
-            val.d = evaluate_expression_double(node->data.op.right);
-        }
-        else if (is_short_expression(node))
-        {
-            val.d = evaluate_expression_short(node->data.op.right);
-        }
-        else
-        {
-            val.i = evaluate_expression_int(node->data.op.right);
-        }
-
-        // Find the array in symbol_table, do the index logic, store
+        // Evaluate the right side with proper type handling
         const char *array_name = node->data.op.left->data.array.name;
         int idx = evaluate_expression_int(node->data.op.left->data.array.index);
 
+        // Find array in symbol table
         for (int i = 0; i < var_count; i++)
         {
             if (strcmp(symbol_table[i].name, array_name) == 0)
@@ -1869,30 +1882,27 @@ void execute_assignment(ASTNode *node)
                     yyerror("Array index out of bounds!");
                     return;
                 }
-                switch (node->var_type)
+
+                // Use the array's actual type for assignment
+                switch (symbol_table[i].var_type)
                 {
-                case VAR_INT:
-                    symbol_table[i].value.iarray[idx] = val.i;
-                    return;
-                case VAR_SHORT:
-                    symbol_table[i].value.sarray[idx] = val.s;
-                    return;
                 case VAR_FLOAT:
-                    symbol_table[i].value.farray[idx] = val.f;
-                    return;
+                    symbol_table[i].value.farray[idx] = evaluate_expression_float(node->data.op.right);
+                    break;
                 case VAR_DOUBLE:
-                    symbol_table[i].value.darray[idx] = val.d;
-                    return;
-                case VAR_BOOL:
-                    symbol_table[i].value.barray[idx] = val.i;
-                    return;
-                case VAR_CHAR:
-                    symbol_table[i].value.carray[idx] = val.i;
-                    return;
+                    symbol_table[i].value.darray[idx] = evaluate_expression_double(node->data.op.right);
+                    break;
+                case VAR_INT:
+                    symbol_table[i].value.iarray[idx] = evaluate_expression_int(node->data.op.right);
+                    break;
+                case VAR_SHORT:
+                    symbol_table[i].value.sarray[idx] = evaluate_expression_short(node->data.op.right);
+                    break;
                 default:
-                    yyerror("Undefined array type!");
+                    yyerror("Unsupported array type");
                     return;
                 }
+                return;
             }
         }
         yyerror("Undefined array variable");
@@ -1970,7 +1980,6 @@ void execute_statement(ASTNode *node)
             ASTNode *array_node = node->data.op.left;
             const char *array_name = array_node->data.array.name;
             int idx = evaluate_expression_int(array_node->data.array.index);
-            int value = evaluate_expression_int(node->data.op.right);
 
             // Find array in symbol table
             for (int i = 0; i < var_count; i++)
@@ -1987,7 +1996,31 @@ void execute_statement(ASTNode *node)
                         yyerror("Array index out of bounds!");
                         return;
                     }
-                    symbol_table[i].value.iarray[idx] = value;
+
+                    switch (symbol_table[i].var_type)
+                    {
+                    case VAR_FLOAT:
+                        symbol_table[i].value.farray[idx] = evaluate_expression_float(node->data.op.right);
+                        break;
+                    case VAR_DOUBLE:
+                        symbol_table[i].value.darray[idx] = evaluate_expression_double(node->data.op.right);
+                        break;
+                    case VAR_INT:
+                        symbol_table[i].value.iarray[idx] = evaluate_expression_int(node->data.op.right);
+                        break;
+                    case VAR_SHORT:
+                        symbol_table[i].value.sarray[idx] = evaluate_expression_short(node->data.op.right);
+                        break;
+                    case VAR_BOOL:
+                        symbol_table[i].value.barray[idx] = evaluate_expression_bool(node->data.op.right);
+                        break;
+                    case VAR_CHAR:
+                        symbol_table[i].value.carray[idx] = (char)evaluate_expression_int(node->data.op.right);
+                        break;
+                    default:
+                        yyerror("Unsupported array type");
+                        return;
+                    }
                     return;
                 }
             }
@@ -2385,7 +2418,45 @@ void execute_yapping_call(ArgumentList *args)
             else if (strchr("fFeEgGa", *format))
             {
                 // Floating-point numbers
-                if (is_float_expression(expr))
+                if (expr->type == NODE_ARRAY_ACCESS)
+                {
+                    // Special handling for array access
+                    const char *array_name = expr->data.array.name;
+                    int idx = evaluate_expression_int(expr->data.array.index);
+
+                    for (int i = 0; i < var_count; i++)
+                    {
+                        if (strcmp(symbol_table[i].name, array_name) == 0)
+                        {
+                            if (!symbol_table[i].is_array)
+                            {
+                                yyerror("Not an array!");
+                                return;
+                            }
+                            if (idx < 0 || idx >= symbol_table[i].array_length)
+                            {
+                                yyerror("Array index out of bounds!");
+                                return;
+                            }
+                            if (symbol_table[i].var_type == VAR_FLOAT)
+                            {
+                                float val = symbol_table[i].value.farray[idx];
+                                buffer_offset += snprintf(buffer + buffer_offset,
+                                                          sizeof(buffer) - buffer_offset,
+                                                          specifier, val);
+                            }
+                            else if (symbol_table[i].var_type == VAR_DOUBLE)
+                            {
+                                double val = symbol_table[i].value.darray[idx];
+                                buffer_offset += snprintf(buffer + buffer_offset,
+                                                          sizeof(buffer) - buffer_offset,
+                                                          specifier, val);
+                            }
+                            break;
+                        }
+                    }
+                }
+                else if (is_float_expression(expr))
                 {
                     float val = evaluate_expression_float(expr);
                     buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, val);
