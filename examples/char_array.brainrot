@@ -1,0 +1,15 @@
+skibidi main {
+    yap a[4];
+    rizz i;
+
+    a[0] = 'r';
+    a[1] = 'i';
+    a[2] = 'z';
+    a[3] = 'z';
+    
+    flex (i = 0; i < 4; i = i + 1) {
+        yappin("%c", a[i]);
+    }
+    
+    bussin 0;
+}

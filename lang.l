@@ -110,11 +110,14 @@ extern int yylineno;
 "🚽"[^\n]*      ; /* Ignore single line comments */
 "W"              { yylval.ival = 1; return BOOLEAN; }
 "L"              { yylval.ival = 0; return BOOLEAN; }
-[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?[fF]? {
+[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?[LlFf]? {
     char *endptr;
     if (strchr(yytext, 'f') || strchr(yytext, 'F')) {
         yylval.fval = strtof(yytext, &endptr);
         return FLOAT_LITERAL;
+    } else if (strchr(yytext, 'L') || strchr(yytext, 'l')) {
+        yylval.dval = strtod(yytext, &endptr);
+        return DOUBLE_LITERAL;
     } else {
         yylval.dval = strtod(yytext, &endptr);
         return DOUBLE_LITERAL;

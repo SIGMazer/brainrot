@@ -1,0 +1,14 @@
+skibidi main {
+    cap bool_array[3];
+    rizz i;
+
+    bool_array[0] = W;
+    bool_array[1] = L;
+    bool_array[2] = W;
+
+    flex (i = 0; i < 3; i = i + 1) {
+        yapping("%b", bool_array[i]);
+    }
+
+    bussin 0;
+}
