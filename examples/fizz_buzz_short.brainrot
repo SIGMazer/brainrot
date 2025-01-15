@@ -1,6 +1,6 @@
 skibidi main {
-    nut rizz i;
-    flex (i = 1; i <= 10; i = i + 1){
+    smol i;
+    flex (i = 1; i <= 10; i++){
         edgy ( (i % 15) == 0 ) {
             yapping("FizzBuzz");
         } amogus edgy ( (i % 3) == 0 ) {
