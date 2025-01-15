@@ -1,0 +1,14 @@
+skibidi main {
+    smol short_array[3];
+    rizz i;
+
+    flex (i = 1; i < 4; i = i + 1) {
+        short_array[i-1] = i;
+    }
+
+    flex (i = 0; i < 3; i = i + 1) {
+        yapping("%d", short_array[i]);
+    }
+
+    bussin 0;
+}

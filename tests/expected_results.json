@@ -30,5 +30,11 @@
     "const": "1\n1\n",
     "do-while": "0\n1\n1\n2\n3\n5\n8\n",
     "nest-loop": "0\ngoon\ngoon\ngoon\nbreak goon 2\ngoon\n1\ngoon\ngoon\ngoon\nbreak goon 2\ngoon\n2\ngoon\ngoon\ngoon\nbreak goon 2\ngoon\nbreak flex",
-    "next-prime": "11"
+    "next-prime": "11",
+    "int_array": "1\n2\n3\n",
+    "short_array": "1\n2\n3\n",
+    "bool_array": "W\nL\nW\n",
+    "float_array": "3.140000\n3.141500\n3.141592\n",
+    "double_array": "3.140000\n3.141500\n3.141592\n",
+    "char_array": "rizz"
 }

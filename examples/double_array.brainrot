@@ -1,0 +1,14 @@
+skibidi main {
+    gigachad double_array[3];
+
+    double_array[0] = 3.14L;
+    double_array[1] = 3.1415L;
+    double_array[2] = 3.141592L;
+
+    rizz i;
+    flex (i = 0; i < 3; i = i + 1) {
+        yapping("%f", double_array[i]);
+    }
+
+    bussin 0;
+}
