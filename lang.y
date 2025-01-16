@@ -62,6 +62,7 @@ ASTNode *root = NULL;
     ASTNode *node;
     CaseNode *case_node;
     ArgumentList *args;
+    ExpressionList *expr_list;
 }
 
 /* Define token types */
@@ -104,6 +105,7 @@ ASTNode *root = NULL;
 %type <node> array_access
 %type <node> assignment
 %type <node> literal identifier sizeof_expression
+%type <expr_list> array_init initializer_list
 
 
 %start program
@@ -221,6 +223,30 @@ declaration:
             set_array_variable($3, $5, get_current_modifiers(), $2);
             $$ = create_array_declaration_node($3, $5, $2);
         }
+    | optional_modifiers type IDENTIFIER LBRACKET RBRACKET EQUALS array_init
+        {
+            set_array_variable($3, count_expression_list($7), get_current_modifiers(), $2);
+            populate_array_varialbe($3, $7);
+            $$ = create_array_declaration_node($3, count_expression_list($7), $2);
+        }
+    | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET EQUALS array_init
+        {
+            set_array_variable($3, $5, get_current_modifiers(), $2);
+            populate_array_varialbe($3, $8);
+            $$ = create_array_declaration_node($3, $5, $2);
+        }
+    ;
+
+array_init:
+    LBRACE initializer_list RBRACE
+        { $$ = $2; }
+    ;
+
+initializer_list:
+    expression
+        { $$ = create_expression_list($1); }
+    | initializer_list COMMA expression
+        { $$ = append_expression_list($1, $3); }
     ;
 
 optional_modifiers:
@@ -337,7 +363,7 @@ expression:
     ;
 
 sizeof_expression:
-        SIZEOF LPAREN IDENTIFIER RPAREN{ $$ = create_sizeof_node($3); }
+        SIZEOF LPAREN expression RPAREN{ $$ = create_sizeof_node($3); }
     ;
 literal:
       INT_LITERAL        { $$ = create_int_node($1); }

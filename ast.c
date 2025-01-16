@@ -453,10 +453,10 @@ ASTNode *create_double_node(double value)
     return node;
 }
 
-ASTNode *create_sizeof_node(char *name)
+ASTNode *create_sizeof_node(ASTNode *expr)
 {
     ASTNode *node = create_node(NODE_SIZEOF, NONE, current_modifiers);
-    SET_DATA_NAME(node, name);
+    SET_SIZEOF(node, expr);
     return node;
 }
 
@@ -619,6 +619,10 @@ int get_expression_type(ASTNode *node)
     case NODE_UNARY_OPERATION:
     {
         return get_expression_type(node->data.unary.operand);
+    }
+    case NODE_SIZEOF:
+    {
+        return VAR_INT; // Sizeof always returns an integer
     }
     default:
         yyerror("Unknown node type in get_expression_type");
@@ -1275,6 +1279,108 @@ double evaluate_expression_double(ASTNode *node)
         return 0.0L;
     }
 }
+size_t get_type_size(char* name, bool is_array)
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            if (symbol_table[i].var_type == VAR_FLOAT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(float) * symbol_table[i].array_length;
+                }
+                return sizeof(float);
+            }
+            else if (symbol_table[i].var_type == VAR_DOUBLE)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(double) * symbol_table[i].array_length;
+                }
+                return sizeof(double);
+            }
+            else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(unsigned int) * symbol_table[i].array_length;
+                }
+                return sizeof(unsigned int);
+            }
+            else if (symbol_table[i].var_type == VAR_BOOL)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(bool) * symbol_table[i].array_length;
+                }
+                return sizeof(bool);
+            }
+            else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(unsigned short) * symbol_table[i].array_length;
+                }
+                return sizeof(unsigned short);
+            }
+            else if (symbol_table[i].var_type == VAR_SHORT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(short) * symbol_table[i].array_length;
+                }
+                return sizeof(short);
+            }
+            else if (symbol_table[i].var_type == VAR_INT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(int) * symbol_table[i].array_length;
+                }
+                return sizeof(int);
+            }
+            else
+            {
+                yyerror("Undefined variable in sizeof");
+            }
+        }
+    }
+    yyerror("Undefined variable in sizeof");
+    return 0;
+}
+
+size_t handle_sizeof(ASTNode *node)
+{
+    ASTNode* expr = node->data.sizeof_stmt.expr;
+    VarType type = get_expression_type(node->data.sizeof_stmt.expr);
+    bool is_array = node->data.sizeof_stmt.expr->is_array;
+    if(expr->type == NODE_IDENTIFIER)
+    {
+        return get_type_size(expr->data.name, is_array);
+    }
+    switch (type)
+    {
+        case VAR_INT:
+            return  sizeof(int);
+        case VAR_FLOAT:
+            return  sizeof(float);
+        case VAR_DOUBLE:
+            return  sizeof(double);
+        case VAR_SHORT:
+            return  sizeof(short);
+        case VAR_BOOL:
+            return  sizeof(bool);
+        case VAR_CHAR:
+            return  sizeof(char);
+        default:
+            yyerror("Invalid type in sizeof");
+            return 0;
+    }
+    yyerror("Invalid type in sizeof");
+    return 0;
+}
 
 short evaluate_expression_short(ASTNode *node)
 {
@@ -1299,47 +1405,7 @@ short evaluate_expression_short(ASTNode *node)
         return (short)node->data.dvalue;
     case NODE_SIZEOF:
     {
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return sizeof(float);
-                }
-                else if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return sizeof(double);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(unsigned int);
-                }
-                else if (symbol_table[i].var_type == VAR_BOOL)
-                {
-                    return sizeof(bool);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(unsigned short);
-                }
-                else if (symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(short);
-                }
-                else if (symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(int);
-                }
-                else
-                {
-                    yyerror("Undefined variable in sizeof");
-                }
-            }
-        }
-        yyerror("Undefined variable in sizeof");
-        return 0;
+        return handle_sizeof(node);
     }
     case NODE_IDENTIFIER:
     {
@@ -1454,47 +1520,7 @@ int evaluate_expression_int(ASTNode *node)
         return (int)node->data.dvalue;
     case NODE_SIZEOF:
     {
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return sizeof(float);
-                }
-                else if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return sizeof(double);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(unsigned int);
-                }
-                else if (symbol_table[i].var_type == VAR_BOOL)
-                {
-                    return sizeof(bool);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(unsigned short);
-                }
-                else if (symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(short);
-                }
-                else if (symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(int);
-                }
-                else
-                {
-                    yyerror("Undefined variable in sizeof");
-                }
-            }
-        }
-        yyerror("Undefined variable in sizeof");
-        return 0;
+        return handle_sizeof(node);
     }
     case NODE_IDENTIFIER:
     {
@@ -2844,3 +2870,126 @@ void *evaluate_array_access(ASTNode *node)
     yyerror("Undefined array variable");
     return NULL;
 }
+
+
+ExpressionList* create_expression_list(ASTNode* expr)
+{
+    ExpressionList* list = malloc(sizeof(ExpressionList));
+    if (!list)
+    {
+        yyerror("Failed to allocate memory for expression list");
+        exit(1);
+    }
+    list->expr = expr;
+    list->next = list;
+    list->prev = list;
+    return list;
+}
+
+ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr)
+{
+    ExpressionList* new_node = malloc(sizeof(ExpressionList));
+    if (!new_node)
+    {
+        yyerror("Failed to allocate memory for expression list");
+        exit(1);
+    }
+    new_node->expr = expr;
+
+    if(!list)
+    {
+        new_node->next = new_node;
+        new_node->prev = new_node;
+        return new_node;
+    }
+
+    new_node->next = list;
+    new_node->prev = list->prev;
+    list->prev->next = new_node;
+    list->prev = new_node;
+    return list;
+}
+
+size_t count_expression_list(ExpressionList* list)
+{
+    if (!list)
+        return 0;
+    size_t count = 1;
+    ExpressionList* current = list->next;
+    do
+    {
+        count++;
+        current = current->next;
+    } while (current != list);
+    return count;
+}
+
+void free_expression_list(ExpressionList* list)
+{
+    while (list)
+    {
+        ExpressionList* next = list->next;
+        free(list);
+        list = next;
+    }
+}
+
+void populate_array_varialbe(char* name, ExpressionList* list)
+{
+    for (size_t i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            if (!symbol_table[i].is_array)
+            {
+                yyerror("Not an array!");
+                return;
+            }
+            if (symbol_table[i].array_length < count_expression_list(list))
+            {
+                yyerror("Too many elements in array initialization");
+                exit(1);
+            }
+
+            size_t array_length = symbol_table[i].array_length;
+            VarType var_type = symbol_table[i].var_type;
+
+            ExpressionList* current = list;
+            for(size_t index = 0; index < array_length; index++)
+            {
+                switch (var_type)
+                {
+                case VAR_INT:
+                    symbol_table[i].value.iarray[index] = evaluate_expression_int(current->expr);
+                    break;
+                case VAR_FLOAT:
+                    symbol_table[i].value.farray[index] = evaluate_expression_float(current->expr);
+                    break;
+                case VAR_DOUBLE:
+                    symbol_table[i].value.darray[index] = evaluate_expression_double(current->expr);
+                    break;
+                case VAR_SHORT:
+                    symbol_table[i].value.sarray[index] = evaluate_expression_short(current->expr);
+                    break;
+                case VAR_CHAR:
+                    symbol_table[i].value.carray[index] = (char)evaluate_expression_int(current->expr);
+                    break;
+                case VAR_BOOL:
+                    symbol_table[i].value.barray[index] = evaluate_expression_bool(current->expr);
+                    break;
+                default:
+                    yyerror("Unsupported array type");
+                    return;
+                }
+
+                current = current->next;
+                if (current == list)
+                    break;
+            }
+            return;
+        }
+    }
+    yyerror("Undefined array variable");
+
+}
+

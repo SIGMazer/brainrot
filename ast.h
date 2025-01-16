@@ -33,6 +33,13 @@ typedef struct JumpBuffer
     struct JumpBuffer *next;
 } JumpBuffer;
 
+typedef struct ExpressionList
+{
+    ASTNode *expr;
+    struct ExpressionList *next;
+    struct ExpressionList *prev;
+} ExpressionList;
+
 typedef enum
 {
     VAR_INT,
@@ -216,6 +223,10 @@ struct ASTNode
             ASTNode *expression;
             CaseNode *cases;
         } switch_stmt;
+        struct
+        {
+            ASTNode *expr;
+        } sizeof_stmt;
         ASTNode *break_stmt;
     } data;
 };
@@ -254,7 +265,7 @@ ASTNode *create_do_while_statement_node(ASTNode *cond, ASTNode *body);
 ASTNode *create_function_call_node(char *func_name, ArgumentList *args);
 ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list);
 ASTNode *create_print_statement_node(ASTNode *expr);
-ASTNode *create_sizeof_node(char *identifier);
+ASTNode *create_sizeof_node(ASTNode *node);
 ASTNode *create_error_statement_node(ASTNode *expr);
 ASTNode *create_statement_list(ASTNode *statement, ASTNode *next_statement);
 ASTNode *create_if_statement_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch);
@@ -264,7 +275,11 @@ CaseNode *create_case_node(ASTNode *value, ASTNode *statements);
 CaseNode *create_default_case_node(ASTNode *statements);
 CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
-ASTNode *create_default_node(VarType var_type);
+ASTNode* create_default_node(VarType var_type);
+ExpressionList* create_expression_list(ASTNode* expr);
+ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr);
+void free_expression_list(ExpressionList* list);
+void populate_array_varialbe(char* name, ExpressionList* list);
 
 /* Evaluation and execution functions */
 void *evaluate_array_access(ASTNode *node);
@@ -294,6 +309,8 @@ void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
+size_t count_expression_list(ExpressionList* list);
+size_t handle_sizeof(ASTNode *node);
 
 extern TypeModifiers current_modifiers;
 
@@ -304,6 +321,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
 #define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
 #define SET_DATA_NAME(node, n) ((node)->data.name = strdup(n))
+#define SET_SIZEOF(node, n) ((node)->data.sizeof_stmt.expr = (n))
 #define SET_DATA_OP(node, l, r, opr) \
     do                               \
     {                                \

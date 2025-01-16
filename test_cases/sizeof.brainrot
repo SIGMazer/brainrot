@@ -5,6 +5,7 @@ skibidi main {
     rizz x = 42;
     nonut rizz y = 100;
     cap z = W;
+    rizz arr[3] = {1,2,3};
     
     rizz size1 = maxxing(x);
     rizz size2 = maxxing(y);
@@ -12,6 +13,7 @@ skibidi main {
     rizz size4 = maxxing(u); 
     rizz size5 = maxxing(v);
     rizz size6 = maxxing(w);
+    rizz size7 = maxxing(arr);
     
     yapping("%lu", size1);
     yapping("%lu", size2);
@@ -19,4 +21,5 @@ skibidi main {
     yapping("%lu", size4);
     yapping("%lu", size5);
     yapping("%lu", size6);
+    yapping("%lu", size7);
 }
