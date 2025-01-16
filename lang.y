@@ -363,7 +363,7 @@ expression:
     ;
 
 sizeof_expression:
-        SIZEOF LPAREN IDENTIFIER RPAREN{ $$ = create_sizeof_node($3); }
+        SIZEOF LPAREN expression RPAREN{ $$ = create_sizeof_node($3); }
     ;
 literal:
       INT_LITERAL        { $$ = create_int_node($1); }

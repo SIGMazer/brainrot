@@ -453,10 +453,10 @@ ASTNode *create_double_node(double value)
     return node;
 }
 
-ASTNode *create_sizeof_node(char *name)
+ASTNode *create_sizeof_node(ASTNode *expr)
 {
     ASTNode *node = create_node(NODE_SIZEOF, NONE, current_modifiers);
-    SET_DATA_NAME(node, name);
+    SET_SIZEOF(node, expr);
     return node;
 }
 
@@ -619,6 +619,10 @@ int get_expression_type(ASTNode *node)
     case NODE_UNARY_OPERATION:
     {
         return get_expression_type(node->data.unary.operand);
+    }
+    case NODE_SIZEOF:
+    {
+        return VAR_INT; // Sizeof always returns an integer
     }
     default:
         yyerror("Unknown node type in get_expression_type");
@@ -1275,6 +1279,108 @@ double evaluate_expression_double(ASTNode *node)
         return 0.0L;
     }
 }
+size_t get_type_size(char* name, bool is_array)
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            if (symbol_table[i].var_type == VAR_FLOAT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(float) * symbol_table[i].array_length;
+                }
+                return sizeof(float);
+            }
+            else if (symbol_table[i].var_type == VAR_DOUBLE)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(double) * symbol_table[i].array_length;
+                }
+                return sizeof(double);
+            }
+            else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(unsigned int) * symbol_table[i].array_length;
+                }
+                return sizeof(unsigned int);
+            }
+            else if (symbol_table[i].var_type == VAR_BOOL)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(bool) * symbol_table[i].array_length;
+                }
+                return sizeof(bool);
+            }
+            else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(unsigned short) * symbol_table[i].array_length;
+                }
+                return sizeof(unsigned short);
+            }
+            else if (symbol_table[i].var_type == VAR_SHORT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(short) * symbol_table[i].array_length;
+                }
+                return sizeof(short);
+            }
+            else if (symbol_table[i].var_type == VAR_INT)
+            {
+                if (symbol_table[i].is_array)
+                {
+                    return sizeof(int) * symbol_table[i].array_length;
+                }
+                return sizeof(int);
+            }
+            else
+            {
+                yyerror("Undefined variable in sizeof");
+            }
+        }
+    }
+    yyerror("Undefined variable in sizeof");
+    return 0;
+}
+
+size_t handle_sizeof(ASTNode *node)
+{
+    ASTNode* expr = node->data.sizeof_stmt.expr;
+    VarType type = get_expression_type(node->data.sizeof_stmt.expr);
+    bool is_array = node->data.sizeof_stmt.expr->is_array;
+    if(expr->type == NODE_IDENTIFIER)
+    {
+        return get_type_size(expr->data.name, is_array);
+    }
+    switch (type)
+    {
+        case VAR_INT:
+            return  sizeof(int);
+        case VAR_FLOAT:
+            return  sizeof(float);
+        case VAR_DOUBLE:
+            return  sizeof(double);
+        case VAR_SHORT:
+            return  sizeof(short);
+        case VAR_BOOL:
+            return  sizeof(bool);
+        case VAR_CHAR:
+            return  sizeof(char);
+        default:
+            yyerror("Invalid type in sizeof");
+            return 0;
+    }
+    yyerror("Invalid type in sizeof");
+    return 0;
+}
 
 short evaluate_expression_short(ASTNode *node)
 {
@@ -1299,47 +1405,7 @@ short evaluate_expression_short(ASTNode *node)
         return (short)node->data.dvalue;
     case NODE_SIZEOF:
     {
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return sizeof(float);
-                }
-                else if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return sizeof(double);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(unsigned int);
-                }
-                else if (symbol_table[i].var_type == VAR_BOOL)
-                {
-                    return sizeof(bool);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(unsigned short);
-                }
-                else if (symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(short);
-                }
-                else if (symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(int);
-                }
-                else
-                {
-                    yyerror("Undefined variable in sizeof");
-                }
-            }
-        }
-        yyerror("Undefined variable in sizeof");
-        return 0;
+        return handle_sizeof(node);
     }
     case NODE_IDENTIFIER:
     {
@@ -1454,47 +1520,7 @@ int evaluate_expression_int(ASTNode *node)
         return (int)node->data.dvalue;
     case NODE_SIZEOF:
     {
-        char *name = node->data.name;
-        for (int i = 0; i < var_count; i++)
-        {
-            if (strcmp(symbol_table[i].name, name) == 0)
-            {
-                if (symbol_table[i].var_type == VAR_FLOAT)
-                {
-                    return sizeof(float);
-                }
-                else if (symbol_table[i].var_type == VAR_DOUBLE)
-                {
-                    return sizeof(double);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(unsigned int);
-                }
-                else if (symbol_table[i].var_type == VAR_BOOL)
-                {
-                    return sizeof(bool);
-                }
-                else if (symbol_table[i].modifiers.is_unsigned && symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(unsigned short);
-                }
-                else if (symbol_table[i].var_type == VAR_SHORT)
-                {
-                    return sizeof(short);
-                }
-                else if (symbol_table[i].var_type == VAR_INT)
-                {
-                    return sizeof(int);
-                }
-                else
-                {
-                    yyerror("Undefined variable in sizeof");
-                }
-            }
-        }
-        yyerror("Undefined variable in sizeof");
-        return 0;
+        return handle_sizeof(node);
     }
     case NODE_IDENTIFIER:
     {
