@@ -83,7 +83,7 @@ flex -o lang.lex.c lang.l
 3. Compile the compiler:
 
 ```bash
-gcc -o brainrot lang.tab.c lex.yy.c ast.c -lfl
+gcc -o brainrot lang.tab.c lex.yy.c ast.c -lfl -lm
 ```
 
 Alternatively, simply run:
