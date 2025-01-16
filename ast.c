@@ -2844,3 +2844,126 @@ void *evaluate_array_access(ASTNode *node)
     yyerror("Undefined array variable");
     return NULL;
 }
+
+
+ExpressionList* create_expression_list(ASTNode* expr)
+{
+    ExpressionList* list = malloc(sizeof(ExpressionList));
+    if (!list)
+    {
+        yyerror("Failed to allocate memory for expression list");
+        exit(1);
+    }
+    list->expr = expr;
+    list->next = list;
+    list->prev = list;
+    return list;
+}
+
+ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr)
+{
+    ExpressionList* new_node = malloc(sizeof(ExpressionList));
+    if (!new_node)
+    {
+        yyerror("Failed to allocate memory for expression list");
+        exit(1);
+    }
+    new_node->expr = expr;
+
+    if(!list)
+    {
+        new_node->next = new_node;
+        new_node->prev = new_node;
+        return new_node;
+    }
+
+    new_node->next = list;
+    new_node->prev = list->prev;
+    list->prev->next = new_node;
+    list->prev = new_node;
+    return list;
+}
+
+size_t count_expression_list(ExpressionList* list)
+{
+    if (!list)
+        return 0;
+    size_t count = 1;
+    ExpressionList* current = list->next;
+    do
+    {
+        count++;
+        current = current->next;
+    } while (current != list);
+    return count;
+}
+
+void free_expression_list(ExpressionList* list)
+{
+    while (list)
+    {
+        ExpressionList* next = list->next;
+        free(list);
+        list = next;
+    }
+}
+
+void populate_array_varialbe(char* name, ExpressionList* list)
+{
+    for (size_t i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, name) == 0)
+        {
+            if (!symbol_table[i].is_array)
+            {
+                yyerror("Not an array!");
+                return;
+            }
+            if (symbol_table[i].array_length < count_expression_list(list))
+            {
+                yyerror("Too many elements in array initialization");
+                exit(1);
+            }
+
+            size_t array_length = symbol_table[i].array_length;
+            VarType var_type = symbol_table[i].var_type;
+
+            ExpressionList* current = list;
+            for(size_t index = 0; index < array_length; index++)
+            {
+                switch (var_type)
+                {
+                case VAR_INT:
+                    symbol_table[i].value.iarray[index] = evaluate_expression_int(current->expr);
+                    break;
+                case VAR_FLOAT:
+                    symbol_table[i].value.farray[index] = evaluate_expression_float(current->expr);
+                    break;
+                case VAR_DOUBLE:
+                    symbol_table[i].value.darray[index] = evaluate_expression_double(current->expr);
+                    break;
+                case VAR_SHORT:
+                    symbol_table[i].value.sarray[index] = evaluate_expression_short(current->expr);
+                    break;
+                case VAR_CHAR:
+                    symbol_table[i].value.carray[index] = (char)evaluate_expression_int(current->expr);
+                    break;
+                case VAR_BOOL:
+                    symbol_table[i].value.barray[index] = evaluate_expression_bool(current->expr);
+                    break;
+                default:
+                    yyerror("Unsupported array type");
+                    return;
+                }
+
+                current = current->next;
+                if (current == list)
+                    break;
+            }
+            return;
+        }
+    }
+    yyerror("Undefined array variable");
+
+}
+

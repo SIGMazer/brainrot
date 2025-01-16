@@ -34,6 +34,7 @@
     "next-prime": "11",
     "int_array": "1\n2\n3\n",
     "short_array": "1\n2\n3\n",
+    "array_initialization": "1\n2\n3\n",
     "bool_array": "W\nL\nW\n",
     "float_array": "3.140000\n3.141500\n3.141592\n",
     "double_array": "3.140000\n3.141500\n3.141592\n",

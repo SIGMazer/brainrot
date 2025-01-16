@@ -33,6 +33,13 @@ typedef struct JumpBuffer
     struct JumpBuffer *next;
 } JumpBuffer;
 
+typedef struct ExpressionList
+{
+    ASTNode *expr;
+    struct ExpressionList *next;
+    struct ExpressionList *prev;
+} ExpressionList;
+
 typedef enum
 {
     VAR_INT,
@@ -264,7 +271,11 @@ CaseNode *create_case_node(ASTNode *value, ASTNode *statements);
 CaseNode *create_default_case_node(ASTNode *statements);
 CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
-ASTNode *create_default_node(VarType var_type);
+ASTNode* create_default_node(VarType var_type);
+ExpressionList* create_expression_list(ASTNode* expr);
+ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr);
+void free_expression_list(ExpressionList* list);
+void populate_array_varialbe(char* name, ExpressionList* list);
 
 /* Evaluation and execution functions */
 void *evaluate_array_access(ASTNode *node);
@@ -294,6 +305,7 @@ void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
+size_t count_expression_list(ExpressionList* list);
 
 extern TypeModifiers current_modifiers;
 
