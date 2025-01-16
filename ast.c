@@ -2926,12 +2926,16 @@ size_t count_expression_list(ExpressionList* list)
 
 void free_expression_list(ExpressionList* list)
 {
-    while (list)
+    if (!list)
+        return;
+    ExpressionList* current = list->next;
+    while (current != list)
     {
-        ExpressionList* next = list->next;
-        free(list);
-        list = next;
+        ExpressionList* next = current->next;
+        free(current);
+        current = next;
     }
+    free(list);
 }
 
 void populate_array_varialbe(char* name, ExpressionList* list)
