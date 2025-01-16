@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
 static JumpBuffer *jump_buffer = {0};
 
 TypeModifiers current_modifiers = {false, false, false, false, false};
@@ -631,11 +632,13 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     int right_type = get_expression_type(node->data.op.right);
 
     // Promote types if necessary (short -> int -> float -> double).
-    int promoted_type = VAR_INT;
+    int promoted_type = VAR_SHORT;
     if (left_type == VAR_DOUBLE || right_type == VAR_DOUBLE)
         promoted_type = VAR_DOUBLE;
     else if (left_type == VAR_FLOAT || right_type == VAR_FLOAT)
         promoted_type = VAR_FLOAT;
+    else if (left_type == VAR_INT || right_type == VAR_INT)
+        promoted_type = VAR_INT;
 
     // Allocate and evaluate operands based on promoted type.
     switch (promoted_type)
@@ -672,6 +675,13 @@ void *handle_binary_operation(ASTNode *node, int result_type)
                                      ? (double)evaluate_expression_float(node->data.op.right)
                                      : evaluate_expression_double(node->data.op.right);
         break;
+    case VAR_SHORT:
+        left_value = calloc(1, sizeof(short));
+        right_value = calloc(1, sizeof(short));
+        *(short *)left_value = evaluate_expression_short(node->data.op.left);
+        *(short *)right_value = evaluate_expression_short(node->data.op.right);
+        break;
+    
 
     default:
         yyerror("Unsupported type promotion");
@@ -689,25 +699,22 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         if (promoted_type == VAR_INT)
             *(int *)result = *(int *)left_value + *(int *)right_value;
         else if (promoted_type == VAR_FLOAT)
-        {
             *(float *)result = *(float *)left_value + *(float *)right_value;
-        }
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value + *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value + *(short *)right_value;
         break;
 
     case OP_MINUS:
         if (promoted_type == VAR_INT)
             *(int *)result = *(int *)left_value - *(int *)right_value;
         else if (promoted_type == VAR_FLOAT)
-        {
             *(float *)result = *(float *)left_value - *(float *)right_value;
-        }
         else if (promoted_type == VAR_DOUBLE)
-        {
-            volatile double res = *(double *)left_value - *(double *)right_value;
-            *(double *)result = res;
-        }
+            *(double *) result= *(double *)left_value - *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value - *(short *)right_value;
 
         break;
 
@@ -718,6 +725,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value * *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value * *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value * *(short *)right_value;
         break;
 
     case OP_DIVIDE:
@@ -775,6 +784,18 @@ void *handle_binary_operation(ASTNode *node, int result_type)
                 *(double *)result = left / right;
             }
         }
+        else if (promoted_type == VAR_SHORT)
+        {
+            if (*(short *)right_value == 0)
+            {
+                yyerror("Division by zero");
+                *(short *)result = 0; // Define a fallback behavior for short division by zero
+            }
+            else
+            {
+                *(short *)result = *(short *)left_value / *(short *)right_value;
+            }
+        }
         break;
     case OP_MOD:
         if (promoted_type == VAR_INT)
@@ -799,10 +820,17 @@ void *handle_binary_operation(ASTNode *node, int result_type)
                 *(int *)result = left % right;
             }
         }
-        else
+        else if (promoted_type == VAR_FLOAT)
         {
-            yyerror("Modulo operation is only supported for integers");
-            *(int *)result = 0;
+            *(float *)result = fmod(*(float *)left_value, *(float *)right_value);
+        }
+        else if (promoted_type == VAR_DOUBLE)
+        {
+            *(double *)result = fmod(*(double *)left_value, *(double *)right_value);
+        }
+        else if (promoted_type == VAR_SHORT)
+        {
+            *(short *)result = *(short *)left_value % *(short *)right_value;
         }
         break;
     case OP_LT:
@@ -812,6 +840,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value < *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value < *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value < *(short *)right_value;
         break;
 
     case OP_GT:
@@ -821,6 +851,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value > *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value > *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value > *(short *)right_value;
         break;
 
     case OP_LE:
@@ -830,6 +862,10 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value <= *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value <= *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value <= *(short *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value <= *(short *)right_value;
         break;
 
     case OP_GE:
@@ -839,6 +875,10 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value >= *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value >= *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value >= *(short *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value >= *(short *)right_value;
         break;
 
     case OP_EQ:
@@ -849,6 +889,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value == *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value == *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value == *(short *)right_value;
         break;
 
     case OP_NE:
@@ -858,6 +900,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             *(float *)result = *(float *)left_value != *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
             *(double *)result = *(double *)left_value != *(double *)right_value;
+        else if (promoted_type == VAR_SHORT)
+            *(short *)result = *(short *)left_value != *(short *)right_value;
         break;
 
     default:
@@ -1307,7 +1351,9 @@ short evaluate_expression_short(ASTNode *node)
                            ? *(short *)result
                        : (result_type == VAR_FLOAT)
                            ? (short)(*(float *)result)
-                           : (short)(*(double *)result);
+                           : (result_type == VAR_DOUBLE)
+                               ? (short)(*(double *)result)
+                               : (short)(*(int *)result);
         free(result);
         return result_short;
     }
