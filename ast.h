@@ -264,6 +264,7 @@ CaseNode *create_case_node(ASTNode *value, ASTNode *statements);
 CaseNode *create_default_case_node(ASTNode *statements);
 CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
+ASTNode* create_default_node(VarType var_type);
 
 /* Evaluation and execution functions */
 double evaluate_expression_double(ASTNode *node);
@@ -292,6 +293,7 @@ void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
+
 
 extern TypeModifiers current_modifiers;
 

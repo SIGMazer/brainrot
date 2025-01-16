@@ -82,7 +82,9 @@ ASTNode *root = NULL;
 %token <fval> FLOAT_LITERAL
 %token <dval> DOUBLE_LITERAL
 
+
 /* Declare types for non-terminals */
+%type <ival> type
 %type <node> program skibidi_function
 %type <node> statements statement
 %type <node> declaration
@@ -98,6 +100,11 @@ ASTNode *root = NULL;
 %type <node> if_statement
 %type <node> switch_statement break_statement
 %type <case_node> case_list case_clause
+%type <node> binary_operation unary_operation parentheses
+%type <node> array_access
+%type <node> assignment
+%type <node> literal identifier sizeof_expression
+
 
 %start program
 
@@ -191,102 +198,28 @@ if_statement:
         { $$ = create_if_statement_node($3, $6, $10); }
     ;
 
+type:
+    RIZZ        { $$ = VAR_INT; }
+    | CHAD      { $$ = VAR_FLOAT; }
+    | GIGACHAD  { $$ = VAR_DOUBLE; }
+    | SMOL      { $$ = VAR_SHORT; }
+    | YAP       { $$ = VAR_CHAR; }
+    | CAP       { $$ = VAR_BOOL; }
+    ;
+
 declaration:
-    optional_modifiers RIZZ IDENTIFIER
-        { 
-            current_var_type = VAR_INT;
-            $$ = create_assignment_node($3, create_int_node(0)); 
-        }
-    | optional_modifiers RIZZ IDENTIFIER EQUALS expression
-        { 
-            current_var_type = VAR_INT;
-            $$ = create_assignment_node($3, $5); 
-        }
-    | optional_modifiers RIZZ IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+    optional_modifiers type IDENTIFIER
         {
-          current_var_type = VAR_INT;
-          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
-          $$ = create_array_declaration_node($3, $5, current_var_type);
+            $$ = create_assignment_node($3, create_default_node($2)); 
         }
-    | optional_modifiers CHAD IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+    | optional_modifiers type IDENTIFIER EQUALS expression
         {
-          current_var_type = VAR_FLOAT;
-          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
-          $$ = create_array_declaration_node($3, $5, current_var_type);
+            $$ = create_assignment_node($3, $5);
         }
-    | optional_modifiers SMOL IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+    | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET
         {
-          current_var_type = VAR_SHORT;
-          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
-          $$ = create_array_declaration_node($3, $5, current_var_type);
-        }
-    | optional_modifiers GIGACHAD IDENTIFIER LBRACKET INT_LITERAL RBRACKET
-        {
-          current_var_type = VAR_DOUBLE;
-          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
-          $$ = create_array_declaration_node($3, $5, current_var_type);
-        }
-    | optional_modifiers YAP IDENTIFIER LBRACKET INT_LITERAL RBRACKET
-        {
-          current_var_type = VAR_CHAR;
-          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
-          $$ = create_array_declaration_node($3, $5, current_var_type);
-        }
-    | optional_modifiers CAP IDENTIFIER LBRACKET INT_LITERAL RBRACKET
-        {
-          current_var_type = VAR_BOOL;
-          set_array_variable($3, $5, get_current_modifiers(), current_var_type);
-          $$ = create_array_declaration_node($3, $5, current_var_type);
-        }
-    | optional_modifiers SMOL IDENTIFIER
-        { 
-            current_var_type = VAR_SHORT;
-            $$ = create_assignment_node($3, create_short_node(0)); 
-        }
-    | optional_modifiers SMOL IDENTIFIER EQUALS expression
-        { 
-            current_var_type = VAR_SHORT;
-            $$ = create_assignment_node($3, $5); 
-        }
-    | optional_modifiers CHAD IDENTIFIER
-        { 
-            current_var_type = VAR_FLOAT;
-            $$ = create_assignment_node($3, create_float_node(0.0f)); 
-        }
-    | optional_modifiers CHAD IDENTIFIER EQUALS expression
-        { 
-            current_var_type = VAR_FLOAT;
-            $$ = create_assignment_node($3, $5); 
-        }
-    | optional_modifiers GIGACHAD IDENTIFIER
-        { 
-            current_var_type = VAR_DOUBLE;
-            $$ = create_assignment_node($3, create_double_node(0.0L)); 
-        }
-    | optional_modifiers GIGACHAD IDENTIFIER EQUALS expression
-        { 
-            current_var_type = VAR_DOUBLE;
-            $$ = create_assignment_node($3, $5); 
-        }
-    |  optional_modifiers YAP IDENTIFIER
-        { 
-            current_var_type = VAR_CHAR;
-            $$ = create_assignment_node($3, create_char_node(0)); 
-        }
-    | optional_modifiers YAP IDENTIFIER EQUALS expression
-        { 
-            current_var_type = VAR_CHAR;
-            $$ = create_assignment_node($3, $5); 
-        }
-    | optional_modifiers CAP IDENTIFIER
-        { 
-            current_var_type = VAR_BOOL; 
-            $$ = create_assignment_node($3, create_boolean_node(0)); 
-        }
-    | optional_modifiers CAP IDENTIFIER EQUALS expression
-        { 
-            current_var_type = VAR_BOOL;  
-            $$ = create_assignment_node($3, $5); 
+            set_array_variable($3, $5, get_current_modifiers(), $2);
+            $$ = create_array_declaration_node($3, $5, $2);
         }
     ;
 
@@ -393,91 +326,89 @@ return_statement:
     ;
 
 expression:
-      INT_LITERAL
-        { $$ = create_int_node($1); }
-    | FLOAT_LITERAL
-        { $$ = create_float_node($1); } 
-    | DOUBLE_LITERAL
-        { $$ = create_double_node($1); } 
-    | CHAR
-        { $$ = create_char_node($1); }
-    | SHORT_LITERAL
-        { $$ = create_short_node($1); }
-    | BOOLEAN
-        { $$ = create_boolean_node($1); }
-    | IDENTIFIER
-        { $$ = create_identifier_node($1); }
-    | SIZEOF LPAREN IDENTIFIER RPAREN
-        { $$ = create_sizeof_node($3); }
-    | IDENTIFIER EQUALS expression
-        { $$ = create_assignment_node($1, $3); }
-    | expression PLUS expression
-        { $$ = create_operation_node(OP_PLUS, $1, $3); }
-    | expression MINUS expression
-        { $$ = create_operation_node(OP_MINUS, $1, $3); }
-    | expression TIMES expression
-        { $$ = create_operation_node(OP_TIMES, $1, $3); }
-    | expression DIVIDE expression
-        { $$ = create_operation_node(OP_DIVIDE, $1, $3); }
-    | expression MOD expression
-        { $$ = create_operation_node(OP_MOD, $1, $3); }
-    | expression LT expression
-        { $$ = create_operation_node(OP_LT, $1, $3); }
-    | expression GT expression
-        { $$ = create_operation_node(OP_GT, $1, $3); }
-    | expression LE expression
-        { $$ = create_operation_node(OP_LE, $1, $3); }
-    | expression GE expression
-        { $$ = create_operation_node(OP_GE, $1, $3); }
-    | expression EQ expression
-        { $$ = create_operation_node(OP_EQ, $1, $3); }
-    | expression NE expression
-        { $$ = create_operation_node(OP_NE, $1, $3); }
-    | expression AND expression
-        { $$ = create_operation_node(OP_AND, $1, $3); }
-    | expression OR expression
-        { $$ = create_operation_node(OP_OR, $1, $3); }
-    | MINUS expression %prec UMINUS
-        { $$ = create_unary_operation_node(OP_NEG, $2); }
-    | LPAREN expression RPAREN
-        { $$ = $2; }
-    | STRING_LITERAL
-        { $$ = create_string_literal_node($1); }
-    | expression INC %prec LOWER_THAN_ELSE
-          {
-              $$ = create_unary_operation_node(OP_POST_INC, $1);  // Post-increment
-          }
-    | expression DEC %prec LOWER_THAN_ELSE
-          {
-              $$ = create_unary_operation_node(OP_POST_DEC, $1);  // Post-decrement
-          }
-    | INC expression %prec LOWER_THAN_ELSE
-          {
-              $$ = create_unary_operation_node(OP_PRE_INC, $2);   // Pre-increment
-          }
-    | DEC expression %prec LOWER_THAN_ELSE
-          {
-              $$ = create_unary_operation_node(OP_PRE_DEC, $2);   // Pre-decrement
-          }
-    | IDENTIFIER LBRACKET expression RBRACKET 
-        {
-           $$ = create_array_access_node($1, $3);
-        }
-    | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
-    {
-        ASTNode *access = create_array_access_node($1, $3);
-        ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node) {
-            yyerror("Memory allocation failed");
-            exit(1);
-        }
-        node->type = NODE_ASSIGNMENT;
-        node->data.op.left = access;  // Keep the entire array access node
-        node->data.op.right = $6;
-        node->data.op.op = OP_ASSIGN;
-        $$ = node;
-    }
+      literal
+    | identifier
+    | assignment
+    | binary_operation
+    | unary_operation
+    | parentheses
+    | array_access
+    | sizeof_expression
     ;
+
+sizeof_expression:
+        SIZEOF LPAREN IDENTIFIER RPAREN{ $$ = create_sizeof_node($3); }
+    ;
+literal:
+      INT_LITERAL        { $$ = create_int_node($1); }
+    | FLOAT_LITERAL      { $$ = create_float_node($1); }
+    | DOUBLE_LITERAL     { $$ = create_double_node($1); }
+    | CHAR               { $$ = create_char_node($1); }
+    | SHORT_LITERAL      { $$ = create_short_node($1); }
+    | BOOLEAN            { $$ = create_boolean_node($1); }
+    | STRING_LITERAL     { $$ = create_string_literal_node($1); }
+    ;
+
+identifier:
+      IDENTIFIER         { $$ = create_identifier_node($1); }
+    ;
+
+assignment:
+      IDENTIFIER EQUALS expression
+        { $$ = create_assignment_node($1, $3); }
+    | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
+        {
+                ASTNode *access = create_array_access_node($1, $3);
+            ASTNode *node = malloc(sizeof(ASTNode));
+            if (!node) {
+                yyerror("Memory allocation failed");
+                exit(1);
+            }
+            node->type = NODE_ASSIGNMENT;
+            node->data.op.left = access;  // Keep the entire array access node
+            node->data.op.right = $6;
+            node->data.op.op = OP_ASSIGN;
+        $$ = node;
+        }
+    ;
+
+binary_operation:
+      expression PLUS expression       { $$ = create_operation_node(OP_PLUS, $1, $3); }
+    | expression MINUS expression      { $$ = create_operation_node(OP_MINUS, $1, $3); }
+    | expression TIMES expression      { $$ = create_operation_node(OP_TIMES, $1, $3); }
+    | expression DIVIDE expression     { $$ = create_operation_node(OP_DIVIDE, $1, $3); }
+    | expression MOD expression        { $$ = create_operation_node(OP_MOD, $1, $3); }
+    | expression LT expression         { $$ = create_operation_node(OP_LT, $1, $3); }
+    | expression GT expression         { $$ = create_operation_node(OP_GT, $1, $3); }
+    | expression LE expression         { $$ = create_operation_node(OP_LE, $1, $3); }
+    | expression GE expression         { $$ = create_operation_node(OP_GE, $1, $3); }
+    | expression EQ expression         { $$ = create_operation_node(OP_EQ, $1, $3); }
+    | expression NE expression         { $$ = create_operation_node(OP_NE, $1, $3); }
+    | expression AND expression        { $$ = create_operation_node(OP_AND, $1, $3); }
+    | expression OR expression         { $$ = create_operation_node(OP_OR, $1, $3); }
+    ;
+
+unary_operation:
+      MINUS expression %prec UMINUS    { $$ = create_unary_operation_node(OP_NEG, $2); }
+    | INC expression %prec LOWER_THAN_ELSE
+        { $$ = create_unary_operation_node(OP_PRE_INC, $2); }
+    | DEC expression %prec LOWER_THAN_ELSE
+        { $$ = create_unary_operation_node(OP_PRE_DEC, $2); }
+    | expression INC %prec LOWER_THAN_ELSE
+        { $$ = create_unary_operation_node(OP_POST_INC, $1); }
+    | expression DEC %prec LOWER_THAN_ELSE
+        { $$ = create_unary_operation_node(OP_POST_DEC, $1); }
+    ;
+
+parentheses:
+      LPAREN expression RPAREN         { $$ = $2; }
+    ;
+
+array_access:
+      IDENTIFIER LBRACKET expression RBRACKET
+        { $$ = create_array_access_node($1, $3); }
+    ;
+
 
 
 %%

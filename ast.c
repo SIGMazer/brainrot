@@ -2753,3 +2753,18 @@ void bruh()
 {
     LONGJMP();
 }
+
+ASTNode* create_default_node(VarType var_type) {
+    switch (var_type) {
+        case VAR_INT: return create_int_node(0);
+        case VAR_FLOAT: return create_float_node(0.0f);
+        case VAR_DOUBLE: return create_double_node(0.0);
+        case VAR_SHORT: return create_short_node(0);
+        case VAR_CHAR: return create_char_node('\0');
+        case VAR_BOOL: return create_boolean_node(0);
+        default:
+            yyerror("Unsupported type for default node");
+            exit(1);
+    }
+}
+
