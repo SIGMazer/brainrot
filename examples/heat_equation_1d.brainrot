@@ -1,0 +1,50 @@
+skibidi main {
+    rizz N = 50;
+    gigachad u[50];
+    gigachad u_new[50];
+    rizz i;
+    rizz t;
+    rizz timesteps = 100;
+    
+    🚽 Initialize array
+    flex (i = 0; i < N; i = i + 1) {
+        edgy ((i > 16) && (i < 33)) {
+            u[i] = 100.0;
+        } amogus {
+            u[i] = 0.0;
+        }
+    }
+    
+    🚽 Time evolution using just comparisons
+    flex (t = 0; t < timesteps; t = t + 1) {
+        edgy (t % 10 == 0) {
+            yapping("Timestep %d: ", t);
+            flex (i = 0; i < N; i = i + 1) {
+                yapping("%lf", u[i]);
+            }
+            yapping("");
+        }
+        
+        🚽 Update interior points using only assignments
+        flex (i = 1; i < N-1; i = i + 1) {
+            edgy (u[i+1] > u[i]) {
+                u_new[i] = u[i] + 1.0;  🚽 If right neighbor is higher, increase slightly
+            } amogus edgy (u[i-1] > u[i]) {
+                u_new[i] = u[i] + 1.0;  🚽 If left neighbor is higher, increase slightly
+            } amogus edgy ((u[i-1] < u[i]) && (u[i+1] < u[i])) {
+                u_new[i] = u[i] - 1.0;  🚽 If both neighbors are lower, decrease slightly
+            } amogus {
+                u_new[i] = u[i];  🚽 Otherwise keep same value
+            }
+        }
+        
+        u_new[0] = 0.0;
+        u_new[N-1] = 0.0;
+        
+        flex (i = 0; i < N; i = i + 1) {
+            u[i] = u_new[i];
+        }
+    }
+    
+    bussin 0;
+}
