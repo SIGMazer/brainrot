@@ -109,6 +109,13 @@ skibidi main {
 ./brainrot < hello.brainrot
 ```
 
+Check out the [examples](examples/README.md):
+
+- [Hello world](examples/hello_world.brainrot)
+- [Fizz Buzz](examples/fizz_buzz.brainrot)
+- [Bubble Sort](examples/bubble_sort.brainrot)
+- [One-dimensional Heat Equation Solver](examples/heat_equation_1d.brainrot)
+
 ## 🗪 Community
 
 Join our community on [Discord](https://discord.gg/FjHhvBHSGj).

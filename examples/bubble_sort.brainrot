@@ -1,0 +1,43 @@
+skibidi main {
+    rizz arr[10];
+    rizz i;
+    rizz j;
+    rizz temp;
+    
+    🚽 Initialize array with some unsorted numbers
+    arr[0] = 64;
+    arr[1] = 34;
+    arr[2] = 25;
+    arr[3] = 12;
+    arr[4] = 22;
+    arr[5] = 11;
+    arr[6] = 90;
+    arr[7] = 42;
+    arr[8] = 15;
+    arr[9] = 77;
+    
+    🚽 Print original array
+    yapping("Original array: ");
+    flex (i = 0; i < 10; i = i + 1) {
+        yapping("%d ", arr[i]);
+    }
+    
+    🚽 Bubble sort
+    flex (i = 0; i < 9; i = i + 1) {
+        flex (j = 0; j < 9 - i; j = j + 1) {
+            edgy (arr[j] > arr[j + 1]) {
+                temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+    
+    🚽 Print sorted array
+    yapping("Sorted array: ");
+    flex (i = 0; i < 10; i = i + 1) {
+        yapping("%d ", arr[i]);
+    }
+    
+    bussin 0;
+}

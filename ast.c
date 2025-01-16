@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-
 static JumpBuffer *jump_buffer = {0};
 
 TypeModifiers current_modifiers = {false, false, false, false, false};
@@ -566,12 +565,24 @@ int get_expression_type(ASTNode *node)
         return VAR_INT;
     case NODE_ARRAY_ACCESS:
     {
-        // Look up the array's type in the symbol table
+        // First, get the array's base type from symbol table
         const char *array_name = node->data.array.name;
         for (int i = 0; i < var_count; i++)
         {
             if (strcmp(symbol_table[i].name, array_name) == 0)
             {
+                // Found the array, now handle the index expression
+                ASTNode *index_expr = node->data.array.index;
+
+                // Recursively evaluate index expression type
+                int index_type = get_expression_type(index_expr);
+                if (index_type != VAR_INT && index_type != VAR_SHORT)
+                {
+                    yyerror("Array index must be an integer type");
+                    return NONE;
+                }
+
+                // Return the array's element type
                 return symbol_table[i].var_type;
             }
         }
@@ -631,6 +642,17 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     int left_type = get_expression_type(node->data.op.left);
     int right_type = get_expression_type(node->data.op.right);
 
+    if (node->data.op.left->type == NODE_ARRAY_ACCESS)
+    {
+        // Get value using array_access evaluation
+        left_value = evaluate_array_access(node->data.op.left);
+    }
+    if (node->data.op.right->type == NODE_ARRAY_ACCESS)
+    {
+        // Get value using array_access evaluation
+        right_value = evaluate_array_access(node->data.op.right);
+    }
+
     // Promote types if necessary (short -> int -> float -> double).
     int promoted_type = VAR_SHORT;
     if (left_type == VAR_DOUBLE || right_type == VAR_DOUBLE)
@@ -681,7 +703,6 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         *(short *)left_value = evaluate_expression_short(node->data.op.left);
         *(short *)right_value = evaluate_expression_short(node->data.op.right);
         break;
-    
 
     default:
         yyerror("Unsupported type promotion");
@@ -712,7 +733,7 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         else if (promoted_type == VAR_FLOAT)
             *(float *)result = *(float *)left_value - *(float *)right_value;
         else if (promoted_type == VAR_DOUBLE)
-            *(double *) result= *(double *)left_value - *(double *)right_value;
+            *(double *)result = *(double *)left_value - *(double *)right_value;
         else if (promoted_type == VAR_SHORT)
             *(short *)result = *(short *)left_value - *(short *)right_value;
 
@@ -1351,9 +1372,9 @@ short evaluate_expression_short(ASTNode *node)
                            ? *(short *)result
                        : (result_type == VAR_FLOAT)
                            ? (short)(*(float *)result)
-                           : (result_type == VAR_DOUBLE)
-                               ? (short)(*(double *)result)
-                               : (short)(*(int *)result);
+                       : (result_type == VAR_DOUBLE)
+                           ? (short)(*(double *)result)
+                           : (short)(*(int *)result);
         free(result);
         return result_short;
     }
@@ -2754,17 +2775,72 @@ void bruh()
     LONGJMP();
 }
 
-ASTNode* create_default_node(VarType var_type) {
-    switch (var_type) {
-        case VAR_INT: return create_int_node(0);
-        case VAR_FLOAT: return create_float_node(0.0f);
-        case VAR_DOUBLE: return create_double_node(0.0);
-        case VAR_SHORT: return create_short_node(0);
-        case VAR_CHAR: return create_char_node('\0');
-        case VAR_BOOL: return create_boolean_node(0);
-        default:
-            yyerror("Unsupported type for default node");
-            exit(1);
+ASTNode *create_default_node(VarType var_type)
+{
+    switch (var_type)
+    {
+    case VAR_INT:
+        return create_int_node(0);
+    case VAR_FLOAT:
+        return create_float_node(0.0f);
+    case VAR_DOUBLE:
+        return create_double_node(0.0);
+    case VAR_SHORT:
+        return create_short_node(0);
+    case VAR_CHAR:
+        return create_char_node('\0');
+    case VAR_BOOL:
+        return create_boolean_node(0);
+    default:
+        yyerror("Unsupported type for default node");
+        exit(1);
     }
 }
 
+void *evaluate_array_access(ASTNode *node)
+{
+    if (!node || node->type != NODE_ARRAY_ACCESS)
+    {
+        yyerror("Invalid array access node");
+        return NULL;
+    }
+
+    const char *array_name = node->data.array.name;
+    int idx = evaluate_expression_int(node->data.array.index);
+
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(symbol_table[i].name, array_name) == 0)
+        {
+            if (!symbol_table[i].is_array)
+            {
+                yyerror("Not an array!");
+                return NULL;
+            }
+            if (idx < 0 || idx >= symbol_table[i].array_length)
+            {
+                yyerror("Array index out of bounds!");
+                return NULL;
+            }
+
+            // Allocate and return value based on type
+            void *result = malloc(sizeof(double)); // Use largest possible type
+            switch (symbol_table[i].var_type)
+            {
+            case VAR_DOUBLE:
+                *(double *)result = symbol_table[i].value.darray[idx];
+                break;
+            case VAR_FLOAT:
+                *(double *)result = (double)symbol_table[i].value.farray[idx];
+                break;
+            case VAR_INT:
+                *(double *)result = (double)symbol_table[i].value.iarray[idx];
+                break;
+                // ... handle other types ...
+            }
+            return result;
+        }
+    }
+    yyerror("Undefined array variable");
+    return NULL;
+}
