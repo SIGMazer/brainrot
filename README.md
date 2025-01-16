@@ -212,11 +212,6 @@ This project is licensed under the GPL License - see the LICENSE file for detail
 - Inspired by meme culture and internet slang
 - Built using Flex and Bison tools
 
-## 🐛 Known Issues
-
-1. Error reporting is minimal
-2. No support for arrays
-3. Limited string manipulation capabilities
-4. No support for complex control structures
+## 🐛 Issues
 
 Please report any additional issues in the GitHub Issues section.
