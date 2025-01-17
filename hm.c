@@ -54,7 +54,7 @@ void dump(HashMap *hm)
     for (size_t i = 0; i < hm->capacity; i++) {
         if (hm->nodes[i]) {
             Variable *v = (Variable *)hm->nodes[i]->value;
-            printf("key: %s, value: %s\n", hm->nodes[i]->key, v->name);
+            printf("key: %s, value: %s, is_array: %s\n", hm->nodes[i]->key, v->name, v->is_array ? "true" : "false");
         }
     }
 }
@@ -78,6 +78,7 @@ void hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_s
     if (hm->size >= hm->capacity * LOAD_FACTOR) {
         hm_resize(hm);
     }
+    Variable *v = (Variable *)value;
     size_t index = fnv1a_hash(key, key_size) % hm->capacity;
     while (hm->nodes[index]) {
         HashMapNode *node = hm->nodes[index];

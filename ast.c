@@ -21,9 +21,8 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
     Variable *var = hm_get(symbol_table, name, strlen(name));
     if (var != NULL)
     {
-
-            switch (type)
-            {
+        switch (type)
+        {
             case VAR_INT:
                 var->value.ivalue = *(int *)value;
                 break;
@@ -42,11 +41,11 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
             case VAR_CHAR:
                 var->value.ivalue = *(char *)value;
                 break;
-            }
-            return true;
         }
+        return true;
+    }
     // Add a new variable if it doesn't exist
-    var = malloc(sizeof(Variable)); 
+    var = calloc(1,sizeof(Variable)); 
     if (symbol_table->size < MAX_VARS)
     {
         var->name = strdup(name);
@@ -77,6 +76,8 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
             break;
         }
         hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
+        free(var->name);
+        free(var);
         return true;
     }
     return false; // Symbol table is full
@@ -93,6 +94,33 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
     Variable *var = hm_get(symbol_table, name, strlen(name));
     if (var != NULL)
     {
+        if (var->is_array)
+        {
+            // free the old array
+            switch (var->var_type)
+            {
+                case VAR_INT:
+                    free(var->value.iarray);
+                    break;
+                case VAR_SHORT:
+                    free(var->value.sarray);
+                    break;
+                case VAR_FLOAT:
+                    free(var->value.farray);
+                    break;
+                case VAR_DOUBLE:
+                    free(var->value.darray);
+                    break;
+                case VAR_BOOL:
+                    free(var->value.barray);
+                    break;
+                case VAR_CHAR:
+                    free(var->value.carray);
+                    break;
+                default:
+                    break;
+            }
+        }
         var->var_type = type;
         var->is_array = true;
         var->array_length = length;
@@ -130,7 +158,7 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
     }
 
     // not found => create new
-    var = malloc(sizeof(Variable));
+    var = calloc(1,sizeof(Variable));
     if (symbol_table->size < MAX_VARS)
     {
         var->name = strdup(name);
@@ -168,6 +196,8 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
                 break;
         }
         hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
+        free(var->name);
+        free(var);
         return true;
     }
     return false; // no space
@@ -336,6 +366,7 @@ ASTNode *create_array_access_node(char *name, ASTNode *index)
 
     // Look up and set the array's type from the symbol table
     Variable *var = hm_get(symbol_table, name, strlen(name));
+    free((void *)name);
     if(var != NULL)
     {
         node->var_type = var->var_type;
@@ -626,16 +657,6 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     int left_type = get_expression_type(node->data.op.left);
     int right_type = get_expression_type(node->data.op.right);
 
-    if (node->data.op.left->type == NODE_ARRAY_ACCESS)
-    {
-        // Get value using array_access evaluation
-        left_value = evaluate_array_access(node->data.op.left);
-    }
-    if (node->data.op.right->type == NODE_ARRAY_ACCESS)
-    {
-        // Get value using array_access evaluation
-        right_value = evaluate_array_access(node->data.op.right);
-    }
 
     // Promote types if necessary (short -> int -> float -> double).
     int promoted_type = VAR_SHORT;
@@ -1907,6 +1928,7 @@ void execute_assignment(ASTNode *node)
     if (node->type != NODE_ASSIGNMENT)
     {
         yyerror("Expected assignment node");
+        free_ast(node);
         return;
     }
 
@@ -1929,11 +1951,13 @@ void execute_assignment(ASTNode *node)
             if (!var->is_array)
             {
                 yyerror("Not an array!");
+                free_ast(node);
                 return;
             }
             if (idx < 0 || idx >= var->array_length)
             {
                 yyerror("Array index out of bounds!");
+                free_ast(node);
                 return;
             }
 
@@ -1954,11 +1978,14 @@ void execute_assignment(ASTNode *node)
                     break;
                 default:
                     yyerror("Unsupported array type");
+                    free_ast(node);
                     return;
             }
+            free_ast(node);
             return;
         }
         yyerror("Undefined array variable");
+        free_ast(node);
         return;
     }
 
@@ -1978,6 +2005,7 @@ void execute_assignment(ASTNode *node)
             {
                 yyerror("Failed to set integer variable");
             }
+            free_ast(node);
             return;
         }
     }
@@ -2014,6 +2042,7 @@ void execute_assignment(ASTNode *node)
             yyerror("Failed to set integer variable");
         }
     }
+    free_ast(node);
 }
 
 void execute_statement(ASTNode *node)
@@ -2948,5 +2977,24 @@ void populate_array_varialbe(char* name, ExpressionList* list)
     }
     yyerror("Undefined array variable");
 
+}
+
+void free_ast(ASTNode *node)
+{
+    if (!node) return;
+
+    // Free left and right child nodes if they exist
+    free_ast(node->data.op.left);
+    free_ast(node->data.op.right);
+
+    // Free dynamically allocated data (e.g., names or array data)
+    if (node->data.name) free(node->data.name);
+    if (node->type == NODE_ARRAY_ACCESS && node->data.array.name)
+    {
+        free(node->data.array.name);
+    }
+
+    // Free the node itself
+    free(node);
 }
 
