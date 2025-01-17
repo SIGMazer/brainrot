@@ -165,6 +165,23 @@ struct ArgumentList
     struct ArgumentList *next;
 };
 
+/* HashMap structures  */
+typedef struct
+{
+    void* key;
+    void* value;
+    size_t key_size;
+    size_t value_size;
+} HashMapNode;
+
+typedef struct
+{
+    HashMapNode** nodes;
+    size_t size;
+    size_t capacity;
+} HashMap;
+
+
 /* AST node structure */
 struct ASTNode
 {
@@ -233,7 +250,7 @@ struct ASTNode
 
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
-extern Variable symbol_table[MAX_VARS];
+extern HashMap *symbol_table; 
 extern int var_count;
 
 /* Function prototypes */
@@ -311,6 +328,12 @@ bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
 size_t count_expression_list(ExpressionList* list);
 size_t handle_sizeof(ASTNode *node);
+
+/* Hash Map fucntions */
+
+HashMap* hm_new();
+void  hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_size);
+void* hm_get(HashMap *hm, const void *key, size_t key_size);
 
 extern TypeModifiers current_modifiers;
 
