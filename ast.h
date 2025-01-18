@@ -3,6 +3,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include "lib/hm.h"
+#include "lib/mem.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -165,23 +167,6 @@ struct ArgumentList
     struct ArgumentList *next;
 };
 
-/* HashMap structures  */
-typedef struct
-{
-    void* key;
-    void* value;
-    size_t key_size;
-    size_t value_size;
-} HashMapNode;
-
-typedef struct
-{
-    HashMapNode** nodes;
-    size_t size;
-    size_t capacity;
-} HashMap;
-
-
 /* AST node structure */
 struct ASTNode
 {
@@ -250,7 +235,7 @@ struct ASTNode
 
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
-extern HashMap *symbol_table; 
+extern HashMap *symbol_table;
 extern int var_count;
 
 /* Function prototypes */
@@ -292,11 +277,11 @@ CaseNode *create_case_node(ASTNode *value, ASTNode *statements);
 CaseNode *create_default_case_node(ASTNode *statements);
 CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
-ASTNode* create_default_node(VarType var_type);
-ExpressionList* create_expression_list(ASTNode* expr);
-ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr);
-void free_expression_list(ExpressionList* list);
-void populate_array_varialbe(char* name, ExpressionList* list);
+ASTNode *create_default_node(VarType var_type);
+ExpressionList *create_expression_list(ASTNode *expr);
+ExpressionList *append_expression_list(ExpressionList *list, ASTNode *expr);
+void free_expression_list(ExpressionList *list);
+void populate_array_variable(char *name, ExpressionList *list);
 void free_ast(ASTNode *node);
 
 /* Evaluation and execution functions */
@@ -327,14 +312,9 @@ void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
-size_t count_expression_list(ExpressionList* list);
+size_t count_expression_list(ExpressionList *list);
 size_t handle_sizeof(ASTNode *node);
-
-/* Hash Map fucntions */
-
-HashMap* hm_new();
-void  hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_size);
-void* hm_get(HashMap *hm, const void *key, size_t key_size);
+size_t get_type_size(char *name);
 
 extern TypeModifiers current_modifiers;
 

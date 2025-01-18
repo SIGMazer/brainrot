@@ -219,22 +219,29 @@ declaration:
         }
     | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET
         {
-            set_array_variable($3, $5, get_current_modifiers(), $2);
+            if (!set_array_variable($3, $5, get_current_modifiers(), $2))
+            {
+                yyerror("Failed to create array");
+                YYABORT;
+            }
             $$ = create_array_declaration_node($3, $5, $2);
         }
     | optional_modifiers type IDENTIFIER LBRACKET RBRACKET EQUALS array_init
         {
             set_array_variable($3, count_expression_list($7), get_current_modifiers(), $2);
-            populate_array_varialbe($3, $7);
+            populate_array_variable($3, $7);
             $$ = create_array_declaration_node($3, count_expression_list($7), $2);
             free_expression_list($7);
         }
     | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET EQUALS array_init
         {
+            ASTNode *node = create_array_declaration_node($3, $5, $2);
             set_array_variable($3, $5, get_current_modifiers(), $2);
-            populate_array_varialbe($3, $8);
-            $$ = create_array_declaration_node($3, $5, $2);
-            free_expression_list($8);
+            if ($8) {  // Only try to populate if we have initializer
+                populate_array_variable($3, $8);
+                free_expression_list($8);  // Free after populating
+            }
+            $$ = node;
         }
     ;
 
@@ -484,7 +491,7 @@ void baka(const char* format, ...) {
 }
 
 TypeModifiers get_variable_modifiers(const char* name) {
-    TypeModifiers mods = {false, false, false};  // Default modifiers
+    TypeModifiers mods = {false, false, false, false};  // Default modifiers
     Variable *var = hm_get(symbol_table, name, strlen(name));
     if (var != NULL) {
         return var->modifiers;

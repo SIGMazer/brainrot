@@ -16,13 +16,15 @@
 // Alignment requirement for the platform
 #define ALIGNMENT sizeof(void *)
 
-static void *handle_malloc_error(size_t size);
-static size_t align_size(size_t size);
+void *handle_malloc_error(size_t size);
+size_t align_size(size_t size);
 void *safe_malloc(size_t size);
-static size_t align_size(size_t size);
-static void *handle_malloc_error(size_t size);
+size_t align_size(size_t size);
+void *handle_malloc_error(size_t size);
 void *safe_malloc_array(size_t nmemb, size_t size);
 void safe_free(void **ptr);
+void *safe_memcpy(void *dest, const void *src, size_t n);
+char *safe_strdup(const char *str);
 
 // Convenience macro for type-safe allocation
 #define SAFE_MALLOC(type) ((type *)safe_malloc(sizeof(type)))
