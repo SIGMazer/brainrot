@@ -20,27 +20,26 @@ extern VarType current_var_type;
 
 /* Fix get_variable function: */
 Value get_variable(char *name) {
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(symbol_table[i].name, name) == 0) {
-            if (symbol_table[i].modifiers.is_volatile) {
-                asm volatile("" ::: "memory");
-            }
-            switch (symbol_table[i].var_type) {
-                case VAR_INT:
-                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
-                case VAR_SHORT:
-                    return (Value) { .svalue = symbol_table[i].value.svalue };
-                case VAR_FLOAT:
-                    return (Value) { .fvalue = symbol_table[i].value.fvalue };
-                case VAR_DOUBLE:
-                    return (Value) { .dvalue = symbol_table[i].value.dvalue };
-                case VAR_BOOL:
-                    return (Value) { .bvalue = symbol_table[i].value.bvalue };
-                case VAR_CHAR:
-                    return (Value) { .ivalue = symbol_table[i].value.ivalue };
-            }
-
+    Variable *var = hm_get(symbol_table, name, strlen(name));
+    if (var != NULL) {
+        if (var->modifiers.is_volatile) {
+            asm volatile("" ::: "memory");
         }
+        switch (var->var_type) {
+            case VAR_INT:
+                return (Value) { .ivalue = var->value.ivalue };
+            case VAR_SHORT:
+                return (Value) { .svalue = var->value.svalue };
+            case VAR_FLOAT:
+                return (Value) { .fvalue = var->value.fvalue };
+            case VAR_DOUBLE:
+                return (Value) { .dvalue = var->value.dvalue };
+            case VAR_BOOL:
+                return (Value) { .bvalue = var->value.bvalue };
+            case VAR_CHAR:
+                return (Value) { .ivalue = var->value.ivalue };
+        }
+
     }
     yyerror("Undefined variable");
     exit(1);
@@ -127,7 +126,7 @@ ASTNode *root = NULL;
 
 program:
     skibidi_function
-        { root = $1; }
+        {root = $1; }
     ;
 
 skibidi_function:
@@ -386,7 +385,7 @@ assignment:
         { $$ = create_assignment_node($1, $3); }
     | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
         {
-                ASTNode *access = create_array_access_node($1, $3);
+            ASTNode *access = create_array_access_node($1, $3);
             ASTNode *node = malloc(sizeof(ASTNode));
             if (!node) {
                 yyerror("Memory allocation failed");
@@ -442,6 +441,7 @@ array_access:
 %%
 
 int main(void) {
+    symbol_table = hm_new();
     if (yyparse() == 0) {
         execute_statement(root);
     }
@@ -485,10 +485,9 @@ void baka(const char* format, ...) {
 
 TypeModifiers get_variable_modifiers(const char* name) {
     TypeModifiers mods = {false, false, false};  // Default modifiers
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(symbol_table[i].name, name) == 0) {
-            return symbol_table[i].modifiers;
-        }
+    Variable *var = hm_get(symbol_table, name, strlen(name));
+    if (var != NULL) {
+        return var->modifiers;
     }
     return mods;  // Return default modifiers if not found
 }

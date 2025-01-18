@@ -165,6 +165,23 @@ struct ArgumentList
     struct ArgumentList *next;
 };
 
+/* HashMap structures  */
+typedef struct
+{
+    void* key;
+    void* value;
+    size_t key_size;
+    size_t value_size;
+} HashMapNode;
+
+typedef struct
+{
+    HashMapNode** nodes;
+    size_t size;
+    size_t capacity;
+} HashMap;
+
+
 /* AST node structure */
 struct ASTNode
 {
@@ -233,7 +250,7 @@ struct ASTNode
 
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
-extern Variable symbol_table[MAX_VARS];
+extern HashMap *symbol_table; 
 extern int var_count;
 
 /* Function prototypes */
@@ -280,6 +297,7 @@ ExpressionList* create_expression_list(ASTNode* expr);
 ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr);
 void free_expression_list(ExpressionList* list);
 void populate_array_varialbe(char* name, ExpressionList* list);
+void free_ast(ASTNode *node);
 
 /* Evaluation and execution functions */
 void *evaluate_array_access(ASTNode *node);
@@ -312,6 +330,12 @@ void bruh();
 size_t count_expression_list(ExpressionList* list);
 size_t handle_sizeof(ASTNode *node);
 
+/* Hash Map fucntions */
+
+HashMap* hm_new();
+void  hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_size);
+void* hm_get(HashMap *hm, const void *key, size_t key_size);
+
 extern TypeModifiers current_modifiers;
 
 /* Macros for assigning specific fields to a node */
@@ -320,7 +344,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_FLOAT(node, value) ((node)->data.fvalue = (value))
 #define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
 #define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
-#define SET_DATA_NAME(node, n) ((node)->data.name = strdup(n))
+#define SET_DATA_NAME(node, n) ((node)->data.name = strdup(n), free(n))
 #define SET_SIZEOF(node, n) ((node)->data.sizeof_stmt.expr = (n))
 #define SET_DATA_OP(node, l, r, opr) \
     do                               \
