@@ -1,7 +1,7 @@
 all:
 	bison -d -Wcounterexamples lang.y -o lang.tab.c
 	flex lang.l
-	gcc -o brainrot hm.c lang.tab.c lex.yy.c ast.c -lfl -lm
+	gcc -o brainrot lib/hm.c lang.tab.c lex.yy.c ast.c -lfl -lm
 
 test:
 	pytest -v
