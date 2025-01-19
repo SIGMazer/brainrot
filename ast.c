@@ -776,7 +776,7 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             if (*(int *)right_value == 0)
             {
                 yyerror("Division by zero");
-                *(int *)result = 0; // Define a fallback behavior for int division by zero
+                exit(EXIT_FAILURE);
             }
             else
             {
@@ -830,7 +830,7 @@ void *handle_binary_operation(ASTNode *node, int result_type)
             if (*(short *)right_value == 0)
             {
                 yyerror("Division by zero");
-                *(short *)result = 0; // Define a fallback behavior for short division by zero
+                exit(EXIT_FAILURE);
             }
             else
             {
