@@ -380,11 +380,11 @@ literal:
     | CHAR               { $$ = create_char_node($1); }
     | SHORT_LITERAL      { $$ = create_short_node($1); }
     | BOOLEAN            { $$ = create_boolean_node($1); }
-    | STRING_LITERAL     { $$ = create_string_literal_node($1); }
+    | STRING_LITERAL     { $$ = create_string_literal_node($1); free($1);}
     ;
 
 identifier:
-      IDENTIFIER         { $$ = create_identifier_node($1); }
+      IDENTIFIER         { $$ = create_identifier_node($1); free($1);  }
     ;
 
 assignment:
@@ -452,12 +452,18 @@ int main(void) {
     if (yyparse() == 0) {
         execute_statement(root);
     }
+    free_ast(root);
+    hm_free(symbol_table);
     return 0;
 }
 
 void yyerror(const char *s) {
     extern char *yytext;
     fprintf(stderr, "Error: %s at line %d\n", s, yylineno - 1);
+    if(yylval.strval)
+    {
+        free(yylval.strval);
+    }
 }
 
 void ragequit(int exit_code) {
