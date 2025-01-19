@@ -350,7 +350,7 @@ ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
     node->var_type = var_type;
     node->is_array = true;
     node->array_length = length;
-    node->data.array.name= safe_strdup(name);
+    node->data.array.name = safe_strdup(name);
     return node;
 }
 
@@ -2979,7 +2979,6 @@ void populate_array_variable(char *name, ExpressionList *list)
                 return;
             }
 
-
             SAFE_FREE(current->expr);
             current = current->next;
             if (current == list)
@@ -2997,16 +2996,14 @@ void free_statement_list(StatementList *list)
     {
         StatementList *next = list->next;
 
-
         // Free the current list node
-        if(list)
+        if (list)
             SAFE_FREE(list);
 
         // Move to the next node
         list = next;
     }
 }
-
 
 void free_ast(ASTNode *node)
 {
@@ -3015,83 +3012,81 @@ void free_ast(ASTNode *node)
 
     switch (node->type)
     {
-        case NODE_IDENTIFIER:
-            SAFE_FREE(node->data.name);
-            break;
-        case NODE_OPERATION:
-        case NODE_ASSIGNMENT:
-            free_ast(node->data.op.left);
-            free_ast(node->data.op.right);
-            break;
+    case NODE_IDENTIFIER:
+        SAFE_FREE(node->data.name);
+        break;
+    case NODE_OPERATION:
+    case NODE_ASSIGNMENT:
+        free_ast(node->data.op.left);
+        free_ast(node->data.op.right);
+        break;
 
-        case NODE_UNARY_OPERATION:
-            free_ast(node->data.unary.operand);
-            break;
+    case NODE_UNARY_OPERATION:
+        free_ast(node->data.unary.operand);
+        break;
 
-        case NODE_STATEMENT_LIST: {
-              StatementList *sl = node->data.statements;
-              while (sl)
-              {
-                  StatementList *next = sl->next;
-                  free_ast(sl->statement); // Free each statement in the list
-                  SAFE_FREE(sl);          // Free the list node
-                  sl = next;
-              }
-              break;
-          }
-
-        case NODE_FOR_STATEMENT:
-              free_ast(node->data.for_stmt.init);
-              free_ast(node->data.for_stmt.cond);
-              free_ast(node->data.for_stmt.incr);
-              free_ast(node->data.for_stmt.body);
-              break;
-
-        case NODE_WHILE_STATEMENT:
-              free_ast(node->data.while_stmt.cond);
-              free_ast(node->data.while_stmt.body);
-              break;
-
-
-        case NODE_ARRAY_ACCESS:
-              SAFE_FREE(node->data.array.name);
-              free_ast(node->data.array.index); 
-              break;
-
-        case NODE_IF_STATEMENT:
-              free_ast(node->data.if_stmt.condition);
-              free_ast(node->data.if_stmt.then_branch);
-              free_ast(node->data.if_stmt.else_branch);
-              break;
-
-        case NODE_SIZEOF:
-              free_ast(node->data.sizeof_stmt.expr);
-              break;
-
-        case NODE_BREAK_STATEMENT:
-              free_ast(node->data.break_stmt);
-              break;
-        case NODE_FUNC_CALL:
-              SAFE_FREE(node->data.func_call.function_name);
-              ArgumentList *args  = node->data.func_call.arguments;
-              while (args)
-              {
-                  ArgumentList *next = args->next;
-                  free_ast(args->expr); // Free each statement in the list
-                  SAFE_FREE(args);          // Free the list node
-                  args = next;
-              }
-              break;
-        case NODE_STRING_LITERAL:
-                  SAFE_FREE(node->data.name);          // Free the list node
-                  break;
-
-        default:
-              break;
+    case NODE_STATEMENT_LIST:
+    {
+        StatementList *sl = node->data.statements;
+        while (sl)
+        {
+            StatementList *next = sl->next;
+            free_ast(sl->statement); // Free each statement in the list
+            SAFE_FREE(sl);           // Free the list node
+            sl = next;
+        }
+        break;
     }
 
+    case NODE_FOR_STATEMENT:
+        free_ast(node->data.for_stmt.init);
+        free_ast(node->data.for_stmt.cond);
+        free_ast(node->data.for_stmt.incr);
+        free_ast(node->data.for_stmt.body);
+        break;
+
+    case NODE_WHILE_STATEMENT:
+        free_ast(node->data.while_stmt.cond);
+        free_ast(node->data.while_stmt.body);
+        break;
+
+    case NODE_ARRAY_ACCESS:
+        SAFE_FREE(node->data.array.name);
+        free_ast(node->data.array.index);
+        break;
+
+    case NODE_IF_STATEMENT:
+        free_ast(node->data.if_stmt.condition);
+        free_ast(node->data.if_stmt.then_branch);
+        free_ast(node->data.if_stmt.else_branch);
+        break;
+
+    case NODE_SIZEOF:
+        free_ast(node->data.sizeof_stmt.expr);
+        break;
+
+    case NODE_BREAK_STATEMENT:
+        free_ast(node->data.break_stmt);
+        break;
+    case NODE_FUNC_CALL:
+        SAFE_FREE(node->data.func_call.function_name);
+        ArgumentList *args = node->data.func_call.arguments;
+        while (args)
+        {
+            ArgumentList *next = args->next;
+            free_ast(args->expr); // Free each statement in the list
+            SAFE_FREE(args);      // Free the list node
+            args = next;
+        }
+        break;
+    case NODE_STRING_LITERAL:
+        SAFE_FREE(node->data.name); // Free the list node
+        break;
+
+    default:
+        break;
+    }
 
     // Free the node itself
     SAFE_FREE(node);
 }
-
