@@ -26,7 +26,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc flex bison libfl-dev valgrind -y
+          sudo apt-get install gcc flex bison libfl-dev -y
 
       - name: Build Brainrot
         run: |
@@ -59,7 +59,7 @@ jobs:
       - name: Install Python and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install python3 python3-pip -y
+          sudo apt-get install python3 python3-pip valgrind -y
           python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
