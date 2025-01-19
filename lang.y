@@ -1,6 +1,7 @@
 %define parse.error verbose
 %{
 #include "ast.h"
+#include "lib/mem.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,7 @@
 #include <unistd.h>
 
 int yylex(void);
+int yylex_destroy(void);
 void yyerror(const char *s);
 void ragequit(int exit_code);
 void yapping(const char* format, ...);
@@ -211,37 +213,42 @@ type:
 declaration:
     optional_modifiers type IDENTIFIER
         {
-            $$ = create_assignment_node($3, create_default_node($2)); 
+            $$ = create_assignment_node($3, create_default_node($2));
+            SAFE_FREE($3);
         }
     | optional_modifiers type IDENTIFIER EQUALS expression
         {
             $$ = create_assignment_node($3, $5);
+            SAFE_FREE($3);
         }
     | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET
         {
-            if (!set_array_variable($3, $5, get_current_modifiers(), $2))
-            {
+            if (!set_array_variable($3, $5, get_current_modifiers(), $2)) {
                 yyerror("Failed to create array");
+                SAFE_FREE($3);
                 YYABORT;
             }
             $$ = create_array_declaration_node($3, $5, $2);
+            SAFE_FREE($3);
         }
     | optional_modifiers type IDENTIFIER LBRACKET RBRACKET EQUALS array_init
         {
             set_array_variable($3, count_expression_list($7), get_current_modifiers(), $2);
             populate_array_variable($3, $7);
             $$ = create_array_declaration_node($3, count_expression_list($7), $2);
+            SAFE_FREE($3);
             free_expression_list($7);
         }
     | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET EQUALS array_init
         {
             ASTNode *node = create_array_declaration_node($3, $5, $2);
             set_array_variable($3, $5, get_current_modifiers(), $2);
-            if ($8) {  // Only try to populate if we have initializer
+            if ($8) {
                 populate_array_variable($3, $8);
-                free_expression_list($8);  // Free after populating
+                free_expression_list($8);
             }
             $$ = node;
+            SAFE_FREE($3);
         }
     ;
 
@@ -317,7 +324,10 @@ increment:
 
 function_call:
     IDENTIFIER LPAREN arg_list RPAREN
-      { $$ = create_function_call_node($1, $3); }
+      { 
+          $$ = create_function_call_node($1, $3);
+          SAFE_FREE($1);
+      }
     ;
 
 arg_list
@@ -384,25 +394,34 @@ literal:
     ;
 
 identifier:
-      IDENTIFIER         { $$ = create_identifier_node($1); free($1);  }
+      IDENTIFIER         
+        { 
+            $$ = create_identifier_node($1); 
+            SAFE_FREE($1);  
+        }
     ;
 
 assignment:
       IDENTIFIER EQUALS expression
-        { $$ = create_assignment_node($1, $3); }
+        { 
+            $$ = create_assignment_node($1, $3); 
+            SAFE_FREE($1);
+        }
     | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
         {
             ASTNode *access = create_array_access_node($1, $3);
-            ASTNode *node = malloc(sizeof(ASTNode));
+            ASTNode *node = SAFE_MALLOC(ASTNode);
             if (!node) {
                 yyerror("Memory allocation failed");
-                exit(1);
+                SAFE_FREE($1);
+                exit(EXIT_FAILURE);
             }
             node->type = NODE_ASSIGNMENT;
-            node->data.op.left = access;  // Keep the entire array access node
+            node->data.op.left = access;
             node->data.op.right = $6;
             node->data.op.op = OP_ASSIGN;
-        $$ = node;
+            $$ = node;
+            SAFE_FREE($1);
         }
     ;
 
@@ -440,7 +459,10 @@ parentheses:
 
 array_access:
       IDENTIFIER LBRACKET expression RBRACKET
-        { $$ = create_array_access_node($1, $3); }
+        { 
+            $$ = create_array_access_node($1, $3);
+            SAFE_FREE($1);
+        }
     ;
 
 
@@ -454,6 +476,10 @@ int main(void) {
     }
     free_ast(root);
     hm_free(symbol_table);
+    
+    // Clean up flex's internal state
+    yylex_destroy();
+    
     return 0;
 }
 
@@ -462,7 +488,7 @@ void yyerror(const char *s) {
     fprintf(stderr, "Error: %s at line %d\n", s, yylineno - 1);
     if(yylval.strval)
     {
-        free(yylval.strval);
+        SAFE_FREE(yylval.strval);
     }
 }
 

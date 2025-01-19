@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ast.h"
+#include "lib/mem.h"
 #include "lang.tab.h"
 
 VarType current_var_type = NONE;
@@ -152,7 +153,7 @@ extern int yylineno;
     }
 }
 '.' { yylval.ival = yytext[1]; return CHAR; }
-[a-zA-Z_][a-zA-Z0-9_]* { yylval.strval = strdup(yytext); return IDENTIFIER; }
+[a-zA-Z_][a-zA-Z0-9_]* { yylval.strval = safe_strdup(yytext); return IDENTIFIER; }
 \"([^\\\"]|\\.)*\" {
     // Strip the leading and trailing quotes:
     char *raw = (yytext + 1);
