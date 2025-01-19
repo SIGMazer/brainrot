@@ -1,5 +1,6 @@
 #include "../ast.h"
 #include "hm.h"
+#include "mem.h"
 
 /**
  * @brief Computes FNV-1a hash of the given data
@@ -47,7 +48,7 @@ bool key_equal(const void *a, const void *b, size_t len)
  */
 HashMap *hm_new()
 {
-    HashMap *hm = malloc(sizeof(HashMap));
+    HashMap *hm = SAFE_MALLOC(HashMap);
     hm->capacity = INIT_CAPACITY;
     hm->size = 0;
     hm->nodes = calloc(hm->capacity, sizeof(HashMapNode *));
@@ -65,21 +66,31 @@ HashMap *hm_new()
 void hm_resize(HashMap *hm)
 {
     size_t new_capacity = hm->capacity * 2;
-    HashMapNode **new_nodes = calloc(new_capacity, sizeof(HashMapNode *));
+    HashMapNode **new_nodes = SAFE_MALLOC_ARRAY(HashMapNode *, new_capacity);
+    if (!new_nodes)
+        return; // Add error check
+
+    memset(new_nodes, 0, new_capacity * sizeof(HashMapNode *)); // Initialize to NULL
+
+    // Rehash existing entries
     for (size_t i = 0; i < hm->capacity; i++)
     {
-        HashMapNode *node = hm->nodes[i];
-        while (node)
+        if (hm->nodes[i]) // Check if slot is occupied
         {
+            HashMapNode *node = hm->nodes[i];
             size_t index = fnv1a_hash(node->key, node->key_size) % new_capacity;
-            while (new_nodes[index])
+
+            // Find next empty slot
+            while (new_nodes[index] != NULL)
             {
                 index = (index + 1) % new_capacity;
             }
             new_nodes[index] = node;
         }
     }
-    free(hm->nodes);
+
+    // Free old array and update hashmap
+    SAFE_FREE(hm->nodes);
     hm->nodes = new_nodes;
     hm->capacity = new_capacity;
 }
@@ -116,16 +127,22 @@ void dump(HashMap *hm)
  */
 void *hm_get(HashMap *hm, const void *key, size_t key_size)
 {
-    size_t index = fnv1a_hash(key, key_size) % hm->capacity;
-    while (hm->nodes[index])
+    size_t start_index = fnv1a_hash(key, key_size) % hm->capacity;
+    size_t index = start_index;
+
+    do
     {
         HashMapNode *node = hm->nodes[index];
+        if (!node)
+            return NULL; // Empty slot means key not found
+
         if (key_equal(node->key, key, key_size))
         {
             return node->value;
         }
+
         index = (index + 1) % hm->capacity;
-    }
+    } while (index != start_index); // Stop if we've checked every slot
 
     return NULL;
 }
@@ -149,25 +166,54 @@ void hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_s
     {
         hm_resize(hm);
     }
-    Variable *v = (Variable *)value;
+
     size_t index = fnv1a_hash(key, key_size) % hm->capacity;
+
+    // Find slot or existing key
     while (hm->nodes[index])
     {
         HashMapNode *node = hm->nodes[index];
         if (key_equal(node->key, key, key_size))
         {
-            memcpy(node->value, value, value_size);
+            // Update existing value
+            void *new_value = safe_malloc(value_size);
+            if (!new_value)
+                return;
+
+            memcpy(new_value, value, value_size);
+            SAFE_FREE(node->value);
+            node->value = new_value;
+            node->value_size = value_size;
             return;
         }
         index = (index + 1) % hm->capacity;
     }
-    HashMapNode *node = malloc(sizeof(HashMapNode));
-    node->key_size = key_size;
-    node->value_size = value_size;
-    node->key = malloc(key_size);
-    node->value = malloc(value_size);
-    memcpy(node->value, value, value_size);
+
+    // Create new entry
+    HashMapNode *node = SAFE_MALLOC(HashMapNode);
+    if (!node)
+        return;
+
+    // Allocate and copy key
+    node->key = safe_malloc(key_size);
+    if (!node->key)
+    {
+        SAFE_FREE(node);
+        return;
+    }
     memcpy(node->key, key, key_size);
+    node->key_size = key_size;
+
+    // Allocate and copy value
+    node->value = safe_malloc(value_size);
+    if (!node->value)
+    {
+        SAFE_FREE(node->key);
+        SAFE_FREE(node);
+        return;
+    }
+    memcpy(node->value, value, value_size);
+    node->value_size = value_size;
 
     hm->nodes[index] = node;
     hm->size++;
@@ -187,11 +233,11 @@ void hm_free(HashMap *hm)
     {
         if (hm->nodes[i])
         {
-            free(hm->nodes[i]->key);
-            free(hm->nodes[i]->value);
-            free(hm->nodes[i]);
+            SAFE_FREE(hm->nodes[i]->key);
+            SAFE_FREE(hm->nodes[i]->value);
+            SAFE_FREE(hm->nodes[i]);
         }
     }
-    free(hm->nodes);
-    free(hm);
+    SAFE_FREE(hm->nodes);
+    SAFE_FREE(hm);
 }

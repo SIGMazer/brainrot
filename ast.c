@@ -1,6 +1,8 @@
 /* ast.c */
 
 #include "ast.h"
+#include "lib/mem.h"
+#include "lib/hm.h"
 #include <stdbool.h>
 #include <math.h>
 #include <limits.h>
@@ -23,32 +25,32 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
     {
         switch (type)
         {
-            case VAR_INT:
-                var->value.ivalue = *(int *)value;
-                break;
-            case VAR_SHORT:
-                var->value.svalue = *(short *)value;
-                break;
-            case VAR_FLOAT:
-                var->value.fvalue = *(float *)value;
-                break;
-            case VAR_DOUBLE:
-                var->value.dvalue = *(double *)value;
-                break;
-            case VAR_BOOL:
-                var->value.bvalue = *(bool *)value;
-                break;
-            case VAR_CHAR:
-                var->value.ivalue = *(char *)value;
-                break;
+        case VAR_INT:
+            var->value.ivalue = *(int *)value;
+            break;
+        case VAR_SHORT:
+            var->value.svalue = *(short *)value;
+            break;
+        case VAR_FLOAT:
+            var->value.fvalue = *(float *)value;
+            break;
+        case VAR_DOUBLE:
+            var->value.dvalue = *(double *)value;
+            break;
+        case VAR_BOOL:
+            var->value.bvalue = *(bool *)value;
+            break;
+        case VAR_CHAR:
+            var->value.ivalue = *(char *)value;
+            break;
         }
         return true;
     }
     // Add a new variable if it doesn't exist
-    var = calloc(1,sizeof(Variable)); 
+    var = SAFE_MALLOC(Variable);
     if (symbol_table->size < MAX_VARS)
     {
-        var->name = strdup(name);
+        var->name = safe_strdup(name);
         var->var_type = type;
         var->modifiers = mods;
 
@@ -76,8 +78,8 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
             break;
         }
         hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
-        free(var->name);
-        free(var);
+        SAFE_FREE(var->name);
+        SAFE_FREE(var);
         return true;
     }
     return false; // Symbol table is full
@@ -99,26 +101,26 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
             // free the old array
             switch (var->var_type)
             {
-                case VAR_INT:
-                    free(var->value.iarray);
-                    break;
-                case VAR_SHORT:
-                    free(var->value.sarray);
-                    break;
-                case VAR_FLOAT:
-                    free(var->value.farray);
-                    break;
-                case VAR_DOUBLE:
-                    free(var->value.darray);
-                    break;
-                case VAR_BOOL:
-                    free(var->value.barray);
-                    break;
-                case VAR_CHAR:
-                    free(var->value.carray);
-                    break;
-                default:
-                    break;
+            case VAR_INT:
+                SAFE_FREE(var->value.iarray);
+                break;
+            case VAR_SHORT:
+                SAFE_FREE(var->value.sarray);
+                break;
+            case VAR_FLOAT:
+                SAFE_FREE(var->value.farray);
+                break;
+            case VAR_DOUBLE:
+                SAFE_FREE(var->value.darray);
+                break;
+            case VAR_BOOL:
+                SAFE_FREE(var->value.barray);
+                break;
+            case VAR_CHAR:
+                SAFE_FREE(var->value.carray);
+                break;
+            default:
+                break;
             }
         }
         var->var_type = type;
@@ -127,77 +129,78 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
         var->modifiers = mods;
         switch (type)
         {
-            case VAR_INT:
-                var->value.iarray = malloc(sizeof(int) * length);
-                memset(var->value.iarray, 0, length * sizeof(int));
-                break;
-            case VAR_SHORT:
-                var->value.sarray = malloc(sizeof(short) * length);
-                memset(var->value.sarray, 0, length * sizeof(short));
-                break;
-            case VAR_FLOAT:
-                var->value.farray = malloc(sizeof(float) * length);
-                memset(var->value.farray, 0, length * sizeof(float));
-                break;
-            case VAR_DOUBLE:
-                var->value.darray = malloc(sizeof(double) * length);
-                memset(var->value.darray, 0, length * sizeof(double));
-                break;
-            case VAR_BOOL:
-                var->value.barray = malloc(sizeof(bool) * length);
-                memset(var->value.barray, 0, length * sizeof(bool));
-                break;
-            case VAR_CHAR:
-                var->value.carray = malloc(sizeof(char) * length);
-                memset(var->value.carray, 0, length * sizeof(char));
-                break;
-            default:
-                break;
+        case VAR_INT:
+            var->value.iarray = SAFE_MALLOC_ARRAY(int, length);
+            memset(var->value.iarray, 0, length * sizeof(int));
+            break;
+        case VAR_SHORT:
+            var->value.sarray = SAFE_MALLOC_ARRAY(short, length);
+            memset(var->value.sarray, 0, length * sizeof(short));
+            break;
+        case VAR_FLOAT:
+            var->value.farray = SAFE_MALLOC_ARRAY(float, length);
+            memset(var->value.farray, 0, length * sizeof(float));
+            break;
+        case VAR_DOUBLE:
+            var->value.darray = SAFE_MALLOC_ARRAY(double, length);
+            memset(var->value.darray, 0, length * sizeof(double));
+            break;
+        case VAR_BOOL:
+            var->value.barray = SAFE_MALLOC_ARRAY(bool, length);
+            memset(var->value.barray, 0, length * sizeof(bool));
+            break;
+        case VAR_CHAR:
+            var->value.carray = SAFE_MALLOC_ARRAY(char, length);
+            memset(var->value.carray, 0, length * sizeof(char));
+            break;
+        default:
+            break;
         }
         return true;
     }
 
     // not found => create new
-    var = calloc(1,sizeof(Variable));
+    var = SAFE_MALLOC(Variable);
+    memset(var, 0, sizeof(Variable));
     if (symbol_table->size < MAX_VARS)
     {
-        var->name = strdup(name);
+        var->name = safe_strdup(name);
         var->var_type = type;
         var->is_array = true;
         var->array_length = length;
         var->modifiers = mods;
         switch (type)
         {
-            case VAR_INT:
-                var->value.iarray = malloc(sizeof(int) * length);
-                memset(var->value.iarray, 0, length * sizeof(int));
-                break;
-            case VAR_SHORT:
-                var->value.sarray = malloc(sizeof(short) * length);
-                memset(var->value.sarray, 0, length * sizeof(short));
-                break;
-            case VAR_FLOAT:
-                var->value.farray = malloc(sizeof(float) * length);
-                memset(var->value.farray, 0, length * sizeof(float));
-                break;
-            case VAR_DOUBLE:
-                var->value.darray = malloc(sizeof(double) * length);
-                memset(var->value.darray, 0, length * sizeof(double));
-                break;
-            case VAR_BOOL:
-                var->value.barray = malloc(sizeof(bool) * length);
-                memset(var->value.barray, 0, length * sizeof(bool));
-                break;
-            case VAR_CHAR:
-                var->value.carray = malloc(sizeof(char) * length);
-                memset(var->value.carray, 0, length * sizeof(char));
-                break;
-            default:
-                break;
+        case VAR_INT:
+            var->value.iarray = SAFE_MALLOC_ARRAY(int, length);
+            memset(var->value.iarray, 0, length * sizeof(int));
+            break;
+        case VAR_SHORT:
+            var->value.sarray = SAFE_MALLOC_ARRAY(short, length);
+            memset(var->value.sarray, 0, length * sizeof(short));
+            break;
+        case VAR_FLOAT:
+            var->value.farray = SAFE_MALLOC_ARRAY(float, length);
+            memset(var->value.farray, 0, length * sizeof(float));
+            break;
+        case VAR_DOUBLE:
+            var->value.darray = SAFE_MALLOC_ARRAY(double, length);
+            memset(var->value.darray, 0, length * sizeof(double));
+            break;
+        case VAR_BOOL:
+            var->value.barray = SAFE_MALLOC_ARRAY(bool, length);
+            memset(var->value.barray, 0, length * sizeof(bool));
+            break;
+        case VAR_CHAR:
+            var->value.carray = SAFE_MALLOC_ARRAY(char, length);
+            memset(var->value.carray, 0, length * sizeof(char));
+            break;
+        default:
+            break;
         }
         hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
-        free(var->name);
-        free(var);
+        SAFE_FREE(var->name);
+        SAFE_FREE(var);
         return true;
     }
     return false; // no space
@@ -314,7 +317,7 @@ void execute_switch_statement(ASTNode *node)
 
 static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     if (!node)
     {
         yyerror("Error: Memory allocation failed for ASTNode.\n");
@@ -337,7 +340,7 @@ ASTNode *create_int_node(int value)
 
 ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     if (!node)
         return NULL;
 
@@ -352,7 +355,7 @@ ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
 
 ASTNode *create_array_access_node(char *name, ASTNode *index)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     if (!node)
     {
         yyerror("Memory allocation failed");
@@ -360,14 +363,14 @@ ASTNode *create_array_access_node(char *name, ASTNode *index)
     }
 
     node->type = NODE_ARRAY_ACCESS;
-    node->data.array.name = strdup(name);
+    node->data.array.name = safe_strdup(name);
     node->data.array.index = index;
     node->is_array = true;
 
     // Look up and set the array's type from the symbol table
     Variable *var = hm_get(symbol_table, name, strlen(name));
-    free((void *)name);
-    if(var != NULL)
+    SAFE_FREE(name);
+    if (var != NULL)
     {
         node->var_type = var->var_type;
         node->array_length = var->array_length;
@@ -418,7 +421,6 @@ ASTNode *create_assignment_node(char *name, ASTNode *expr)
     SET_DATA_OP(node, create_identifier_node(name), expr, OP_ASSIGN);
     return node;
 }
-
 
 ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right)
 {
@@ -486,68 +488,68 @@ void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int prom
     Variable *var = hm_get(symbol_table, name, strlen(name));
     if (var != NULL)
     {
-        static Value promoted_value; 
+        static Value promoted_value;
         if (promote == 1)
         {
 
             switch (var->var_type)
             {
-                case VAR_DOUBLE:
-                    return &var->value.dvalue;
-                case VAR_FLOAT:
-                    promoted_value.dvalue = (double)var->value.fvalue;
-                    return &promoted_value;
-                case VAR_INT:
-                case VAR_CHAR:
-                case VAR_SHORT:
-                    promoted_value.dvalue = (double)var->value.svalue;
-                    return &promoted_value;
-                case VAR_BOOL:
-                    promoted_value.dvalue = (double)var->value.ivalue;
-                    return &promoted_value;
-                default:
-                    yyerror("Unsupported variable type");
-                    return NULL;
+            case VAR_DOUBLE:
+                return &var->value.dvalue;
+            case VAR_FLOAT:
+                promoted_value.dvalue = (double)var->value.fvalue;
+                return &promoted_value;
+            case VAR_INT:
+            case VAR_CHAR:
+            case VAR_SHORT:
+                promoted_value.dvalue = (double)var->value.svalue;
+                return &promoted_value;
+            case VAR_BOOL:
+                promoted_value.dvalue = (double)var->value.ivalue;
+                return &promoted_value;
+            default:
+                yyerror("Unsupported variable type");
+                return NULL;
             }
         }
         else if (promote == 2)
         {
             switch (var->var_type)
             {
-                case VAR_DOUBLE:
-                    promoted_value.fvalue = (float)var->value.dvalue;
-                    return &promoted_value;
-                case VAR_FLOAT:
-                    return &var->value.fvalue;
-                case VAR_INT:
-                case VAR_CHAR:
-                case VAR_SHORT:
-                    promoted_value.fvalue = (float)var->value.svalue;
-                case VAR_BOOL:
-                    promoted_value.fvalue = (float)var->value.ivalue;
-                    return &promoted_value;
-                default:
-                    yyerror("Unsupported variable type");
-                    return NULL;
+            case VAR_DOUBLE:
+                promoted_value.fvalue = (float)var->value.dvalue;
+                return &promoted_value;
+            case VAR_FLOAT:
+                return &var->value.fvalue;
+            case VAR_INT:
+            case VAR_CHAR:
+            case VAR_SHORT:
+                promoted_value.fvalue = (float)var->value.svalue;
+            case VAR_BOOL:
+                promoted_value.fvalue = (float)var->value.ivalue;
+                return &promoted_value;
+            default:
+                yyerror("Unsupported variable type");
+                return NULL;
             }
         }
         else
         {
             switch (var->var_type)
             {
-                case VAR_DOUBLE:
-                    return &var->value.dvalue;
-                case VAR_FLOAT:
-                    return &var->value.fvalue;
-                case VAR_INT:
-                case VAR_CHAR:
-                case VAR_SHORT:
-                    return &var->value.svalue;
-                case VAR_BOOL:
-                    return &var->value.ivalue;
-                default:
-                    yyerror("Unsupported variable type");
-                    return NULL;
+            case VAR_DOUBLE:
+                return &var->value.dvalue;
+            case VAR_FLOAT:
+                return &var->value.fvalue;
+            case VAR_INT:
+            case VAR_CHAR:
+            case VAR_SHORT:
+                return &var->value.svalue;
+            case VAR_BOOL:
+                return &var->value.ivalue;
+            default:
+                yyerror("Unsupported variable type");
+                return NULL;
             }
         }
     }
@@ -657,7 +659,6 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     int left_type = get_expression_type(node->data.op.left);
     int right_type = get_expression_type(node->data.op.right);
 
-
     // Promote types if necessary (short -> int -> float -> double).
     int promoted_type = VAR_SHORT;
     if (left_type == VAR_DOUBLE || right_type == VAR_DOUBLE)
@@ -671,15 +672,15 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     switch (promoted_type)
     {
     case VAR_INT:
-        left_value = calloc(1, sizeof(int));
-        right_value = calloc(1, sizeof(int));
+        left_value = SAFE_MALLOC(int);
+        right_value = SAFE_MALLOC(int);
         *(int *)left_value = evaluate_expression_int(node->data.op.left);
         *(int *)right_value = evaluate_expression_int(node->data.op.right);
         break;
 
     case VAR_FLOAT:
-        left_value = calloc(1, sizeof(float));
-        right_value = calloc(1, sizeof(float));
+        left_value = SAFE_MALLOC(float);
+        right_value = SAFE_MALLOC(float);
         *(float *)left_value = (left_type == VAR_INT)
                                    ? (float)evaluate_expression_int(node->data.op.left)
                                    : evaluate_expression_float(node->data.op.left);
@@ -689,8 +690,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         break;
 
     case VAR_DOUBLE:
-        left_value = calloc(1, sizeof(double));
-        right_value = calloc(1, sizeof(double));
+        left_value = SAFE_MALLOC(double);
+        right_value = SAFE_MALLOC(double);
         *(double *)left_value = (left_type == VAR_INT)
                                     ? (double)evaluate_expression_int(node->data.op.left)
                                 : (left_type == VAR_FLOAT)
@@ -703,8 +704,8 @@ void *handle_binary_operation(ASTNode *node, int result_type)
                                      : evaluate_expression_double(node->data.op.right);
         break;
     case VAR_SHORT:
-        left_value = calloc(1, sizeof(short));
-        right_value = calloc(1, sizeof(short));
+        left_value = SAFE_MALLOC(short);
+        right_value = SAFE_MALLOC(short);
         *(short *)left_value = evaluate_expression_short(node->data.op.left);
         *(short *)right_value = evaluate_expression_short(node->data.op.right);
         break;
@@ -715,10 +716,24 @@ void *handle_binary_operation(ASTNode *node, int result_type)
     }
 
     // Perform the operation and allocate the result.
-    void *result = calloc(1, (promoted_type == VAR_DOUBLE)  ? sizeof(double)
-                             : (promoted_type == VAR_FLOAT) ? sizeof(float)
-                             : (promoted_type == VAR_SHORT) ? sizeof(short)
-                                                            : sizeof(int));
+    void *result;
+    if (promoted_type == VAR_DOUBLE)
+    {
+        result = SAFE_MALLOC(double);
+    }
+    else if (promoted_type == VAR_FLOAT)
+    {
+        result = SAFE_MALLOC(float);
+    }
+    else if (promoted_type == VAR_SHORT)
+    {
+        result = SAFE_MALLOC(short);
+    }
+    else
+    {
+        result = SAFE_MALLOC(int);
+    }
+
     switch (node->data.op.op)
     {
     case OP_PLUS:
@@ -932,12 +947,12 @@ void *handle_binary_operation(ASTNode *node, int result_type)
 
     default:
         yyerror("Unsupported binary operator");
-        free(result);
+        SAFE_FREE(result);
         result = NULL;
     }
 
-    free(left_value);
-    free(right_value);
+    SAFE_FREE(left_value);
+    SAFE_FREE(right_value);
 
     return result;
 }
@@ -949,31 +964,31 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     case OP_NEG:
         if (operand_type == VAR_INT)
         {
-            int *result = malloc(sizeof(int));
+            int *result = SAFE_MALLOC(int);
             *result = -(*(int *)operand_value);
             return result;
         }
         else if (operand_type == VAR_SHORT)
         {
-            short *result = malloc(sizeof(short));
+            short *result = SAFE_MALLOC(short);
             *result = !(*(short *)operand_value);
             return result;
         }
         else if (operand_type == VAR_FLOAT)
         {
-            float *result = malloc(sizeof(float));
+            float *result = SAFE_MALLOC(float);
             *result = -(*(float *)operand_value);
             return result;
         }
         else if (operand_type == VAR_DOUBLE)
         {
-            double *result = malloc(sizeof(double));
+            double *result = SAFE_MALLOC(double);
             *result = -(*(double *)operand_value);
             return result;
         }
         else if (operand_type == VAR_BOOL)
         {
-            bool *result = malloc(sizeof(bool));
+            bool *result = SAFE_MALLOC(bool);
             *result = !(*(bool *)operand_value);
             return result;
         }
@@ -1137,21 +1152,21 @@ float evaluate_expression_float(ASTNode *node)
             // Return the value based on the array's actual type
             switch (var->var_type)
             {
-                case VAR_FLOAT:
-                    return var->value.farray[idx];
-                case VAR_DOUBLE:
-                    return (float)var->value.darray[idx];
-                case VAR_INT:
-                    return (float)var->value.iarray[idx];
-                case VAR_SHORT:
-                    return (float)var->value.sarray[idx];
-                case VAR_BOOL:
-                    return (float)var->value.barray[idx];
-                case VAR_CHAR:
-                    return (float)var->value.carray[idx];
-                default:
-                    yyerror("Unsupported array type");
-                    return 0.0f;
+            case VAR_FLOAT:
+                return var->value.farray[idx];
+            case VAR_DOUBLE:
+                return (float)var->value.darray[idx];
+            case VAR_INT:
+                return (float)var->value.iarray[idx];
+            case VAR_SHORT:
+                return (float)var->value.sarray[idx];
+            case VAR_BOOL:
+                return (float)var->value.barray[idx];
+            case VAR_CHAR:
+                return (float)var->value.carray[idx];
+            default:
+                yyerror("Unsupported array type");
+                return 0.0f;
             }
         }
         yyerror("Undefined array variable!");
@@ -1177,7 +1192,7 @@ float evaluate_expression_float(ASTNode *node)
                        : (result_type == VAR_FLOAT)
                            ? *(float *)result
                            : (float)(*(double *)result);
-        free(result);
+        SAFE_FREE(result);
         return result_float;
     }
     case NODE_UNARY_OPERATION:
@@ -1221,21 +1236,21 @@ double evaluate_expression_double(ASTNode *node)
             // Return the value based on the array's actual type
             switch (var->var_type)
             {
-                case VAR_FLOAT:
-                    return (double)var->value.farray[idx];
-                case VAR_DOUBLE:
-                    return var->value.darray[idx];
-                case VAR_INT:
-                    return (double)var->value.iarray[idx];
-                case VAR_SHORT:
-                    return (double)var->value.sarray[idx];
-                case VAR_BOOL:
-                    return (double)var->value.barray[idx];
-                case VAR_CHAR:
-                    return (double)var->value.carray[idx];
-                default:
-                    yyerror("Unsupported array type");
-                    return 0.0L;
+            case VAR_FLOAT:
+                return (double)var->value.farray[idx];
+            case VAR_DOUBLE:
+                return var->value.darray[idx];
+            case VAR_INT:
+                return (double)var->value.iarray[idx];
+            case VAR_SHORT:
+                return (double)var->value.sarray[idx];
+            case VAR_BOOL:
+                return (double)var->value.barray[idx];
+            case VAR_CHAR:
+                return (double)var->value.carray[idx];
+            default:
+                yyerror("Unsupported array type");
+                return 0.0L;
             }
         }
         yyerror("Undefined array variable!");
@@ -1261,7 +1276,7 @@ double evaluate_expression_double(ASTNode *node)
                         : (result_type == VAR_FLOAT)
                             ? (double)(*(float *)result)
                             : *(double *)result;
-        free(result);
+        SAFE_FREE(result);
         return result_double;
     }
     case NODE_UNARY_OPERATION:
@@ -1275,7 +1290,7 @@ double evaluate_expression_double(ASTNode *node)
         return 0.0L;
     }
 }
-size_t get_type_size(char* name, bool is_array)
+size_t get_type_size(char *name)
 {
     Variable *var = hm_get(symbol_table, name, strlen(name));
     if (var != NULL)
@@ -1347,30 +1362,30 @@ size_t get_type_size(char* name, bool is_array)
 
 size_t handle_sizeof(ASTNode *node)
 {
-    ASTNode* expr = node->data.sizeof_stmt.expr;
+    ASTNode *expr = node->data.sizeof_stmt.expr;
     VarType type = get_expression_type(node->data.sizeof_stmt.expr);
     bool is_array = node->data.sizeof_stmt.expr->is_array;
-    if(expr->type == NODE_IDENTIFIER)
+    if (expr->type == NODE_IDENTIFIER)
     {
-        return get_type_size(expr->data.name, is_array);
+        return get_type_size(expr->data.name);
     }
     switch (type)
     {
-        case VAR_INT:
-            return  sizeof(int);
-        case VAR_FLOAT:
-            return  sizeof(float);
-        case VAR_DOUBLE:
-            return  sizeof(double);
-        case VAR_SHORT:
-            return  sizeof(short);
-        case VAR_BOOL:
-            return  sizeof(bool);
-        case VAR_CHAR:
-            return  sizeof(char);
-        default:
-            yyerror("Invalid type in sizeof");
-            return 0;
+    case VAR_INT:
+        return sizeof(int);
+    case VAR_FLOAT:
+        return sizeof(float);
+    case VAR_DOUBLE:
+        return sizeof(double);
+    case VAR_SHORT:
+        return sizeof(short);
+    case VAR_BOOL:
+        return sizeof(bool);
+    case VAR_CHAR:
+        return sizeof(char);
+    default:
+        yyerror("Invalid type in sizeof");
+        return 0;
     }
     yyerror("Invalid type in sizeof");
     return 0;
@@ -1435,7 +1450,7 @@ short evaluate_expression_short(ASTNode *node)
                        : (result_type == VAR_DOUBLE)
                            ? (short)(*(double *)result)
                            : (short)(*(int *)result);
-        free(result);
+        SAFE_FREE(result);
         return result_short;
     }
     case NODE_UNARY_OPERATION:
@@ -1465,20 +1480,20 @@ short evaluate_expression_short(ASTNode *node)
             }
             switch (node->var_type)
             {
-                case VAR_INT:
-                    return (short)var->value.iarray[idx];
-                case VAR_SHORT:
-                    return var->value.sarray[idx];
-                case VAR_FLOAT:
-                    return (short)var->value.farray[idx];
-                case VAR_DOUBLE:
-                    return (short)var->value.darray[idx];
-                case VAR_BOOL:
-                    return (short)var->value.barray[idx];
-                case VAR_CHAR:
-                    return (short)var->value.carray[idx];
-                default:
-                    yyerror("Undefined array type!");
+            case VAR_INT:
+                return (short)var->value.iarray[idx];
+            case VAR_SHORT:
+                return var->value.sarray[idx];
+            case VAR_FLOAT:
+                return (short)var->value.farray[idx];
+            case VAR_DOUBLE:
+                return (short)var->value.darray[idx];
+            case VAR_BOOL:
+                return (short)var->value.barray[idx];
+            case VAR_CHAR:
+                return (short)var->value.carray[idx];
+            default:
+                yyerror("Undefined array type!");
             }
         }
         yyerror("Undefined array variable!");
@@ -1501,7 +1516,7 @@ int evaluate_expression_int(ASTNode *node)
         return node->data.ivalue;
     case NODE_BOOLEAN:
         return node->data.bvalue; // Already 1 or 0
-    case NODE_CHAR:             // Add explicit handling for characters
+    case NODE_CHAR:               // Add explicit handling for characters
         return node->data.ivalue;
     case NODE_SHORT:
         return node->data.svalue;
@@ -1547,7 +1562,7 @@ int evaluate_expression_int(ASTNode *node)
                      : (result_type == VAR_FLOAT)
                          ? (int)(*(float *)result)
                          : (int)(*(double *)result);
-        free(result);
+        SAFE_FREE(result);
         return result_int;
     }
     case NODE_UNARY_OPERATION:
@@ -1559,7 +1574,7 @@ int evaluate_expression_int(ASTNode *node)
     case NODE_ARRAY_ACCESS:
     {
         // find the symbol
-        char* name = node->data.array.name;
+        char *name = node->data.array.name;
         Variable *var = hm_get(symbol_table, name, strlen(name));
         if (var != NULL)
         {
@@ -1577,20 +1592,20 @@ int evaluate_expression_int(ASTNode *node)
             }
             switch (node->var_type)
             {
-                case VAR_INT:
-                    return var->value.iarray[idx];
-                case VAR_SHORT:
-                    return var->value.sarray[idx];
-                case VAR_FLOAT:
-                    return var->value.farray[idx];
-                case VAR_DOUBLE:
-                    return var->value.darray[idx];
-                case VAR_BOOL:
-                    return var->value.barray[idx];
-                case VAR_CHAR:
-                    return var->value.carray[idx];
-                default:
-                    yyerror("Undefined array type!");
+            case VAR_INT:
+                return var->value.iarray[idx];
+            case VAR_SHORT:
+                return var->value.sarray[idx];
+            case VAR_FLOAT:
+                return var->value.farray[idx];
+            case VAR_DOUBLE:
+                return var->value.darray[idx];
+            case VAR_BOOL:
+                return var->value.barray[idx];
+            case VAR_CHAR:
+                return var->value.carray[idx];
+            default:
+                yyerror("Undefined array type!");
             }
         }
         yyerror("Undefined array variable!");
@@ -1653,7 +1668,7 @@ bool evaluate_expression_bool(ASTNode *node)
                       : (result_type == VAR_FLOAT)
                           ? (bool)(*(float *)result)
                           : (bool)(*(double *)result);
-        free(result);
+        SAFE_FREE(result);
         return result_bool;
     }
     case NODE_UNARY_OPERATION:
@@ -1665,7 +1680,7 @@ bool evaluate_expression_bool(ASTNode *node)
     case NODE_ARRAY_ACCESS:
     {
         // find the symbol
-        char* name = node->data.array.name;
+        char *name = node->data.array.name;
         Variable *var = hm_get(symbol_table, name, strlen(name));
         if (var != NULL)
         {
@@ -1683,20 +1698,20 @@ bool evaluate_expression_bool(ASTNode *node)
             }
             switch (node->var_type)
             {
-                case VAR_INT:
-                    return (bool)var->value.iarray[idx];
-                case VAR_SHORT:
-                    return (bool)var->value.sarray[idx];
-                case VAR_FLOAT:
-                    return (bool)var->value.farray[idx];
-                case VAR_DOUBLE:
-                    return (bool)var->value.darray[idx];
-                case VAR_BOOL:
-                    return var->value.barray[idx];
-                case VAR_CHAR:
-                    return (bool)var->value.carray[idx];
-                default:
-                    yyerror("Undefined array type!");
+            case VAR_INT:
+                return (bool)var->value.iarray[idx];
+            case VAR_SHORT:
+                return (bool)var->value.sarray[idx];
+            case VAR_FLOAT:
+                return (bool)var->value.farray[idx];
+            case VAR_DOUBLE:
+                return (bool)var->value.darray[idx];
+            case VAR_BOOL:
+                return var->value.barray[idx];
+            case VAR_CHAR:
+                return (bool)var->value.carray[idx];
+            default:
+                yyerror("Undefined array type!");
             }
         }
         yyerror("Undefined array variable!");
@@ -1710,7 +1725,7 @@ bool evaluate_expression_bool(ASTNode *node)
 
 ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list)
 {
-    ArgumentList *new_node = malloc(sizeof(ArgumentList));
+    ArgumentList *new_node = SAFE_MALLOC(ArgumentList);
     new_node->expr = expr;
     new_node->next = NULL;
 
@@ -1733,7 +1748,7 @@ ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list)
 
 ASTNode *create_print_statement_node(ASTNode *expr)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_PRINT_STATEMENT;
     node->data.op.left = expr;
     return node;
@@ -1741,7 +1756,7 @@ ASTNode *create_print_statement_node(ASTNode *expr)
 
 ASTNode *create_error_statement_node(ASTNode *expr)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_ERROR_STATEMENT;
     node->data.op.left = expr;
     return node;
@@ -1752,9 +1767,9 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
     if (!existing_list)
     {
         // If there's no existing list, create a new one
-        ASTNode *node = malloc(sizeof(ASTNode));
+        ASTNode *node = SAFE_MALLOC(ASTNode);
         node->type = NODE_STATEMENT_LIST;
-        node->data.statements = malloc(sizeof(StatementList));
+        node->data.statements = SAFE_MALLOC(StatementList);
         node->data.statements->statement = statement;
         node->data.statements->next = NULL;
         return node;
@@ -1768,7 +1783,7 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
             sl = sl->next;
         }
         // Now sl is the last element; append the new statement
-        StatementList *new_item = malloc(sizeof(StatementList));
+        StatementList *new_item = SAFE_MALLOC(StatementList);
         new_item->statement = statement;
         new_item->next = NULL;
         sl->next = new_item;
@@ -1779,7 +1794,7 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
 bool is_const_variable(const char *name)
 {
     Variable *var = hm_get(symbol_table, name, strlen(name));
-    if ( var!= NULL)
+    if (var != NULL)
     {
         return var->modifiers.is_const;
     }
@@ -1964,22 +1979,22 @@ void execute_assignment(ASTNode *node)
             // Use the array's actual type for assignment
             switch (var->var_type)
             {
-                case VAR_FLOAT:
-                    var->value.farray[idx] = evaluate_expression_float(node->data.op.right);
-                    break;
-                case VAR_DOUBLE:
-                    var->value.darray[idx] = evaluate_expression_double(node->data.op.right);
-                    break;
-                case VAR_INT:
-                    var->value.iarray[idx] = evaluate_expression_int(node->data.op.right);
-                    break;
-                case VAR_SHORT:
-                    var->value.sarray[idx] = evaluate_expression_short(node->data.op.right);
-                    break;
-                default:
-                    yyerror("Unsupported array type");
-                    free_ast(node);
-                    return;
+            case VAR_FLOAT:
+                var->value.farray[idx] = evaluate_expression_float(node->data.op.right);
+                break;
+            case VAR_DOUBLE:
+                var->value.darray[idx] = evaluate_expression_double(node->data.op.right);
+                break;
+            case VAR_INT:
+                var->value.iarray[idx] = evaluate_expression_int(node->data.op.right);
+                break;
+            case VAR_SHORT:
+                var->value.sarray[idx] = evaluate_expression_short(node->data.op.right);
+                break;
+            default:
+                yyerror("Unsupported array type");
+                free_ast(node);
+                return;
             }
             free_ast(node);
             return;
@@ -2080,27 +2095,27 @@ void execute_statement(ASTNode *node)
 
                 switch (var->var_type)
                 {
-                    case VAR_FLOAT:
-                        var->value.farray[idx] = evaluate_expression_float(node->data.op.right);
-                        break;
-                    case VAR_DOUBLE:
-                        var->value.darray[idx] = evaluate_expression_double(node->data.op.right);
-                        break;
-                    case VAR_INT:
-                        var->value.iarray[idx] = evaluate_expression_int(node->data.op.right);
-                        break;
-                    case VAR_SHORT:
-                        var->value.sarray[idx] = evaluate_expression_short(node->data.op.right);
-                        break;
-                    case VAR_BOOL:
-                        var->value.barray[idx] = evaluate_expression_bool(node->data.op.right);
-                        break;
-                    case VAR_CHAR:
-                        var->value.carray[idx] = (char)evaluate_expression_int(node->data.op.right);
-                        break;
-                    default:
-                        yyerror("Unsupported array type");
-                        return;
+                case VAR_FLOAT:
+                    var->value.farray[idx] = evaluate_expression_float(node->data.op.right);
+                    break;
+                case VAR_DOUBLE:
+                    var->value.darray[idx] = evaluate_expression_double(node->data.op.right);
+                    break;
+                case VAR_INT:
+                    var->value.iarray[idx] = evaluate_expression_int(node->data.op.right);
+                    break;
+                case VAR_SHORT:
+                    var->value.sarray[idx] = evaluate_expression_short(node->data.op.right);
+                    break;
+                case VAR_BOOL:
+                    var->value.barray[idx] = evaluate_expression_bool(node->data.op.right);
+                    break;
+                case VAR_CHAR:
+                    var->value.carray[idx] = (char)evaluate_expression_int(node->data.op.right);
+                    break;
+                default:
+                    yyerror("Unsupported array type");
+                    return;
                 }
                 return;
             }
@@ -2163,7 +2178,7 @@ void execute_statement(ASTNode *node)
         if (node->data.array.name && node->data.array.index)
         {
             int length = node->data.array.index->data.ivalue;
-            if (!set_array_variable(node->data.array.name, length, node->modifiers, node->var_type))
+            if (!(node->data.array.name, length, node->modifiers, node->var_type))
             {
                 yyerror("Failed to create array");
             }
@@ -2342,7 +2357,7 @@ void execute_do_while_statement(ASTNode *node)
 
 ASTNode *create_if_statement_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_IF_STATEMENT;
     node->data.if_stmt.condition = condition;
     node->data.if_stmt.then_branch = then_branch;
@@ -2352,7 +2367,7 @@ ASTNode *create_if_statement_node(ASTNode *condition, ASTNode *then_branch, ASTN
 
 ASTNode *create_string_literal_node(char *string)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_STRING_LITERAL;
     node->data.name = string;
     return node;
@@ -2360,7 +2375,7 @@ ASTNode *create_string_literal_node(char *string)
 
 ASTNode *create_switch_statement_node(ASTNode *expression, CaseNode *cases)
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_SWITCH_STATEMENT;
     node->data.switch_stmt.expression = expression;
     node->data.switch_stmt.cases = cases;
@@ -2369,7 +2384,7 @@ ASTNode *create_switch_statement_node(ASTNode *expression, CaseNode *cases)
 
 CaseNode *create_case_node(ASTNode *value, ASTNode *statements)
 {
-    CaseNode *node = malloc(sizeof(CaseNode));
+    CaseNode *node = SAFE_MALLOC(CaseNode);
     node->value = value;
     node->statements = statements;
     node->next = NULL;
@@ -2394,7 +2409,7 @@ CaseNode *append_case_list(CaseNode *list, CaseNode *case_node)
 
 ASTNode *create_break_node()
 {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_BREAK_STATEMENT;
     node->data.break_stmt = NULL;
     return node;
@@ -2504,7 +2519,7 @@ void execute_yapping_call(ArgumentList *args)
                     const char *array_name = expr->data.array.name;
                     int idx = evaluate_expression_int(expr->data.array.index);
 
-                    Variable* var = hm_get(symbol_table, array_name, strlen(array_name));
+                    Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
                     if (var != NULL)
                     {
                         if (!var->is_array)
@@ -2521,15 +2536,15 @@ void execute_yapping_call(ArgumentList *args)
                         {
                             float val = var->value.farray[idx];
                             buffer_offset += snprintf(buffer + buffer_offset,
-                                    sizeof(buffer) - buffer_offset,
-                                    specifier, val);
+                                                      sizeof(buffer) - buffer_offset,
+                                                      specifier, val);
                         }
                         else if (var->var_type == VAR_DOUBLE)
                         {
                             double val = var->value.darray[idx];
                             buffer_offset += snprintf(buffer + buffer_offset,
-                                    sizeof(buffer) - buffer_offset,
-                                    specifier, val);
+                                                      sizeof(buffer) - buffer_offset,
+                                                      specifier, val);
                         }
                         break;
                     }
@@ -2819,46 +2834,45 @@ void *evaluate_array_access(ASTNode *node)
     const char *array_name = node->data.array.name;
     int idx = evaluate_expression_int(node->data.array.index);
 
-    Variable* var = hm_get(symbol_table, array_name, strlen(array_name));
+    Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
 
-        if (var != NULL)
+    if (var != NULL)
+    {
+        if (!var->is_array)
         {
-            if (!var->is_array)
-            {
-                yyerror("Not an array!");
-                return NULL;
-            }
-            if (idx < 0 || idx >= var->array_length)
-            {
-                yyerror("Array index out of bounds!");
-                return NULL;
-            }
-
-            // Allocate and return value based on type
-            void *result = malloc(sizeof(double)); // Use largest possible type
-            switch (var->var_type)
-            {
-            case VAR_DOUBLE:
-                *(double *)result = var->value.darray[idx];
-                break;
-            case VAR_FLOAT:
-                *(double *)result = (double)var->value.farray[idx];
-                break;
-            case VAR_INT:
-                *(double *)result = (double)var->value.iarray[idx];
-                break;
-                // ... handle other types ...
-            }
-            return result;
+            yyerror("Not an array!");
+            return NULL;
         }
+        if (idx < 0 || idx >= var->array_length)
+        {
+            yyerror("Array index out of bounds!");
+            return NULL;
+        }
+
+        // Allocate and return value based on type
+        void *result = SAFE_MALLOC(double); // Use largest possible type
+        switch (var->var_type)
+        {
+        case VAR_DOUBLE:
+            *(double *)result = var->value.darray[idx];
+            break;
+        case VAR_FLOAT:
+            *(double *)result = (double)var->value.farray[idx];
+            break;
+        case VAR_INT:
+            *(double *)result = (double)var->value.iarray[idx];
+            break;
+            // ... handle other types ...
+        }
+        return result;
+    }
     yyerror("Undefined array variable");
     return NULL;
 }
 
-
-ExpressionList* create_expression_list(ASTNode* expr)
+ExpressionList *create_expression_list(ASTNode *expr)
 {
-    ExpressionList* list = malloc(sizeof(ExpressionList));
+    ExpressionList *list = SAFE_MALLOC(ExpressionList);
     if (!list)
     {
         yyerror("Failed to allocate memory for expression list");
@@ -2870,9 +2884,9 @@ ExpressionList* create_expression_list(ASTNode* expr)
     return list;
 }
 
-ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr)
+ExpressionList *append_expression_list(ExpressionList *list, ASTNode *expr)
 {
-    ExpressionList* new_node = malloc(sizeof(ExpressionList));
+    ExpressionList *new_node = SAFE_MALLOC(ExpressionList);
     if (!new_node)
     {
         yyerror("Failed to allocate memory for expression list");
@@ -2880,7 +2894,7 @@ ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr)
     }
     new_node->expr = expr;
 
-    if(!list)
+    if (!list)
     {
         new_node->next = new_node;
         new_node->prev = new_node;
@@ -2894,12 +2908,12 @@ ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr)
     return list;
 }
 
-size_t count_expression_list(ExpressionList* list)
+size_t count_expression_list(ExpressionList *list)
 {
     if (!list)
         return 0;
     size_t count = 1;
-    ExpressionList* current = list->next;
+    ExpressionList *current = list->next;
     do
     {
         count++;
@@ -2908,23 +2922,23 @@ size_t count_expression_list(ExpressionList* list)
     return count;
 }
 
-void free_expression_list(ExpressionList* list)
+void free_expression_list(ExpressionList *list)
 {
     if (!list)
         return;
-    ExpressionList* current = list->next;
+    ExpressionList *current = list->next;
     while (current != list)
     {
-        ExpressionList* next = current->next;
-        free(current);
+        ExpressionList *next = current->next;
+        SAFE_FREE(current);
         current = next;
     }
-    free(list);
+    SAFE_FREE(list);
 }
 
-void populate_array_varialbe(char* name, ExpressionList* list)
+void populate_array_variable(char *name, ExpressionList *list)
 {
-    Variable* var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = hm_get(symbol_table, name, strlen(name));
     if (var != NULL)
     {
         if (!var->is_array)
@@ -2941,32 +2955,32 @@ void populate_array_varialbe(char* name, ExpressionList* list)
         size_t array_length = var->array_length;
         VarType var_type = var->var_type;
 
-        ExpressionList* current = list;
-        for(size_t index = 0; index < array_length; index++)
+        ExpressionList *current = list;
+        for (size_t index = 0; index < array_length; index++)
         {
             switch (var_type)
             {
-                case VAR_INT:
-                    var->value.iarray[index] = evaluate_expression_int(current->expr);
-                    break;
-                case VAR_FLOAT:
-                    var->value.farray[index] = evaluate_expression_float(current->expr);
-                    break;
-                case VAR_DOUBLE:
-                    var->value.darray[index] = evaluate_expression_double(current->expr);
-                    break;
-                case VAR_SHORT:
-                    var->value.sarray[index] = evaluate_expression_short(current->expr);
-                    break;
-                case VAR_CHAR:
-                    var->value.carray[index] = (char)evaluate_expression_int(current->expr);
-                    break;
-                case VAR_BOOL:
-                    var->value.barray[index] = evaluate_expression_bool(current->expr);
-                    break;
-                default:
-                    yyerror("Unsupported array type");
-                    return;
+            case VAR_INT:
+                var->value.iarray[index] = evaluate_expression_int(current->expr);
+                break;
+            case VAR_FLOAT:
+                var->value.farray[index] = evaluate_expression_float(current->expr);
+                break;
+            case VAR_DOUBLE:
+                var->value.darray[index] = evaluate_expression_double(current->expr);
+                break;
+            case VAR_SHORT:
+                var->value.sarray[index] = evaluate_expression_short(current->expr);
+                break;
+            case VAR_CHAR:
+                var->value.carray[index] = (char)evaluate_expression_int(current->expr);
+                break;
+            case VAR_BOOL:
+                var->value.barray[index] = evaluate_expression_bool(current->expr);
+                break;
+            default:
+                yyerror("Unsupported array type");
+                return;
             }
 
             current = current->next;
@@ -2976,25 +2990,25 @@ void populate_array_varialbe(char* name, ExpressionList* list)
         return;
     }
     yyerror("Undefined array variable");
-
 }
 
 void free_ast(ASTNode *node)
 {
-    if (!node) return;
+    if (!node)
+        return;
 
     // Free left and right child nodes if they exist
     free_ast(node->data.op.left);
     free_ast(node->data.op.right);
 
     // Free dynamically allocated data (e.g., names or array data)
-    if (node->data.name) free(node->data.name);
+    if (node->data.name)
+        SAFE_FREE(node->data.name);
     if (node->type == NODE_ARRAY_ACCESS && node->data.array.name)
     {
-        free(node->data.array.name);
+        SAFE_FREE(node->data.array.name);
     }
 
     // Free the node itself
-    free(node);
+    SAFE_FREE(node);
 }
-

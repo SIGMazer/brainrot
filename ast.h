@@ -3,6 +3,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include "lib/hm.h"
+#include "lib/mem.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -165,23 +167,6 @@ struct ArgumentList
     struct ArgumentList *next;
 };
 
-/* HashMap structures  */
-typedef struct
-{
-    void* key;
-    void* value;
-    size_t key_size;
-    size_t value_size;
-} HashMapNode;
-
-typedef struct
-{
-    HashMapNode** nodes;
-    size_t size;
-    size_t capacity;
-} HashMap;
-
-
 /* AST node structure */
 struct ASTNode
 {
@@ -250,7 +235,7 @@ struct ASTNode
 
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
-extern HashMap *symbol_table; 
+extern HashMap *symbol_table;
 extern int var_count;
 
 /* Function prototypes */
@@ -292,11 +277,11 @@ CaseNode *create_case_node(ASTNode *value, ASTNode *statements);
 CaseNode *create_default_case_node(ASTNode *statements);
 CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
-ASTNode* create_default_node(VarType var_type);
-ExpressionList* create_expression_list(ASTNode* expr);
-ExpressionList* append_expression_list(ExpressionList* list, ASTNode* expr);
-void free_expression_list(ExpressionList* list);
-void populate_array_varialbe(char* name, ExpressionList* list);
+ASTNode *create_default_node(VarType var_type);
+ExpressionList *create_expression_list(ASTNode *expr);
+ExpressionList *append_expression_list(ExpressionList *list, ASTNode *expr);
+void free_expression_list(ExpressionList *list);
+void populate_array_variable(char *name, ExpressionList *list);
 void free_ast(ASTNode *node);
 
 /* Evaluation and execution functions */
@@ -327,14 +312,9 @@ void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
-size_t count_expression_list(ExpressionList* list);
+size_t count_expression_list(ExpressionList *list);
 size_t handle_sizeof(ASTNode *node);
-
-/* Hash Map fucntions */
-
-HashMap* hm_new();
-void  hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_size);
-void* hm_get(HashMap *hm, const void *key, size_t key_size);
+size_t get_type_size(char *name);
 
 extern TypeModifiers current_modifiers;
 
@@ -344,7 +324,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_FLOAT(node, value) ((node)->data.fvalue = (value))
 #define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
 #define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
-#define SET_DATA_NAME(node, n) ((node)->data.name = strdup(n), free(n))
+#define SET_DATA_NAME(node, n) ((node)->data.name = safe_strdup(n), SAFE_FREE(n))
 #define SET_SIZEOF(node, n) ((node)->data.sizeof_stmt.expr = (n))
 #define SET_DATA_OP(node, l, r, opr) \
     do                               \
@@ -377,20 +357,20 @@ extern TypeModifiers current_modifiers;
         (node)->data.while_stmt.body = (b); \
     } while (0)
 
-#define SET_DATA_FUNC_CALL(node, func_name, args)                 \
-    do                                                            \
-    {                                                             \
-        (node)->data.func_call.function_name = strdup(func_name); \
-        (node)->data.func_call.arguments = (args);                \
+#define SET_DATA_FUNC_CALL(node, func_name, args)                      \
+    do                                                                 \
+    {                                                                  \
+        (node)->data.func_call.function_name = safe_strdup(func_name); \
+        (node)->data.func_call.arguments = (args);                     \
     } while (0)
 
 /* Macros for handling jump buffer */
-#define PUSH_JUMP_BUFFER()                           \
-    do                                               \
-    {                                                \
-        JumpBuffer *jb = malloc(sizeof(JumpBuffer)); \
-        jb->next = jump_buffer;                      \
-        jump_buffer = jb;                            \
+#define PUSH_JUMP_BUFFER()                        \
+    do                                            \
+    {                                             \
+        JumpBuffer *jb = SAFE_MALLOC(JumpBuffer); \
+        jb->next = jump_buffer;                   \
+        jump_buffer = jb;                         \
     } while (0)
 
 #define POP_JUMP_BUFFER()                \
@@ -398,7 +378,7 @@ extern TypeModifiers current_modifiers;
     {                                    \
         JumpBuffer *jb = jump_buffer;    \
         jump_buffer = jump_buffer->next; \
-        free(jb);                        \
+        SAFE_FREE(jb);                   \
     } while (0)
 
 #define LONGJMP()                                \
