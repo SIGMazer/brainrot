@@ -324,7 +324,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_FLOAT(node, value) ((node)->data.fvalue = (value))
 #define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
 #define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
-#define SET_DATA_NAME(node, n) ((node)->data.name = strdup(n), free(n))
+#define SET_DATA_NAME(node, n) ((node)->data.name = safe_strdup(n), SAFE_FREE(n))
 #define SET_SIZEOF(node, n) ((node)->data.sizeof_stmt.expr = (n))
 #define SET_DATA_OP(node, l, r, opr) \
     do                               \
@@ -357,20 +357,20 @@ extern TypeModifiers current_modifiers;
         (node)->data.while_stmt.body = (b); \
     } while (0)
 
-#define SET_DATA_FUNC_CALL(node, func_name, args)                 \
-    do                                                            \
-    {                                                             \
-        (node)->data.func_call.function_name = strdup(func_name); \
-        (node)->data.func_call.arguments = (args);                \
+#define SET_DATA_FUNC_CALL(node, func_name, args)                      \
+    do                                                                 \
+    {                                                                  \
+        (node)->data.func_call.function_name = safe_strdup(func_name); \
+        (node)->data.func_call.arguments = (args);                     \
     } while (0)
 
 /* Macros for handling jump buffer */
-#define PUSH_JUMP_BUFFER()                           \
-    do                                               \
-    {                                                \
-        JumpBuffer *jb = malloc(sizeof(JumpBuffer)); \
-        jb->next = jump_buffer;                      \
-        jump_buffer = jb;                            \
+#define PUSH_JUMP_BUFFER()                        \
+    do                                            \
+    {                                             \
+        JumpBuffer *jb = SAFE_MALLOC(JumpBuffer); \
+        jb->next = jump_buffer;                   \
+        jump_buffer = jb;                         \
     } while (0)
 
 #define POP_JUMP_BUFFER()                \
@@ -378,7 +378,7 @@ extern TypeModifiers current_modifiers;
     {                                    \
         JumpBuffer *jb = jump_buffer;    \
         jump_buffer = jump_buffer->next; \
-        free(jb);                        \
+        SAFE_FREE(jb);                   \
     } while (0)
 
 #define LONGJMP()                                \

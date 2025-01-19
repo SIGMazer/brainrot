@@ -1,21 +1,79 @@
 #include "mem.h"
 
 /**
- * @brief Allocates memory safely with additional security features
+ * @brief Retrieves the memory block header from a user pointer
  *
- * This function provides a safer alternative to malloc with the following features:
- * - Checks for integer overflow
- * - Aligns memory properly
- * - Zero-initializes allocated memory
- * - Stores allocation size for safe_free
- * - Handles edge cases (zero size, overflow)
+ * Given a pointer to the user data portion of an allocation made by safe_malloc,
+ * calculates and returns a pointer to the associated mem_block_t header.
  *
- * @param size The number of bytes to allocate
- * @return void* Pointer to the allocated memory, or NULL if:
+ * @param ptr Pointer to examine, must have been returned by safe_malloc
+ * @return mem_block_t* Pointer to the block header, or NULL if ptr is NULL
+ *
+ * @warning This function performs no validation - the caller must ensure ptr
+ *          was actually allocated by safe_malloc
+ */
+static inline mem_block_t *get_block_ptr(const void *ptr)
+{
+    return ptr ? ((mem_block_t *)ptr - 1) : NULL;
+}
+
+/**
+ * @brief Aligns a size value to the platform's memory alignment requirement
+ *
+ * Rounds up the given size to the next multiple of ALIGNMENT, with overflow checking.
+ *
+ * @param size Size value to align
+ * @return size_t Aligned size value, or 0 if alignment would cause overflow
+ *
+ * @note The alignment value is platform-dependent and defined by ALIGNMENT macro
+ */
+size_t align_size(size_t size)
+{
+    // Check for overflow before alignment
+    if (size > MAX_ALLOC_SIZE - (ALIGNMENT - 1))
+    {
+        return 0; // Indicate overflow
+    }
+    return (size + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
+}
+
+/**
+ * @brief Handles memory allocation failures with error reporting
+ *
+ * Reports allocation failures to stderr with size and error information,
+ * sets errno to ENOMEM, and returns NULL.
+ *
+ * @param size The size of the failed allocation attempt
+ * @return void* Always returns NULL
+ *
+ * @note Sets errno to ENOMEM
+ */
+void *handle_malloc_error(size_t size)
+{
+    fprintf(stderr, "Memory allocation failed - Size: %zu, Error: %s\n",
+            size, strerror(errno));
+    errno = ENOMEM;
+    return NULL;
+}
+
+/**
+ * @brief Safely allocates memory with overflow checking and zero initialization
+ *
+ * Allocates memory with the following safety features:
+ * - Overflow checking on size calculations
+ * - Memory alignment
+ * - Zero initialization
+ * - Size tracking
+ * - Guard pattern for corruption detection
+ *
+ * @param size Number of bytes to allocate
+ * @return void* Pointer to allocated memory, or NULL if:
  *         - size is 0
- *         - size exceeds MAX_ALLOC_SIZE
- *         - memory allocation fails
- *         - alignment calculation overflows
+ *         - size > MAX_ALLOC_SIZE
+ *         - alignment would cause overflow
+ *         - system is out of memory
+ *
+ * @note Sets errno on failure
  */
 void *safe_malloc(size_t size)
 {
@@ -35,63 +93,43 @@ void *safe_malloc(size_t size)
         return handle_malloc_error(size);
     }
 
-    void *ptr = malloc(aligned_size + sizeof(size_t));
-    if (ptr == NULL)
+    // Calculate total size needed including metadata
+    size_t total_size = sizeof(mem_block_t) + aligned_size;
+    if (total_size < size)
+    { // Check for overflow
+        return handle_malloc_error(size);
+    }
+
+    mem_block_t *block = malloc(total_size);
+    if (block == NULL)
     {
         return handle_malloc_error(size);
     }
 
-    size_t *size_ptr = (size_t *)ptr;
-    *size_ptr = aligned_size;
-    ptr = size_ptr + 1;
+    block->guard = MEMORY_GUARD;
+    block->size = aligned_size;
+    memset(block->data, 0, aligned_size);
 
-    memset(ptr, 0, aligned_size);
-    return ptr;
+    return block->data;
 }
 
 /**
- * @brief Aligns the requested size to the platform's alignment requirements
+ * @brief Safely allocates an array with overflow checking
  *
- * Rounds up the size to the nearest multiple of ALIGNMENT (typically sizeof(void*))
- * to ensure proper memory alignment for all types.
- *
- * @param size The size to align
- * @return size_t The aligned size, or 0 if alignment calculation would overflow
- */
-size_t align_size(size_t size)
-{
-    return (size + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
-}
-
-/**
- * @brief Handles memory allocation errors with detailed reporting
- *
- * Logs the error to stderr with the failed allocation size and system error message,
- * sets errno to ENOMEM, and returns NULL.
- *
- * @param size The size of the failed allocation attempt
- * @return void* Always returns NULL
- */
-void *handle_malloc_error(size_t size)
-{
-    fprintf(stderr, "Memory allocation failed - Size: %zu, Error: %s\n",
-            size, strerror(errno));
-    errno = ENOMEM;
-    return NULL;
-}
-
-/**
- * @brief Safely allocates an array of elements
- *
- * Provides array allocation with overflow checking for the total size calculation.
- * Ensures that nmemb * size doesn't overflow before attempting allocation.
+ * Allocates memory for an array of elements, checking for multiplication
+ * overflow in the size calculation.
  *
  * @param nmemb Number of elements to allocate
  * @param size Size of each element
- * @return void* Pointer to the allocated array, or NULL on any error condition
+ * @return void* Pointer to allocated array, or NULL if:
+ *         - nmemb * size would overflow
+ *         - allocation fails for any reason
+ *
+ * @note Equivalent to safe_malloc(nmemb * size) but with overflow check
  */
 void *safe_malloc_array(size_t nmemb, size_t size)
 {
+    // Check multiplication overflow
     if (nmemb > 0 && size > MAX_ALLOC_SIZE / nmemb)
     {
         return handle_malloc_error(nmemb * size);
@@ -100,101 +138,90 @@ void *safe_malloc_array(size_t nmemb, size_t size)
 }
 
 /**
- * @brief Safely frees memory and nullifies the pointer
+ * @brief Validates if a pointer was allocated by safe_malloc
  *
- * Enhanced version of free that:
- * - Validates the pointer-to-pointer
- * - Retrieves the original allocation size
- * - Securely wipes memory before freeing
- * - Nullifies the pointer after freeing
+ * Checks if a pointer appears to have been allocated by safe_malloc by
+ * verifying the presence and validity of the guard pattern.
+ *
+ * @param ptr Pointer to validate
+ * @return int 1 if pointer appears valid, 0 otherwise
+ *
+ * @warning A matching guard pattern does not guarantee the pointer is valid,
+ *          but a non-matching pattern guarantees it is invalid
+ */
+int is_safe_malloc_ptr(const void *ptr)
+{
+    if (!ptr)
+        return 0;
+    mem_block_t *block = get_block_ptr(ptr);
+    return block->guard == MEMORY_GUARD;
+}
+
+/**
+ * @brief Safely frees memory allocated by safe_malloc
+ *
+ * Frees memory with additional safety features:
+ * - Validates the pointer was allocated by safe_malloc
+ * - Wipes memory contents before freeing
+ * - Sets pointer to NULL after freeing
  * - Handles NULL pointers safely
  *
- * @param ptr Pointer to the pointer to free. Must not be NULL.
- *            The pointed-to pointer will be set to NULL after freeing.
+ * @param ptr Address of pointer to free. Must not be NULL.
+ *            Points to memory allocated by safe_malloc.
+ *
+ * @note If ptr or *ptr is NULL, function returns without action
+ * @note If pointer appears invalid, prints warning and returns without freeing
  */
 void safe_free(void **ptr)
 {
-    if (ptr == NULL)
+    if (!ptr || !*ptr)
     {
-        fprintf(stderr, "Warning: Attempt to free NULL pointer reference\n");
         return;
     }
 
-    if (*ptr != NULL)
+    mem_block_t *block = get_block_ptr(*ptr);
+    if (!block || block->guard != MEMORY_GUARD)
     {
-        size_t *size_ptr = (size_t *)(*ptr) - 1;
-        size_t size = *size_ptr;
-
-        memset(*ptr, 0, size);
-        free((void *)size_ptr);
-        *ptr = NULL;
+        fprintf(stderr, "Warning: Attempt to free invalid/corrupted pointer\n");
+        return;
     }
+
+    // Clear user data
+    memset(block->data, 0, block->size);
+    // Clear metadata
+    block->guard = 0;
+    block->size = 0;
+
+    free(block);
+    *ptr = NULL;
 }
 
 /**
- * @brief Creates a secure duplicate of a string with bounds checking
+ * @brief Safely copies memory between buffers with extensive validation
  *
- * Enhanced version of strdup that:
- * - Validates input string
- * - Uses safe memory allocation
- * - Performs secure string copying
- * - Handles NULL and edge cases
- * - Ensures proper null termination
+ * Copies memory with the following safety checks:
+ * - NULL pointer validation
+ * - Size limit validation
+ * - Destination buffer size validation
+ * - Buffer overlap detection
+ * - Safe_malloc pointer validation
  *
- * @param str The source string to duplicate. Must not be NULL.
- * @return char* Returns:
- *         - New allocated string on success
- *         - NULL if:
- *           - Input string is NULL
- *           - Memory allocation fails
- *           - String length exceeds MAX_ALLOC_SIZE
- *           - Memory copying fails
- *
- * @note The returned string must be freed using SAFE_FREE when no longer needed
- *
- * @example
- *   char *copy = safe_strdup("hello");
- *   if (copy) {
- *       // use copy
- *       SAFE_FREE(copy);
- *   }
- */
-char *safe_strdup(const char *str)
-{
-    if (str == NULL)
-    {
-        fprintf(stderr, "Error: NULL string passed to safe_strdup\n");
-        errno = EINVAL;
-        return NULL;
-    }
-
-    size_t len = strlen(str) + 1;
-    char *new_str = SAFE_MALLOC_ARRAY(char, len);
-    if (new_str)
-    {
-        // Use regular memcpy since str might not be from safe_malloc
-        memcpy(new_str, str, len);
-    }
-    return new_str;
-}
-
-/**
- * @brief Safely copies memory between buffers with bounds checking
- *
- * @param dest Destination buffer
+ * @param dest Destination buffer (must be from safe_malloc)
  * @param src Source buffer
  * @param n Number of bytes to copy
  * @return void* Pointer to destination buffer, or NULL if:
- * - dest or src is NULL
- * - n is 0
- * - buffers overlap
- * - n exceeds source or destination buffer size
+ *         - dest or src is NULL
+ *         - n > MAX_ALLOC_SIZE
+ *         - dest not from safe_malloc
+ *         - dest buffer too small
+ *         - buffers overlap
+ *
+ * @note Sets errno on failure
  */
 void *safe_memcpy(void *dest, const void *src, size_t n)
 {
-    if (dest == NULL || src == NULL)
+    if (!dest || !src)
     {
-        fprintf(stderr, "Error: NULL pointer passed to safe_memcpy\n");
         errno = EINVAL;
         return NULL;
     }
@@ -206,33 +233,66 @@ void *safe_memcpy(void *dest, const void *src, size_t n)
 
     if (n > MAX_ALLOC_SIZE)
     {
-        fprintf(stderr, "Error: Copy size exceeds maximum allowed\n");
+        errno = ERANGE;
+        return NULL;
+    }
+
+    // Verify dest is from safe_malloc
+    if (!is_safe_malloc_ptr(dest))
+    {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    mem_block_t *block = get_block_ptr(dest);
+    if (block->size < n)
+    {
         errno = ERANGE;
         return NULL;
     }
 
     // Check for buffer overlap
-    if ((src < dest && (char *)src + n > dest) ||
+    if ((src < dest && (const char *)src + n > dest) ||
         (dest < src && (char *)dest + n > src))
     {
-        fprintf(stderr, "Error: Buffer overlap detected in safe_memcpy\n");
         errno = EINVAL;
         return NULL;
     }
 
-    // Only check destination size since it's from safe_malloc
-    size_t *dest_size_ptr = (size_t *)dest - 1;
+    return memcpy(dest, src, n);
+}
 
-    // Verify destination buffer has enough space
-    if (*dest_size_ptr < n)
+/**
+ * @brief Safely duplicates a string with extensive validation
+ *
+ * Creates a new string in safe_malloc'd memory with the following features:
+ * - NULL pointer checking
+ * - Proper size calculation with overflow detection
+ * - Secure string copying
+ * - Zero initialization
+ *
+ * @param str String to duplicate
+ * @return char* Pointer to new string, or NULL if:
+ *         - str is NULL
+ *         - memory allocation fails
+ *         - string length exceeds MAX_ALLOC_SIZE
+ *
+ * @note Sets errno on failure
+ * @note Returned string must be freed with safe_free
+ */
+char *safe_strdup(const char *str)
+{
+    if (!str)
     {
-        fprintf(stderr, "Error: Destination buffer too small for copy\n");
-        errno = ERANGE;
+        errno = EINVAL;
         return NULL;
     }
 
-    // Skip source buffer size check since it might not be from safe_malloc
-
-    // Perform the actual copy
-    return memcpy(dest, src, n);
+    size_t len = strlen(str) + 1;
+    char *new_str = safe_malloc(len);
+    if (new_str)
+    {
+        memcpy(new_str, str, len);
+    }
+    return new_str;
 }
