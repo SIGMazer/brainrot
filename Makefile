@@ -51,6 +51,19 @@ clean:
 	rm -f *.o
 	@echo "Blud cleaned up the mess like a true sigma coder."
 
+# Run Valgrind on all .brainrot tests
+.PHONY: valgrind
+valgrind:
+	@for f in test_cases/*.brainrot; do \
+		echo "Ayo, Valgrind is pulling up on $$f..."; \
+		valgrind --leak-check=full --error-exitcode=1 ./$(TARGET) < $$f; \
+		if [ $$? -eq 0 ]; then echo "Valgrind passed for $$f, no memory leaks. Big W!"; \
+		else echo "Valgrind found a memory leak in $$f, taking an L. Better grind harder."; exit 1; fi; \
+		echo; \
+	done
+	@echo "Valgrind check done. If anything was sus, it'll show up with a non-zero exit code. No cap."
+
+
 # Check dependencies
 .PHONY: check-deps
 check-deps:
