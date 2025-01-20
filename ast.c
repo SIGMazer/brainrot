@@ -1199,7 +1199,9 @@ float evaluate_expression_float(ASTNode *node)
     {
         float operand = evaluate_expression_float(node->data.unary.operand);
         float *result = (float *)handle_unary_expression(node, &operand, VAR_FLOAT);
-        return *result;
+        float return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     default:
         yyerror("Invalid float expression");
@@ -1283,7 +1285,9 @@ double evaluate_expression_double(ASTNode *node)
     {
         double operand = evaluate_expression_double(node->data.unary.operand);
         double *result = (double *)handle_unary_expression(node, &operand, VAR_DOUBLE);
-        return *result;
+        double return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     default:
         yyerror("Invalid double expression");
@@ -1457,7 +1461,9 @@ short evaluate_expression_short(ASTNode *node)
     {
         short operand = evaluate_expression_short(node->data.unary.operand);
         short *result = (short *)handle_unary_expression(node, &operand, VAR_SHORT);
-        return *result;
+        short return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     case NODE_ARRAY_ACCESS:
     {
@@ -1569,7 +1575,9 @@ int evaluate_expression_int(ASTNode *node)
     {
         int operand = evaluate_expression_int(node->data.unary.operand);
         int *result = (int *)handle_unary_expression(node, &operand, VAR_INT);
-        return *result;
+        int return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     case NODE_ARRAY_ACCESS:
     {
@@ -1675,7 +1683,9 @@ bool evaluate_expression_bool(ASTNode *node)
     {
         bool operand = evaluate_expression_bool(node->data.unary.operand);
         bool *result = (bool *)handle_unary_expression(node, &operand, VAR_BOOL);
-        return *result;
+        bool return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     case NODE_ARRAY_ACCESS:
     {
