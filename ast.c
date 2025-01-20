@@ -1001,27 +1001,32 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     case OP_PRE_INC:
         if (operand_type == VAR_INT)
         {
-            int old_value = *(int *)operand_value;
-            set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            int *result = SAFE_MALLOC(int);
+            *result = *(int *)operand_value + 1;
+            set_int_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
+
         }
         else if (operand_type == VAR_SHORT)
         {
-            short old_value = *(short *)operand_value;
-            set_short_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            short *result = SAFE_MALLOC(short);
+            *result = *(short *)operand_value + 1;
+            set_short_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_FLOAT)
         {
-            float old_value = *(float *)operand_value;
-            set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            float *result = SAFE_MALLOC(float);
+            *result = *(float *)operand_value + 1;
+            set_float_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_DOUBLE)
         {
-            double old_value = *(double *)operand_value;
-            set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            double *result = SAFE_MALLOC(double);
+            *result = *(double *)operand_value + 1;
+            set_double_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else
         {
@@ -1031,27 +1036,31 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     case OP_PRE_DEC:
         if (operand_type == VAR_INT)
         {
-            int old_value = *(int *)operand_value;
-            set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            int *result = SAFE_MALLOC(int);
+            *result = *(int *)operand_value - 1;
+            set_int_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_SHORT)
         {
-            short old_value = *(short *)operand_value;
-            set_short_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            short *result = SAFE_MALLOC(short);
+            *result = *(short *)operand_value - 1;
+            set_short_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_FLOAT)
         {
-            float old_value = *(float *)operand_value;
-            set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            float *result = SAFE_MALLOC(float);
+            *result = *(float *)operand_value - 1;
+            set_float_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_DOUBLE)
         {
-            double old_value = *(double *)operand_value;
-            set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            double *result = SAFE_MALLOC(double);
+            *result = *(double *)operand_value - 1;
+            set_double_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else
         {
@@ -1061,27 +1070,31 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     case OP_POST_INC:
         if (operand_type == VAR_INT)
         {
-            int old_value = *(int *)operand_value;
-            set_int_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            int *result = SAFE_MALLOC(int);
+            *result = *(int *)operand_value;
+            set_int_variable(node->data.unary.operand->data.name, *result + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_SHORT)
         {
-            short old_value = *(short *)operand_value;
-            set_short_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            short *result = SAFE_MALLOC(short);
+            *result = *(short *)operand_value;
+            set_short_variable(node->data.unary.operand->data.name, *result + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_FLOAT)
         {
-            float old_value = *(float *)operand_value;
-            set_float_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            float *result = SAFE_MALLOC(float);
+            *result = *(float *)operand_value;
+            set_float_variable(node->data.unary.operand->data.name, *result + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_DOUBLE)
         {
-            double old_value = *(double *)operand_value;
-            set_double_variable(node->data.unary.operand->data.name, old_value + 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            double *result = SAFE_MALLOC(double);
+            *result = *(double *)operand_value;
+            set_double_variable(node->data.unary.operand->data.name, *result + 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else
         {
@@ -1091,27 +1104,31 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     case OP_POST_DEC:
         if (operand_type == VAR_INT)
         {
-            int old_value = *(int *)operand_value;
-            set_int_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            int *result = SAFE_MALLOC(int);
+            *result = *(int *)operand_value;
+            set_int_variable(node->data.unary.operand->data.name, *result - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_SHORT)
         {
-            short old_value = *(short *)operand_value;
-            set_short_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            short *result = SAFE_MALLOC(short);
+            *result = *(short *)operand_value;
+            set_short_variable(node->data.unary.operand->data.name, *result - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_FLOAT)
         {
-            float old_value = *(float *)operand_value;
-            set_float_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            float *result = SAFE_MALLOC(float);
+            *result = *(float *)operand_value;
+            set_float_variable(node->data.unary.operand->data.name, *result - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else if (operand_type == VAR_DOUBLE)
         {
-            double old_value = *(double *)operand_value;
-            set_double_variable(node->data.unary.operand->data.name, old_value - 1, get_variable_modifiers(node->data.unary.operand->data.name));
-            return operand_value;
+            double *result = SAFE_MALLOC(double);
+            *result = *(double *)operand_value;
+            set_double_variable(node->data.unary.operand->data.name, *result - 1, get_variable_modifiers(node->data.unary.operand->data.name));
+            return result;
         }
         else
         {
