@@ -18,6 +18,7 @@ By participating in this project, you are expected to uphold our Code of Conduct
 
 - C compiler (gcc recommended)
 - Flex and Bison
+- Valgrind
 - Make
 
 ### Building the Project
@@ -33,6 +34,20 @@ The test suite can be run using:
 
 ```bash
 make test
+```
+
+### Running Memory Leak Tests
+
+Make `run_valgrind_tests.sh` executable:
+
+```bash
+sudo chmod +x run_valgrind_tests.sh
+```
+
+Run:
+
+```bash
+./run_valgrind_tests.sh
 ```
 
 ## Project Structure
