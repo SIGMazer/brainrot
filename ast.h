@@ -324,7 +324,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_FLOAT(node, value) ((node)->data.fvalue = (value))
 #define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
 #define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
-#define SET_DATA_NAME(node, n) ((node)->data.name = safe_strdup(n), SAFE_FREE(n))
+#define SET_DATA_NAME(node, n) ((node)->data.name = safe_strdup(n))
 #define SET_SIZEOF(node, n) ((node)->data.sizeof_stmt.expr = (n))
 #define SET_DATA_OP(node, l, r, opr) \
     do                               \

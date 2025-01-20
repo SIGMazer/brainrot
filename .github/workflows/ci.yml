@@ -71,11 +71,11 @@ jobs:
           pytest -v test_brainrot.py
         working-directory: tests
 
-      # - name: Run Valgrind on all .brainrot tests
-      #   run: |
-      #     for f in test_cases/*.brainrot; do
-      #       echo "Running Valgrind on $f..."
-      #       valgrind --leak-check=full --error-exitcode=1 ./brainrot < "$f"
-      #       echo
-      #     done
-      #   working-directory: .
+      - name: Run Valgrind on all .brainrot tests
+        run: |
+          for f in test_cases/*.brainrot; do
+            echo "Running Valgrind on $f..."
+            valgrind --leak-check=full --error-exitcode=1 ./brainrot < "$f"
+            echo
+          done
+        working-directory: .

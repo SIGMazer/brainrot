@@ -160,8 +160,7 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
     }
 
     // not found => create new
-    var = SAFE_MALLOC(Variable);
-    memset(var, 0, sizeof(Variable));
+    var = SAFE_CALLOC(1, Variable);
     if (symbol_table->size < MAX_VARS)
     {
         var->name = safe_strdup(name);
@@ -196,6 +195,8 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
             memset(var->value.carray, 0, length * sizeof(char));
             break;
         default:
+            SAFE_FREE(var->name);
+            SAFE_FREE(var);
             break;
         }
         hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
@@ -203,6 +204,7 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
         SAFE_FREE(var);
         return true;
     }
+    SAFE_FREE(var);
     return false; // no space
 }
 
@@ -348,8 +350,7 @@ ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
     node->var_type = var_type;
     node->is_array = true;
     node->array_length = length;
-    node->data.op.left = create_identifier_node(name);
-    node->data.op.right = NULL;
+    node->data.array.name = safe_strdup(name);
     return node;
 }
 
@@ -369,7 +370,6 @@ ASTNode *create_array_access_node(char *name, ASTNode *index)
 
     // Look up and set the array's type from the symbol table
     Variable *var = hm_get(symbol_table, name, strlen(name));
-    SAFE_FREE(name);
     if (var != NULL)
     {
         node->var_type = var->var_type;
@@ -1199,7 +1199,9 @@ float evaluate_expression_float(ASTNode *node)
     {
         float operand = evaluate_expression_float(node->data.unary.operand);
         float *result = (float *)handle_unary_expression(node, &operand, VAR_FLOAT);
-        return *result;
+        float return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     default:
         yyerror("Invalid float expression");
@@ -1283,7 +1285,9 @@ double evaluate_expression_double(ASTNode *node)
     {
         double operand = evaluate_expression_double(node->data.unary.operand);
         double *result = (double *)handle_unary_expression(node, &operand, VAR_DOUBLE);
-        return *result;
+        double return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     default:
         yyerror("Invalid double expression");
@@ -1457,7 +1461,9 @@ short evaluate_expression_short(ASTNode *node)
     {
         short operand = evaluate_expression_short(node->data.unary.operand);
         short *result = (short *)handle_unary_expression(node, &operand, VAR_SHORT);
-        return *result;
+        short return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     case NODE_ARRAY_ACCESS:
     {
@@ -1569,7 +1575,9 @@ int evaluate_expression_int(ASTNode *node)
     {
         int operand = evaluate_expression_int(node->data.unary.operand);
         int *result = (int *)handle_unary_expression(node, &operand, VAR_INT);
-        return *result;
+        int return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     case NODE_ARRAY_ACCESS:
     {
@@ -1675,7 +1683,9 @@ bool evaluate_expression_bool(ASTNode *node)
     {
         bool operand = evaluate_expression_bool(node->data.unary.operand);
         bool *result = (bool *)handle_unary_expression(node, &operand, VAR_BOOL);
-        return *result;
+        bool return_val = *result;
+        SAFE_FREE(result);
+        return return_val;
     }
     case NODE_ARRAY_ACCESS:
     {
@@ -1768,8 +1778,19 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
     {
         // If there's no existing list, create a new one
         ASTNode *node = SAFE_MALLOC(ASTNode);
+        if (!node)
+        {
+            yyerror("Memory allocation failed");
+            return NULL;
+        }
         node->type = NODE_STATEMENT_LIST;
         node->data.statements = SAFE_MALLOC(StatementList);
+        if (!node->data.statements)
+        {
+            SAFE_FREE(node);
+            yyerror("Memory allocation failed");
+            return NULL;
+        }
         node->data.statements->statement = statement;
         node->data.statements->next = NULL;
         return node;
@@ -1784,6 +1805,11 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
         }
         // Now sl is the last element; append the new statement
         StatementList *new_item = SAFE_MALLOC(StatementList);
+        if (!new_item)
+        {
+            yyerror("Memory allocation failed");
+            return existing_list;
+        }
         new_item->statement = statement;
         new_item->next = NULL;
         sl->next = new_item;
@@ -1943,7 +1969,6 @@ void execute_assignment(ASTNode *node)
     if (node->type != NODE_ASSIGNMENT)
     {
         yyerror("Expected assignment node");
-        free_ast(node);
         return;
     }
 
@@ -1966,13 +1991,11 @@ void execute_assignment(ASTNode *node)
             if (!var->is_array)
             {
                 yyerror("Not an array!");
-                free_ast(node);
                 return;
             }
             if (idx < 0 || idx >= var->array_length)
             {
                 yyerror("Array index out of bounds!");
-                free_ast(node);
                 return;
             }
 
@@ -2057,7 +2080,6 @@ void execute_assignment(ASTNode *node)
             yyerror("Failed to set integer variable");
         }
     }
-    free_ast(node);
 }
 
 void execute_statement(ASTNode *node)
@@ -2315,7 +2337,6 @@ void execute_for_statement(ASTNode *node)
                 int cond_result = evaluate_expression(node->data.for_stmt.cond);
                 if (!cond_result)
                 {
-                    POP_JUMP_BUFFER();
                     break;
                 }
             }
@@ -2333,6 +2354,7 @@ void execute_for_statement(ASTNode *node)
             }
         }
     }
+    POP_JUMP_BUFFER();
 }
 
 void execute_while_statement(ASTNode *node)
@@ -2369,7 +2391,7 @@ ASTNode *create_string_literal_node(char *string)
 {
     ASTNode *node = SAFE_MALLOC(ASTNode);
     node->type = NODE_STRING_LITERAL;
-    node->data.name = string;
+    node->data.name = safe_strdup(string);
     return node;
 }
 
@@ -2983,13 +3005,30 @@ void populate_array_variable(char *name, ExpressionList *list)
                 return;
             }
 
+            SAFE_FREE(current->expr);
             current = current->next;
             if (current == list)
                 break;
         }
+
         return;
     }
     yyerror("Undefined array variable");
+}
+
+void free_statement_list(StatementList *list)
+{
+    while (list)
+    {
+        StatementList *next = list->next;
+
+        // Free the current list node
+        if (list)
+            SAFE_FREE(list);
+
+        // Move to the next node
+        list = next;
+    }
 }
 
 void free_ast(ASTNode *node)
@@ -2997,16 +3036,148 @@ void free_ast(ASTNode *node)
     if (!node)
         return;
 
-    // Free left and right child nodes if they exist
-    free_ast(node->data.op.left);
-    free_ast(node->data.op.right);
-
-    // Free dynamically allocated data (e.g., names or array data)
-    if (node->data.name)
-        SAFE_FREE(node->data.name);
-    if (node->type == NODE_ARRAY_ACCESS && node->data.array.name)
+    switch (node->type)
     {
-        SAFE_FREE(node->data.array.name);
+    case NODE_IDENTIFIER:
+        SAFE_FREE(node->data.name);
+        break;
+
+    case NODE_OPERATION:
+    case NODE_ASSIGNMENT:
+        free_ast(node->data.op.left);
+        free_ast(node->data.op.right);
+        break;
+
+    case NODE_UNARY_OPERATION:
+        free_ast(node->data.unary.operand);
+        break;
+
+    case NODE_STATEMENT_LIST:
+    {
+        StatementList *current = node->data.statements;
+        while (current)
+        {
+            StatementList *next = current->next;
+            if (current->statement)
+            {
+                free_ast(current->statement);
+            }
+            SAFE_FREE(current);
+            current = next;
+        }
+        break;
+    }
+
+    case NODE_SWITCH_STATEMENT:
+        if (node->data.switch_stmt.expression)
+            free_ast(node->data.switch_stmt.expression);
+        if (node->data.switch_stmt.cases)
+        {
+            CaseNode *current = node->data.switch_stmt.cases;
+            while (current)
+            {
+                CaseNode *next = current->next;
+                if (current->value)
+                    free_ast(current->value);
+                if (current->statements)
+                    free_ast(current->statements);
+                SAFE_FREE(current);
+                current = next;
+            }
+        }
+        break;
+
+    case NODE_FOR_STATEMENT:
+        if (node->data.for_stmt.init)
+            free_ast(node->data.for_stmt.init);
+        if (node->data.for_stmt.cond)
+            free_ast(node->data.for_stmt.cond);
+        if (node->data.for_stmt.incr)
+            free_ast(node->data.for_stmt.incr);
+        if (node->data.for_stmt.body)
+            free_ast(node->data.for_stmt.body);
+        break;
+
+    case NODE_WHILE_STATEMENT:
+    case NODE_DO_WHILE_STATEMENT:
+        if (node->data.while_stmt.cond)
+            free_ast(node->data.while_stmt.cond);
+        if (node->data.while_stmt.body)
+            free_ast(node->data.while_stmt.body);
+        break;
+
+    case NODE_ARRAY_ACCESS:
+        if (node->data.array.name)
+        {
+            SAFE_FREE(node->data.array.name);
+        }
+        if (node->data.array.index)
+        {
+            free_ast(node->data.array.index);
+        }
+        break;
+
+    case NODE_IF_STATEMENT:
+        if (node->data.if_stmt.condition)
+            free_ast(node->data.if_stmt.condition);
+        if (node->data.if_stmt.then_branch)
+            free_ast(node->data.if_stmt.then_branch);
+        if (node->data.if_stmt.else_branch)
+            free_ast(node->data.if_stmt.else_branch);
+        break;
+
+    case NODE_SIZEOF:
+        if (node->data.sizeof_stmt.expr)
+            free_ast(node->data.sizeof_stmt.expr);
+        break;
+
+    case NODE_BREAK_STATEMENT:
+        // Nothing additional to free
+        break;
+
+    case NODE_FUNC_CALL:
+        if (node->data.func_call.function_name)
+        {
+            SAFE_FREE(node->data.func_call.function_name);
+        }
+        ArgumentList *current_arg = node->data.func_call.arguments;
+        while (current_arg)
+        {
+            ArgumentList *next_arg = current_arg->next;
+            if (current_arg->expr)
+            {
+                free_ast(current_arg->expr);
+            }
+            SAFE_FREE(current_arg);
+            current_arg = next_arg;
+        }
+        break;
+
+    case NODE_STRING_LITERAL:
+        if (node->data.name)
+        {
+            SAFE_FREE(node->data.name);
+        }
+        break;
+
+    case NODE_INT:
+    case NODE_SHORT:
+    case NODE_FLOAT:
+    case NODE_DOUBLE:
+    case NODE_BOOLEAN:
+        // These nodes don't have additional allocations
+        break;
+
+    case NODE_ERROR_STATEMENT:
+    case NODE_PRINT_STATEMENT:
+        if (node->data.op.left)
+        {
+            free_ast(node->data.op.left);
+        }
+        break;
+    default:
+        fprintf(stderr, "Warning: Unknown node type in free_ast: %d\n", node->type);
+        break;
     }
 
     // Free the node itself

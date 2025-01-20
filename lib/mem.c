@@ -57,6 +57,72 @@ void *handle_malloc_error(size_t size)
 }
 
 /**
+ * @brief Safely allocates and zero-initializes memory with overflow checking
+ *
+ * Allocates and zero-initializes memory for an array with the following safety features:
+ * - Overflow checking on element count and size
+ * - Memory alignment
+ * - Zero initialization
+ * - Size tracking
+ * - Guard pattern for corruption detection
+ *
+ * @param count Number of elements to allocate
+ * @param size Size of each element in bytes
+ * @return void* Pointer to allocated and zero-initialized memory, or NULL if:
+ *         - count or size is 0
+ *         - count * size > MAX_ALLOC_SIZE
+ *         - alignment would cause overflow
+ *         - system is out of memory
+ *
+ * @note Sets errno on failure
+ */
+void *safe_calloc(size_t count, size_t size)
+{
+    if (count == 0 || size == 0)
+    {
+        return NULL;
+    }
+
+    // Check for overflow in multiplication
+    if (count > MAX_ALLOC_SIZE / size)
+    {
+        return handle_malloc_error(count * size);
+    }
+
+    size_t total_size = count * size;
+    if (total_size > MAX_ALLOC_SIZE)
+    {
+        return handle_malloc_error(total_size);
+    }
+
+    size_t aligned_size = align_size(total_size);
+    if (aligned_size == 0 || aligned_size > MAX_ALLOC_SIZE)
+    {
+        return handle_malloc_error(total_size);
+    }
+
+    // Calculate total size needed including metadata
+    size_t block_size = sizeof(mem_block_t) + aligned_size;
+    if (block_size < total_size)
+    { // Check for overflow
+        return handle_malloc_error(total_size);
+    }
+
+    mem_block_t *block = malloc(block_size);
+    if (block == NULL)
+    {
+        return handle_malloc_error(total_size);
+    }
+
+    block->guard = MEMORY_GUARD;
+    block->size = aligned_size;
+    memset(block->data, 0, aligned_size);
+
+    return block->data;
+}
+
+
+/**
  * @brief Safely allocates memory with overflow checking and zero initialization
  *
  * Allocates memory with the following safety features:
@@ -172,7 +238,7 @@ int is_safe_malloc_ptr(const void *ptr)
  * @note If ptr or *ptr is NULL, function returns without action
  * @note If pointer appears invalid, prints warning and returns without freeing
  */
-void safe_free(void **ptr)
+void safe_free(void **ptr, const char* file, int line, const char* func)
 {
     if (!ptr || !*ptr)
     {
@@ -182,7 +248,8 @@ void safe_free(void **ptr)
     mem_block_t *block = get_block_ptr(*ptr);
     if (!block || block->guard != MEMORY_GUARD)
     {
-        fprintf(stderr, "Warning: Attempt to free invalid/corrupted pointer\n");
+        fprintf(stderr, "Warning: Attempt to free invalid/corrupted pointer, %s, %d, %s\n",
+                file, line, func);
         return;
     }
 
@@ -296,3 +363,5 @@ char *safe_strdup(const char *str)
     }
     return new_str;
 }
+
+
