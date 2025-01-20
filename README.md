@@ -97,7 +97,7 @@ make
 1. Create a Brainrot source file (e.g., `hello.brainrot`):
 
 ```c
-skibidi main {
+ main {
     yapping("Hello, World!");
     bussin 0;
 }
@@ -161,6 +161,7 @@ Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
 | L          | false        | ✅           |
 | thicc      | long long    | ❌           |
 | rant       | string type  | ❌           |
+| lit        | typedef      | ❌           |
 
 ### Builtin functions
 

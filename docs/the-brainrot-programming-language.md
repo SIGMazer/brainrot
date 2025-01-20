@@ -184,6 +184,9 @@ Brainrot replaces familiar C keywords with meme-inspired slang:
 | schizo     | volatile     |
 | W          | true         |
 | L          | false        |
+| thicc      | long long    |
+| rant       | string type  |
+| lit        | typedef      |
 
 ### 7.2. Operators
 
