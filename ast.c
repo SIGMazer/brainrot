@@ -15,45 +15,16 @@ static JumpBuffer *jump_buffer = {0};
 TypeModifiers current_modifiers = {false, false, false, false, false};
 extern VarType current_var_type;
 
-HashMap *symbol_table;
+Scope *current_scope;
 
 // Symbol table functions
 bool set_variable(const char *name, void *value, VarType type, TypeModifiers mods)
 {
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name); 
     if (var != NULL)
     {
-        switch (type)
-        {
-        case VAR_INT:
-            var->value.ivalue = *(int *)value;
-            break;
-        case VAR_SHORT:
-            var->value.svalue = *(short *)value;
-            break;
-        case VAR_FLOAT:
-            var->value.fvalue = *(float *)value;
-            break;
-        case VAR_DOUBLE:
-            var->value.dvalue = *(double *)value;
-            break;
-        case VAR_BOOL:
-            var->value.bvalue = *(bool *)value;
-            break;
-        case VAR_CHAR:
-            var->value.ivalue = *(char *)value;
-            break;
-        }
-        return true;
-    }
-    // Add a new variable if it doesn't exist
-    var = SAFE_MALLOC(Variable);
-    if (symbol_table->size < MAX_VARS)
-    {
-        var->name = safe_strdup(name);
-        var->var_type = type;
         var->modifiers = mods;
-
+        var->var_type = type;
         switch (type)
         {
         case VAR_INT:
@@ -74,12 +45,7 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
         case VAR_CHAR:
             var->value.ivalue = *(char *)value;
             break;
-        default:
-            break;
         }
-        hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
-        SAFE_FREE(var->name);
-        SAFE_FREE(var);
         return true;
     }
     return false; // Symbol table is full
@@ -93,7 +59,7 @@ bool set_int_variable(const char *name, int value, TypeModifiers mods)
 bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type)
 {
     // search for an existing variable
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name); 
     if (var != NULL)
     {
         if (var->is_array)
@@ -159,52 +125,6 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
         return true;
     }
 
-    // not found => create new
-    var = SAFE_CALLOC(1, Variable);
-    if (symbol_table->size < MAX_VARS)
-    {
-        var->name = safe_strdup(name);
-        var->var_type = type;
-        var->is_array = true;
-        var->array_length = length;
-        var->modifiers = mods;
-        switch (type)
-        {
-        case VAR_INT:
-            var->value.iarray = SAFE_MALLOC_ARRAY(int, length);
-            memset(var->value.iarray, 0, length * sizeof(int));
-            break;
-        case VAR_SHORT:
-            var->value.sarray = SAFE_MALLOC_ARRAY(short, length);
-            memset(var->value.sarray, 0, length * sizeof(short));
-            break;
-        case VAR_FLOAT:
-            var->value.farray = SAFE_MALLOC_ARRAY(float, length);
-            memset(var->value.farray, 0, length * sizeof(float));
-            break;
-        case VAR_DOUBLE:
-            var->value.darray = SAFE_MALLOC_ARRAY(double, length);
-            memset(var->value.darray, 0, length * sizeof(double));
-            break;
-        case VAR_BOOL:
-            var->value.barray = SAFE_MALLOC_ARRAY(bool, length);
-            memset(var->value.barray, 0, length * sizeof(bool));
-            break;
-        case VAR_CHAR:
-            var->value.carray = SAFE_MALLOC_ARRAY(char, length);
-            memset(var->value.carray, 0, length * sizeof(char));
-            break;
-        default:
-            SAFE_FREE(var->name);
-            SAFE_FREE(var);
-            break;
-        }
-        hm_put(symbol_table, var->name, strlen(var->name), var, sizeof(Variable));
-        SAFE_FREE(var->name);
-        SAFE_FREE(var);
-        return true;
-    }
-    SAFE_FREE(var);
     return false; // no space
 }
 
@@ -244,7 +164,6 @@ TypeModifiers get_current_modifiers(void)
 }
 
 /* Include the symbol table functions */
-extern int get_variable(char *name);
 extern void yyerror(const char *s);
 extern void ragequit(int exit_code);
 extern void chill(unsigned int seconds);
@@ -264,7 +183,7 @@ bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage)
         node->is_valid_symbol = false;
 
         // Do the table lookup
-        Variable *var = hm_get(symbol_table, node->data.name, strlen(node->data.name));
+        Variable *var = get_variable(node->data.name);
         if (var != NULL)
             node->is_valid_symbol = true;
 
@@ -320,6 +239,7 @@ void execute_switch_statement(ASTNode *node)
 static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
 {
     ASTNode *node = SAFE_MALLOC(ASTNode);
+    int a;
     if (!node)
     {
         yyerror("Error: Memory allocation failed for ASTNode.\n");
@@ -369,7 +289,7 @@ ASTNode *create_array_access_node(char *name, ASTNode *index)
     node->is_array = true;
 
     // Look up and set the array's type from the symbol table
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name); 
     if (var != NULL)
     {
         node->var_type = var->var_type;
@@ -417,7 +337,14 @@ ASTNode *create_identifier_node(char *name)
 
 ASTNode *create_assignment_node(char *name, ASTNode *expr)
 {
-    ASTNode *node = create_node(NODE_ASSIGNMENT, NONE, get_current_modifiers());
+    ASTNode *node = create_node(NODE_ASSIGNMENT, current_var_type, get_current_modifiers());
+    SET_DATA_OP(node, create_identifier_node(name), expr, OP_ASSIGN);
+    return node;
+}
+
+ASTNode *create_declaration_node(char *name, ASTNode *expr)
+{
+    ASTNode *node = create_node(NODE_DECLARATION, current_var_type, get_current_modifiers());
     SET_DATA_OP(node, create_identifier_node(name), expr, OP_ASSIGN);
     return node;
 }
@@ -485,7 +412,7 @@ void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int prom
         exit(1);
 
     char *name = node->data.name;
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name); 
     if (var != NULL)
     {
         static Value promoted_value;
@@ -518,7 +445,7 @@ void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int prom
             {
             case VAR_DOUBLE:
                 promoted_value.fvalue = (float)var->value.dvalue;
-                return &promoted_value;
+                return &promoted_value.fvalue;
             case VAR_FLOAT:
                 return &var->value.fvalue;
             case VAR_INT:
@@ -527,7 +454,7 @@ void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int prom
                 promoted_value.fvalue = (float)var->value.svalue;
             case VAR_BOOL:
                 promoted_value.fvalue = (float)var->value.ivalue;
-                return &promoted_value;
+                return &promoted_value.fvalue;
             default:
                 yyerror("Unsupported variable type");
                 return NULL;
@@ -583,7 +510,7 @@ int get_expression_type(ASTNode *node)
     {
         // First, get the array's base type from symbol table
         const char *array_name = node->data.array.name;
-        Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+        Variable *var = get_variable(array_name); 
         if (var != NULL)
         {
             // Found the array, now handle the index expression
@@ -607,7 +534,7 @@ int get_expression_type(ASTNode *node)
     {
         // Look up the variable type in the symbol table
         const char *array_name = node->data.name;
-        Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+        Variable *var = get_variable(array_name); 
         if (var != NULL)
         {
             return var->var_type;
@@ -1152,7 +1079,7 @@ float evaluate_expression_float(ASTNode *node)
     {
         const char *array_name = node->data.array.name;
         int idx = evaluate_expression_int(node->data.array.index);
-        Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+        Variable *var = get_variable(array_name); 
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1197,7 +1124,7 @@ float evaluate_expression_float(ASTNode *node)
         return (float)node->data.ivalue;
     case NODE_IDENTIFIER:
     {
-        return *(float *)handle_identifier(node, "Undefined variable", 1);
+        return *(float *)handle_identifier(node, "Undefined variable", 2);
     }
     case NODE_OPERATION:
     {
@@ -1238,7 +1165,7 @@ double evaluate_expression_double(ASTNode *node)
         const char *array_name = node->data.array.name;
         int idx = evaluate_expression_int(node->data.array.index);
 
-        Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+        Variable *var = get_variable(array_name); 
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1313,7 +1240,7 @@ double evaluate_expression_double(ASTNode *node)
 }
 size_t get_type_size(char *name)
 {
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         if (var->var_type == VAR_FLOAT)
@@ -1486,7 +1413,7 @@ short evaluate_expression_short(ASTNode *node)
     {
         // find the symbol
         char *name = node->data.array.name;
-        Variable *var = hm_get(symbol_table, name, strlen(name));
+        Variable *var = get_variable(name); 
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1600,7 +1527,7 @@ int evaluate_expression_int(ASTNode *node)
     {
         // find the symbol
         char *name = node->data.array.name;
-        Variable *var = hm_get(symbol_table, name, strlen(name));
+        Variable *var = get_variable(name); 
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1708,7 +1635,7 @@ bool evaluate_expression_bool(ASTNode *node)
     {
         // find the symbol
         char *name = node->data.array.name;
-        Variable *var = hm_get(symbol_table, name, strlen(name));
+        Variable *var = get_variable(name); 
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1836,7 +1763,7 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
 
 bool is_const_variable(const char *name)
 {
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name); 
     if (var != NULL)
     {
         return var->modifiers.is_const;
@@ -1873,7 +1800,7 @@ bool is_short_expression(ASTNode *node)
     {
         if (!check_and_mark_identifier(node, "Undefined variable in type check"))
             exit(1);
-        Variable *var = hm_get(symbol_table, node->data.name, strlen(node->data.name));
+        Variable *var = get_variable(node->data.name); 
         if (var != NULL)
         {
             return var->var_type == VAR_SHORT;
@@ -1909,7 +1836,7 @@ bool is_float_expression(ASTNode *node)
     {
         if (!check_and_mark_identifier(node, "Undefined variable in type check"))
             exit(1);
-        Variable *var = hm_get(symbol_table, node->data.name, strlen(node->data.name));
+        Variable *var = get_variable(node->data.name);
         if (var != NULL)
         {
             return var->var_type == VAR_FLOAT;
@@ -1945,7 +1872,7 @@ bool is_double_expression(ASTNode *node)
     {
         if (!check_and_mark_identifier(node, "Undefined variable in type check"))
             exit(1);
-        Variable *var = hm_get(symbol_table, node->data.name, strlen(node->data.name));
+        Variable *var = get_variable(node->data.name); 
         if (var != NULL)
         {
             return var->var_type == VAR_DOUBLE;
@@ -2002,7 +1929,7 @@ void execute_assignment(ASTNode *node)
         int idx = evaluate_expression_int(node->data.op.left->data.array.index);
 
         // Find array in symbol table
-        Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+        Variable *var = get_variable(array_name); 
         if (var != NULL)
         {
             if (!var->is_array)
@@ -2105,6 +2032,11 @@ void execute_statement(ASTNode *node)
         return;
     switch (node->type)
     {
+    case NODE_DECLARATION:
+        char* name = node->data.op.left->data.name;
+        Variable *var = variable_new(name);
+        add_variable_to_scope(name,var);
+        SAFE_FREE(var);
     case NODE_ASSIGNMENT:
     {
         char *name = node->data.op.left->data.name;
@@ -2118,7 +2050,7 @@ void execute_statement(ASTNode *node)
             int idx = evaluate_expression_int(array_node->data.array.index);
 
             // Find array in symbol table
-            Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+            Variable *var = get_variable(array_name); 
             if (var != NULL)
             {
                 if (!var->is_array)
@@ -2187,7 +2119,7 @@ void execute_statement(ASTNode *node)
                 yyerror("Failed to set short variable");
             }
         }
-        else if (is_float_expression(value_node))
+        else if (node->var_type ==VAR_FLOAT || is_float_expression(value_node))
         {
             float value = evaluate_expression_float(value_node);
             if (!set_float_variable(name, value, mods))
@@ -2195,7 +2127,7 @@ void execute_statement(ASTNode *node)
                 yyerror("Failed to set float variable");
             }
         }
-        else if (is_double_expression(value_node))
+        else if (node->var_type == VAR_DOUBLE|| is_double_expression(value_node))
         {
             double value = evaluate_expression_double(value_node);
             if (!set_double_variable(name, value, mods))
@@ -2296,6 +2228,7 @@ void execute_statement(ASTNode *node)
         execute_statements(node);
         break;
     case NODE_IF_STATEMENT:
+        enter_scope();
         if (evaluate_expression(node->data.if_stmt.condition))
         {
             execute_statement(node->data.if_stmt.then_branch);
@@ -2304,6 +2237,7 @@ void execute_statement(ASTNode *node)
         {
             execute_statement(node->data.if_stmt.else_branch);
         }
+        exit_scope();
         break;
     case NODE_SWITCH_STATEMENT:
         execute_switch_statement(node);
@@ -2341,6 +2275,7 @@ void execute_for_statement(ASTNode *node)
     if (setjmp(CURRENT_JUMP_BUFFER()) == 0)
     {
         // Execute initialization once
+        enter_scope();
         if (node->data.for_stmt.init)
         {
             execute_statement(node->data.for_stmt.init);
@@ -2349,6 +2284,7 @@ void execute_for_statement(ASTNode *node)
         while (1)
         {
             // Evaluate condition
+            enter_scope();
             if (node->data.for_stmt.cond)
             {
                 int cond_result = evaluate_expression(node->data.for_stmt.cond);
@@ -2369,7 +2305,9 @@ void execute_for_statement(ASTNode *node)
             {
                 execute_statement(node->data.for_stmt.incr);
             }
+            exit_scope();
         }
+        exit_scope();
     }
     POP_JUMP_BUFFER();
 }
@@ -2377,20 +2315,28 @@ void execute_for_statement(ASTNode *node)
 void execute_while_statement(ASTNode *node)
 {
     PUSH_JUMP_BUFFER();
+    enter_scope();
     while (evaluate_expression(node->data.while_stmt.cond) && setjmp(CURRENT_JUMP_BUFFER()) == 0)
     {
+        enter_scope();
         execute_statement(node->data.while_stmt.body);
+        exit_scope();
     }
+    exit_scope();
     POP_JUMP_BUFFER();
 }
 
 void execute_do_while_statement(ASTNode *node)
 {
     PUSH_JUMP_BUFFER();
+    enter_scope();
     do
     {
+        enter_scope();
         execute_statement(node->data.while_stmt.body);
+        exit_scope();
     } while (evaluate_expression(node->data.while_stmt.cond) && setjmp(CURRENT_JUMP_BUFFER()) == 0);
+    exit_scope();
     POP_JUMP_BUFFER();
 }
 
@@ -2558,7 +2504,7 @@ void execute_yapping_call(ArgumentList *args)
                     const char *array_name = expr->data.array.name;
                     int idx = evaluate_expression_int(expr->data.array.index);
 
-                    Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+                    Variable *var = get_variable(array_name); 
                     if (var != NULL)
                     {
                         if (!var->is_array)
@@ -2873,7 +2819,7 @@ void *evaluate_array_access(ASTNode *node)
     const char *array_name = node->data.array.name;
     int idx = evaluate_expression_int(node->data.array.index);
 
-    Variable *var = hm_get(symbol_table, array_name, strlen(array_name));
+    Variable *var = get_variable(array_name); 
 
     if (var != NULL)
     {
@@ -2977,7 +2923,7 @@ void free_expression_list(ExpressionList *list)
 
 void populate_array_variable(char *name, ExpressionList *list)
 {
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         if (!var->is_array)
@@ -3061,6 +3007,7 @@ void free_ast(ASTNode *node)
 
     case NODE_OPERATION:
     case NODE_ASSIGNMENT:
+    case NODE_DECLARATION:
         free_ast(node->data.op.left);
         free_ast(node->data.op.right);
         break;
@@ -3199,4 +3146,89 @@ void free_ast(ASTNode *node)
 
     // Free the node itself
     SAFE_FREE(node);
+}
+
+Scope* create_scope(Scope* parent)
+{
+    Scope* scope = SAFE_MALLOC(Scope);
+    if (!scope)
+    {
+        yyerror("Failed to allocate memory for scope");
+        SAFE_FREE(scope);
+        exit(1);
+    }
+    scope->variables = hm_new();
+    scope->parent = parent;
+    return scope;
+}
+
+Variable* get_variable(const char* name)
+{
+    Scope* scope = current_scope;
+    while (scope)
+    {
+        Variable* var = hm_get(scope->variables, name, strlen(name));
+        if (var)
+        {
+            return var;
+        }
+        scope = scope->parent;
+    }
+    return NULL;
+}
+
+void exit_scope()
+{
+    if (!current_scope)
+    {
+        yyerror("No scope to exit");
+        exit(1);
+    }
+    Scope* parent = current_scope->parent;
+    hm_free(current_scope->variables);
+    SAFE_FREE(current_scope);
+    current_scope = parent;
+}
+
+void free_scope(Scope* scope)
+{
+    if (!scope)
+        return;
+    hm_free(scope->variables);
+    free_scope(scope->parent);
+    SAFE_FREE(scope);
+}
+void enter_scope()
+{
+    current_scope = create_scope(current_scope);
+}
+Variable* variable_new(char* name)
+{
+    Variable* var = SAFE_MALLOC(Variable);
+    if (!var)
+    {
+        yyerror("Failed to allocate memory for variable");
+        exit(1);
+    }
+    var->name = name;
+    var->is_array = false;
+    return var;
+}
+
+void add_variable_to_scope(const char* name, Variable* var)
+{
+    if (!current_scope)
+    {
+        yyerror("No scope to add variable to");
+        exit(1);
+    }
+    Variable* existing = hm_get(current_scope->variables, name, strlen(name));
+    if (existing)
+    {
+        yyerror("Variable already exists in current scope");
+        SAFE_FREE(var);
+        exit(1);
+    }
+
+    hm_put(current_scope->variables, name, strlen(name), var, sizeof(Variable));
 }

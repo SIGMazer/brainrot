@@ -1,7 +1,7 @@
 skibidi main {
     🚽 Calculate pi * r^2
-    chad pi = 3.141592;
-    chad r = 5.0;
+    chad pi = 3.141592f;
+    chad r = 5.0f;
     chad area = pi * r * r;    🚽 Area of a circle
     yappin("%.3f\n", area);
     bussin 0;
