@@ -15,6 +15,7 @@ Fixes #<issue_number>
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Documentation update
 - [ ] Performance improvement
+- [ ] Refactor
 
 ## Checklist
 
@@ -22,4 +23,6 @@ Fixes #<issue_number>
 - [ ] I have performed a self-review of my own code
 - [ ] I have documented my changes in the code or documentation
 - [ ] I have added tests that prove my changes work (if applicable)
+- [ ] I have run the unit tests locally
+- [ ] I have run the valgrind memory tests locally
 - [ ] All new and existing tests pass
