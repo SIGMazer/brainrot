@@ -95,6 +95,7 @@ help:
 	@echo "  check-deps : Verify all required bro apps are installed."
 	@echo "  rebuild    : Clean and re-grind the project."
 	@echo "  format     : Format source files using clang-format. No cringe, all kino."
+	@echo "  valgrind   : Checks for sussy memory leaks with Valgrind."
 	@echo "  help       : Show this help for n00bs."
 	@echo ""
 	@echo "Configuration (poggers):"
