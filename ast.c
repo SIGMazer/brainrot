@@ -3068,6 +3068,25 @@ void free_ast(ASTNode *node)
         break;
     }
 
+    case NODE_SWITCH_STATEMENT:
+        if (node->data.switch_stmt.expression)
+            free_ast(node->data.switch_stmt.expression);
+        if (node->data.switch_stmt.cases)
+        {
+            CaseNode *current = node->data.switch_stmt.cases;
+            while (current)
+            {
+                CaseNode *next = current->next;
+                if (current->value)
+                    free_ast(current->value);
+                if (current->statements)
+                    free_ast(current->statements);
+                SAFE_FREE(current);
+                current = next;
+            }
+        }
+        break;
+
     case NODE_FOR_STATEMENT:
         if (node->data.for_stmt.init)
             free_ast(node->data.for_stmt.init);
