@@ -2327,7 +2327,6 @@ void execute_for_statement(ASTNode *node)
                 int cond_result = evaluate_expression(node->data.for_stmt.cond);
                 if (!cond_result)
                 {
-                    POP_JUMP_BUFFER();
                     break;
                 }
             }
@@ -2345,6 +2344,7 @@ void execute_for_statement(ASTNode *node)
             }
         }
     }
+    POP_JUMP_BUFFER();
 }
 
 void execute_while_statement(ASTNode *node)
