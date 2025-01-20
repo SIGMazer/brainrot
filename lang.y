@@ -21,32 +21,6 @@ TypeModifiers get_variable_modifiers(const char* name);
 extern TypeModifiers current_modifiers;
 extern VarType current_var_type;
 
-/* Fix get_variable function: */
-Value get_variable(char *name) {
-    Variable *var = hm_get(symbol_table, name, strlen(name));
-    if (var != NULL) {
-        if (var->modifiers.is_volatile) {
-            asm volatile("" ::: "memory");
-        }
-        switch (var->var_type) {
-            case VAR_INT:
-                return (Value) { .ivalue = var->value.ivalue };
-            case VAR_SHORT:
-                return (Value) { .svalue = var->value.svalue };
-            case VAR_FLOAT:
-                return (Value) { .fvalue = var->value.fvalue };
-            case VAR_DOUBLE:
-                return (Value) { .dvalue = var->value.dvalue };
-            case VAR_BOOL:
-                return (Value) { .bvalue = var->value.bvalue };
-            case VAR_CHAR:
-                return (Value) { .ivalue = var->value.ivalue };
-        }
-
-    }
-    yyerror("Undefined variable");
-    exit(1);
-}
 
 extern int yylineno;
 
@@ -148,11 +122,11 @@ statement:
       declaration SEMICOLON
         { $$ = $1; }
     | for_statement
-        { $$ = $1; }
+        { $$ = $1;  }
     | while_statement
-        { $$ = $1; }
+        { $$ = $1;  }
     | do_while_statement
-        { $$ = $1; }
+        { $$ = $1;  }
     | function_call SEMICOLON
         { $$ = $1; }
     | error_statement SEMICOLON
@@ -160,9 +134,9 @@ statement:
     | return_statement SEMICOLON
         { $$ = $1; }
     | if_statement
-        { $$ = $1; }
+        { $$ = $1;  }
     | switch_statement
-        { $$ = $1; }
+        { $$ = $1;  }
     | break_statement SEMICOLON
         { $$ = $1; }
     | expression SEMICOLON
@@ -214,16 +188,18 @@ type:
 declaration:
     optional_modifiers type IDENTIFIER
         {
-            $$ = create_assignment_node($3, create_default_node($2));
+            $$ = create_declaration_node($3, create_default_node($2));
             SAFE_FREE($3);
         }
     | optional_modifiers type IDENTIFIER EQUALS expression
         {
-            $$ = create_assignment_node($3, $5);
+            $$ = create_declaration_node($3, $5);
             SAFE_FREE($3);
         }
     | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET
         {
+            Variable *var = variable_new($3);
+            add_variable_to_scope($3, var);
             if (!set_array_variable($3, $5, get_current_modifiers(), $2)) {
                 yyerror("Failed to create array");
                 SAFE_FREE($3);
@@ -231,17 +207,23 @@ declaration:
             }
             $$ = create_array_declaration_node($3, $5, $2);
             SAFE_FREE($3);
+            SAFE_FREE(var);
         }
     | optional_modifiers type IDENTIFIER LBRACKET RBRACKET EQUALS array_init
         {
+            Variable *var = variable_new($3);
+            add_variable_to_scope($3, var);
             set_array_variable($3, count_expression_list($7), get_current_modifiers(), $2);
             populate_array_variable($3, $7);
             $$ = create_array_declaration_node($3, count_expression_list($7), $2);
             SAFE_FREE($3);
+            SAFE_FREE(var);
             free_expression_list($7);
         }
     | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET EQUALS array_init
         {
+            Variable *var = variable_new($3);
+            add_variable_to_scope($3, var);
             ASTNode *node = create_array_declaration_node($3, $5, $2);
             set_array_variable($3, $5, get_current_modifiers(), $2);
             if ($8) {
@@ -250,6 +232,7 @@ declaration:
             }
             $$ = node;
             SAFE_FREE($3);
+            SAFE_FREE(var);
         }
     ;
 
@@ -471,12 +454,12 @@ array_access:
 %%
 
 int main(void) {
-    symbol_table = hm_new();
+    current_scope = create_scope(NULL);
     if (yyparse() == 0) {
         execute_statement(root);
     }
     free_ast(root);
-    hm_free(symbol_table);
+    free_scope(current_scope);
     
     // Clean up flex's internal state
     yylex_destroy();
@@ -487,10 +470,6 @@ int main(void) {
 void yyerror(const char *s) {
     extern char *yytext;
     fprintf(stderr, "Error: %s at line %d\n", s, yylineno - 1);
-    if(yylval.strval)
-    {
-        SAFE_FREE(yylval.strval);
-    }
 }
 
 void ragequit(int exit_code) {
@@ -528,8 +507,8 @@ void cleanup() {
     // Free the AST
     free_ast(root);
     
-    // Free the symbol table
-    hm_free(symbol_table);
+    // Free the scope
+    free_scope(current_scope);
     
     // Clean up flex's internal state
     yylex_destroy();
@@ -537,7 +516,7 @@ void cleanup() {
 
 TypeModifiers get_variable_modifiers(const char* name) {
     TypeModifiers mods = {false, false, false, false};  // Default modifiers
-    Variable *var = hm_get(symbol_table, name, strlen(name));
+    Variable *var = get_variable(name); 
     if (var != NULL) {
         return var->modifiers;
     }

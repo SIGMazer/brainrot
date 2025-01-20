@@ -1,15 +1,15 @@
 skibidi main {
     rizz int_array[3] = {1,2,3};
-    rizz int_array[] = {1,2,3};
+    rizz int_array1[] = {1,2,3};
 
-    flex (i = 0; i < 3; i = i + 1) {
+    flex (rizz i = 0; i < 3; i = i + 1) {
         yapping("%d", int_array[i]);
     }
 
-    rizz n = maxxing(int_array) / maxxing(int_array[0]);
+    rizz n = maxxing(int_array1) / maxxing(int_array1[0]);
     
-    flex (i = 0; i < n; i = i + 1) {
-        yapping("%d", int_array[i]);
+    flex (rizz i = 0; i < n; i = i + 1) {
+        yapping("%d", int_array1[i]);
     }
 
 

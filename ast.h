@@ -121,6 +121,7 @@ typedef enum
     NODE_BOOLEAN,
     NODE_IDENTIFIER,
     NODE_ASSIGNMENT,
+    NODE_DECLARATION,
     NODE_OPERATION,
     NODE_UNARY_OPERATION,
     NODE_FOR_STATEMENT,
@@ -233,10 +234,15 @@ struct ASTNode
     } data;
 };
 
+typedef struct Scope
+{
+    HashMap *variables;
+    struct Scope *parent;
+} Scope;
+
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
-extern HashMap *symbol_table;
-extern int var_count;
+extern Scope *current_scope;
 
 /* Function prototypes */
 bool set_int_variable(const char *name, int value, TypeModifiers mods);
@@ -247,6 +253,13 @@ bool set_double_variable(const char *name, double value, TypeModifiers mods);
 TypeModifiers get_variable_modifiers(const char *name);
 void reset_modifiers(void);
 TypeModifiers get_current_modifiers(void);
+Variable *get_variable(const char *name);
+Scope *create_scope(Scope *parent);
+void exit_scope();
+void enter_scope();
+void free_scope(Scope* scope);
+void add_variable_to_scope(const char* name, Variable* var);
+Variable* variable_new(char* name);
 
 /* Node creation functions */
 ASTNode *create_int_node(int value);
@@ -259,6 +272,7 @@ ASTNode *create_char_node(char value);
 ASTNode *create_boolean_node(bool value);
 ASTNode *create_identifier_node(char *name);
 ASTNode *create_assignment_node(char *name, ASTNode *expr);
+ASTNode *create_declaration_node(char *name, ASTNode *expr);
 ASTNode *create_operation_node(OperatorType op, ASTNode *left, ASTNode *right);
 ASTNode *create_unary_operation_node(OperatorType op, ASTNode *operand);
 ASTNode *create_for_statement_node(ASTNode *init, ASTNode *cond, ASTNode *incr, ASTNode *body);
