@@ -16,6 +16,7 @@ void ragequit(int exit_code);
 void yapping(const char* format, ...);
 void yappin(const char* format, ...);
 void baka(const char* format, ...);
+void cleanup();
 TypeModifiers get_variable_modifiers(const char* name);
 extern TypeModifiers current_modifiers;
 extern VarType current_var_type;
@@ -493,6 +494,7 @@ void yyerror(const char *s) {
 }
 
 void ragequit(int exit_code) {
+    cleanup();
     exit(exit_code);
 }
 
@@ -520,6 +522,17 @@ void baka(const char* format, ...) {
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
+}
+
+void cleanup() {
+    // Free the AST
+    free_ast(root);
+    
+    // Free the symbol table
+    hm_free(symbol_table);
+    
+    // Clean up flex's internal state
+    yylex_destroy();
 }
 
 TypeModifiers get_variable_modifiers(const char* name) {
