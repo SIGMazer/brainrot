@@ -1,8 +1,8 @@
-rizz add_two_numbers(rizz a, rizz b) {
-    bussin a + b;
-}
+    rizz numba_go_up(rizz a, rizz b) {
+        bussin a + b;
+    }
 
-skibidi main {
-    yappin("%d\n", add_two_numbers(1, 2));
-    bussin 0;
-}
+    skibidi main {
+        yappin("%d\n", numba_go_up(1, 2));
+        bussin 0;
+    }

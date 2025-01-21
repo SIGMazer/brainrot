@@ -3465,3 +3465,34 @@ ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *pa
 
     return node;
 }
+
+void free_parameters(Parameter *param)
+{
+    while (param)
+    {
+        Parameter *next = param->next;
+        SAFE_FREE(param->name);
+        SAFE_FREE(param);
+        param = next;
+    }
+}
+
+void free_function_table(void)
+{
+    Function *f = function_table;
+    while (f)
+    {
+        Function *next = f->next;
+
+        // Safe to free f->name: it's a separate safe_strdup from the AST's name.
+        SAFE_FREE(f->name);
+
+        // DO NOT free f->parameters or f->body here,
+        // because those pointers belong to the AST and
+        // are already freed in free_ast(root).
+
+        SAFE_FREE(f);
+        f = next;
+    }
+    function_table = NULL;
+}

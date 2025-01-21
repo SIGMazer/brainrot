@@ -495,6 +495,7 @@ int main(void) {
         execute_statement(root);
     }
     free_ast(root);
+    free_function_table();
     free_scope(current_scope);
     
     // Clean up flex's internal state
