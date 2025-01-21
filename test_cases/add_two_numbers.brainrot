@@ -1,0 +1,8 @@
+rizz add_two_numbers(rizz a, rizz b) {
+    bussin a + b;
+}
+
+skibidi main {
+    yappin("%d\n", add_two_numbers(1, 2));
+    bussin 0;
+}

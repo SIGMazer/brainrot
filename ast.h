@@ -53,6 +53,35 @@ typedef enum
     NONE,
 } VarType;
 
+typedef struct Parameter
+{
+    char *name;
+    VarType type;
+    struct Parameter *next;
+} Parameter;
+
+typedef struct Function
+{
+    char *name;
+    VarType return_type;
+    Parameter *parameters;
+    ASTNode *body;
+    struct Function *next;
+} Function;
+
+typedef struct
+{
+    bool has_value;
+    union
+    {
+        int ivalue;
+        float fvalue;
+        double dvalue;
+        bool bvalue;
+    } value;
+    VarType type;
+} ReturnValue;
+
 /* Symbol table structure */
 typedef struct
 {
@@ -136,9 +165,11 @@ typedef enum
     NODE_CASE,
     NODE_DEFAULT_CASE,
     NODE_BREAK_STATEMENT,
-    NODE_FUNC_CALL,
     NODE_SIZEOF,
     NODE_ARRAY_ACCESS,
+    NODE_FUNC_CALL,
+    NODE_FUNCTION_DEF,
+    NODE_RETURN,
 } NodeType;
 
 /* Rest of the structure definitions */
@@ -230,6 +261,13 @@ struct ASTNode
         {
             ASTNode *expr;
         } sizeof_stmt;
+        struct
+        {
+            char *name;
+            VarType return_type;
+            Parameter *parameters;
+            ASTNode *body;
+        } function_def;
         ASTNode *break_stmt;
     } data;
 };
@@ -243,6 +281,9 @@ typedef struct Scope
 /* Global variable declarations */
 extern TypeModifiers current_modifiers;
 extern Scope *current_scope;
+extern Function *function_table;
+extern ReturnValue current_return_value;
+extern jmp_buf return_jump_buf;
 
 /* Function prototypes */
 bool set_int_variable(const char *name, int value, TypeModifiers mods);
@@ -257,9 +298,9 @@ Variable *get_variable(const char *name);
 Scope *create_scope(Scope *parent);
 void exit_scope();
 void enter_scope();
-void free_scope(Scope* scope);
-void add_variable_to_scope(const char* name, Variable* var);
-Variable* variable_new(char* name);
+void free_scope(Scope *scope);
+void add_variable_to_scope(const char *name, Variable *var);
+Variable *variable_new(char *name);
 
 /* Node creation functions */
 ASTNode *create_int_node(int value);
@@ -292,6 +333,7 @@ CaseNode *create_default_case_node(ASTNode *statements);
 CaseNode *append_case_list(CaseNode *list, CaseNode *case_node);
 ASTNode *create_break_node(void);
 ASTNode *create_default_node(VarType var_type);
+ASTNode *create_return_node(ASTNode *expr);
 ExpressionList *create_expression_list(ASTNode *expr);
 ExpressionList *append_expression_list(ExpressionList *list, ASTNode *expr);
 void free_expression_list(ExpressionList *list);
@@ -329,6 +371,13 @@ void bruh();
 size_t count_expression_list(ExpressionList *list);
 size_t handle_sizeof(ASTNode *node);
 size_t get_type_size(char *name);
+
+/* User-defined functions */
+Function *create_function(char *name, VarType return_type, Parameter *params, ASTNode *body);
+Parameter *create_parameter(char *name, VarType type, Parameter *next);
+void execute_function_call(const char *name, ArgumentList *args);
+ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *params, ASTNode *body);
+void handle_return_statement(ASTNode *expr);
 
 extern TypeModifiers current_modifiers;
 
