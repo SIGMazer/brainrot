@@ -117,7 +117,7 @@ function_def_list
 
 function_def
     : type IDENTIFIER LPAREN params RPAREN LBRACE statements RBRACE
-        { $$ = create_function_def_node($2, $1, $4, $7); }
+        { $$ = create_function_def_node($2, $1, $4, $7); SAFE_FREE($2); }
     ;
 
 params
@@ -129,15 +129,11 @@ params
 
 param_list
     : type IDENTIFIER
-        { $$ = create_parameter($2, $1, NULL); }
+        { $$ = create_parameter($2, $1, NULL); SAFE_FREE($2); }
     | param_list COMMA type IDENTIFIER 
-        { $$ = create_parameter($4, $3, $1); }
+        { $$ = create_parameter($4, $3, $1); SAFE_FREE($4); }
     ;
 
-parameter
-    : type IDENTIFIER
-        { $$ = create_parameter($2, $1, NULL); }
-    ;
 
 skibidi_function:
     SKIBIDI MAIN LBRACE statements RBRACE
@@ -383,9 +379,9 @@ error_statement:
 
 return_statement:
     BUSSIN expression
-        { $$ = $2; }
+        { $$ = create_return_node($2); }
     | BUSSIN LPAREN expression RPAREN
-        { $$ = $3; }
+        { $$ = create_return_node($3); }
     ;
 
 expression:

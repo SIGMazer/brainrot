@@ -78,6 +78,7 @@ typedef struct
         float fvalue;
         double dvalue;
         bool bvalue;
+        short svalue;
     } value;
     VarType type;
 } ReturnValue;
@@ -284,7 +285,6 @@ extern Scope *current_scope;
 extern Function *function_table;
 extern ReturnValue current_return_value;
 extern jmp_buf return_jump_buf;
-
 /* Function prototypes */
 bool set_int_variable(const char *name, int value, TypeModifiers mods);
 bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type);
@@ -371,6 +371,7 @@ void bruh();
 size_t count_expression_list(ExpressionList *list);
 size_t handle_sizeof(ASTNode *node);
 size_t get_type_size(char *name);
+void *handle_function_call(ASTNode* node);
 
 /* User-defined functions */
 Function *create_function(char *name, VarType return_type, Parameter *params, ASTNode *body);

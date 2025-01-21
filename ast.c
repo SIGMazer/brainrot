@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static JumpBuffer *jump_buffer = {0};
+JumpBuffer *jump_buffer = {0};
 
 Function *function_table = NULL;
 jmp_buf return_jump_buf;
@@ -263,6 +263,7 @@ ASTNode *create_int_node(int value)
     SET_DATA_INT(node, value);
     return node;
 }
+
 
 ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
 {
@@ -640,6 +641,7 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         *(short *)left_value = evaluate_expression_short(node->data.op.left);
         *(short *)right_value = evaluate_expression_short(node->data.op.right);
         break;
+
 
     default:
         yyerror("Unsupported type promotion");
@@ -1071,6 +1073,7 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     }
 }
 
+
 float evaluate_expression_float(ASTNode *node)
 {
     if (!node)
@@ -1149,6 +1152,21 @@ float evaluate_expression_float(ASTNode *node)
         float return_val = *result;
         SAFE_FREE(result);
         return return_val;
+    }
+    case NODE_SIZEOF:
+    {
+        return (float)handle_sizeof(node);
+    }
+    case NODE_FUNC_CALL:
+    {
+        float *res = (float *)handle_function_call(node);
+        if (res != NULL)
+        {
+            float result = *res;
+            SAFE_FREE(res);
+            return result;
+        }
+        return 0.0f;
     }
     default:
         yyerror("Invalid float expression");
@@ -1235,6 +1253,22 @@ double evaluate_expression_double(ASTNode *node)
         double return_val = *result;
         SAFE_FREE(result);
         return return_val;
+    }
+    case NODE_SIZEOF:
+    {
+        return (double)handle_sizeof(node);
+    }
+    case NODE_FUNC_CALL:
+    {
+        double *res = (double *)handle_function_call(node);
+        if (res != NULL)
+        {
+            double result = *res;
+            SAFE_FREE(res);
+            return result;
+        }
+        return 0.0L;
+
     }
     default:
         yyerror("Invalid double expression");
@@ -1452,6 +1486,17 @@ short evaluate_expression_short(ASTNode *node)
         yyerror("Undefined array variable!");
         return 0;
     }
+    case NODE_FUNC_CALL:
+    {
+        short *res = (short *)handle_function_call(node);
+        if (res != NULL)
+        {
+            short return_val = *res;
+            SAFE_FREE(res);
+            return return_val;
+        }
+        return 0;
+    }
     default:
         yyerror("Invalid short expression");
         return 0;
@@ -1568,22 +1613,12 @@ int evaluate_expression_int(ASTNode *node)
     }
     case NODE_FUNC_CALL:
     {
-        execute_function_call(
-            node->data.func_call.function_name,
-            node->data.func_call.arguments);
-        if (current_return_value.has_value)
+        int *res  = (int *)handle_function_call(node);
+        if (res != NULL)
         {
-            switch (current_return_value.type)
-            {
-            case VAR_INT:
-                return current_return_value.value.ivalue;
-            case VAR_FLOAT:
-                return (int)current_return_value.value.fvalue;
-            case VAR_DOUBLE:
-                return (int)current_return_value.value.dvalue;
-            case VAR_BOOL:
-                return current_return_value.value.bvalue;
-            }
+            int return_val = *res;
+            SAFE_FREE(res);
+            return return_val;
         }
         return 0;
     }
@@ -1592,6 +1627,48 @@ int evaluate_expression_int(ASTNode *node)
         return 0;
     }
 }
+
+void *handle_function_call(ASTNode* node)
+{
+    execute_function_call(
+        node->data.func_call.function_name,
+        node->data.func_call.arguments);
+    void* return_value = NULL;
+    if (current_return_value.has_value)
+    {
+        switch (current_return_value.type)
+        {
+        case VAR_INT:
+            return_value = SAFE_MALLOC(int);
+            *(int *)return_value = current_return_value.value.ivalue;
+            break;
+        case VAR_FLOAT:
+            return_value = SAFE_MALLOC(float);
+            *(float *)return_value = current_return_value.value.fvalue;
+            break;
+        case VAR_DOUBLE:
+            return_value = SAFE_MALLOC(double);
+            *(double *)return_value = current_return_value.value.dvalue;
+            break;
+        case VAR_BOOL:
+            return_value = SAFE_MALLOC(bool);
+            *(bool *)return_value = current_return_value.value.bvalue;
+            break;
+        case VAR_CHAR:
+            return_value = SAFE_MALLOC(char);
+            *(char *)return_value = current_return_value.value.ivalue;
+            break;
+        case VAR_SHORT:
+            return_value = SAFE_MALLOC(short);
+            *(short *)return_value = current_return_value.value.svalue;
+            break;
+        case NONE:
+            return NULL;
+        }
+    }
+    return return_value;
+}
+
 
 bool evaluate_expression_bool(ASTNode *node)
 {
@@ -2294,6 +2371,7 @@ void execute_statement(ASTNode *node)
         break;
     }
 }
+
 
 void execute_statements(ASTNode *node)
 {
@@ -3191,17 +3269,15 @@ void free_ast(ASTNode *node)
     case NODE_FUNCTION_DEF:
         SAFE_FREE(node->data.function_def.name);
         // Free parameters
-        Parameter *param = node->data.function_def.parameters;
-        while (param)
-        {
-            Parameter *next = param->next;
-            SAFE_FREE(param->name);
-            SAFE_FREE(param);
-            param = next;
-        }
         if (node->data.function_def.body)
         {
             free_ast(node->data.function_def.body);
+        }
+        break;
+    case NODE_RETURN:
+        if (node->data.op.left)
+        {
+            free_ast(node->data.op.left);
         }
         break;
     default:
@@ -3344,6 +3420,19 @@ void execute_function_call(const char *name, ArgumentList *args)
             // Process arguments and parameters
             ArgumentList *curr_arg = args;
             Parameter *curr_param = func->parameters;
+            current_return_value.type = func->return_type;
+
+            // reverse the order of parameters
+            Parameter *prev = NULL;
+            Parameter *next = NULL;
+            while (curr_param)
+            {
+                next = curr_param->next;
+                curr_param->next = prev;
+                prev = curr_param;
+                curr_param = next;
+            }
+            curr_param = prev;
 
             while (curr_arg && curr_param)
             {
@@ -3356,21 +3445,31 @@ void execute_function_call(const char *name, ArgumentList *args)
                 switch (curr_param->type)
                 {
                 case VAR_INT:
-                    var->value.ivalue = evaluate_expression_int(curr_arg->expr);
+                    set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
                     break;
                 case VAR_FLOAT:
-                    var->value.fvalue = evaluate_expression_float(curr_arg->expr);
+                    set_float_variable(curr_param->name, evaluate_expression_float(curr_arg->expr), get_current_modifiers());
                     break;
                 case VAR_DOUBLE:
-                    var->value.dvalue = evaluate_expression_double(curr_arg->expr);
+                    set_double_variable(curr_param->name, evaluate_expression_double(curr_arg->expr), get_current_modifiers());
                     break;
                 case VAR_BOOL:
-                    var->value.bvalue = evaluate_expression_bool(curr_arg->expr);
+                    set_bool_variable(curr_param->name, evaluate_expression_bool(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_SHORT:
+                    set_short_variable(curr_param->name, evaluate_expression_short(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_CHAR:
+                    set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
                     break;
                 }
 
+                Parameter *tmp = curr_param;
                 curr_arg = curr_arg->next;
                 curr_param = curr_param->next;
+                SAFE_FREE(var);
+                SAFE_FREE(tmp->name);
+                SAFE_FREE(tmp);
             }
 
             if (curr_arg || curr_param)
@@ -3382,11 +3481,13 @@ void execute_function_call(const char *name, ArgumentList *args)
 
             // Set up return handling
             current_return_value.has_value = false;
-            if (setjmp(return_jump_buf) == 0)
+            PUSH_JUMP_BUFFER();
+            if (setjmp(CURRENT_JUMP_BUFFER()) == 0)
             {
                 execute_statement(func->body);
             }
 
+            POP_JUMP_BUFFER();
             // Clean up scope
             exit_scope();
             return;
@@ -3402,31 +3503,31 @@ void handle_return_statement(ASTNode *expr)
     current_return_value.has_value = true;
     if (expr)
     {
-        // Instead of switch(expr->var_type), do exactly what you'd do for normal expressions:
-        if (is_double_expression(expr))
+        switch (current_return_value.type)
         {
-            current_return_value.value.dvalue = evaluate_expression_double(expr);
-            current_return_value.type = VAR_DOUBLE;
-        }
-        else if (is_float_expression(expr))
-        {
-            current_return_value.value.fvalue = evaluate_expression_float(expr);
-            current_return_value.type = VAR_FLOAT;
-        }
-        else if (is_short_expression(expr))
-        {
-            // Or keep it as short
-            current_return_value.value.ivalue = evaluate_expression_short(expr);
-            current_return_value.type = VAR_INT; // or SMOL if you want to track it distinctly
-        }
-        else
-        {
-            // Default to int
+        case VAR_INT:
             current_return_value.value.ivalue = evaluate_expression_int(expr);
-            current_return_value.type = VAR_INT;
+            break;
+        case VAR_FLOAT:
+            current_return_value.value.fvalue = evaluate_expression_float(expr);
+            break;
+        case VAR_DOUBLE:
+            current_return_value.value.dvalue = evaluate_expression_double(expr);
+            break;
+        case VAR_BOOL:
+            current_return_value.value.bvalue = evaluate_expression_bool(expr);
+            break;
+        case VAR_SHORT:
+            current_return_value.value.svalue = evaluate_expression_short(expr);
+            break;
+        default:
+            yyerror("Unsupported return type");
+            exit(1);
         }
     }
-    longjmp(return_jump_buf, 1);
+    // skibidi main function do not have jump buffer
+    if(CURRENT_JUMP_BUFFER() != NULL)
+        LONGJMP();
 }
 
 Parameter *create_parameter(char *name, VarType type, Parameter *next)
@@ -3496,3 +3597,4 @@ void free_function_table(void)
     }
     function_table = NULL;
 }
+
