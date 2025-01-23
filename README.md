@@ -118,7 +118,9 @@ Check out the [examples](examples/README.md):
 
 ## 🗪 Community
 
-Join our community on [Discord](https://discord.gg/FjHhvBHSGj).
+Join our community on:
+ - [Discord](https://discord.gg/FjHhvBHSGj)
+ - [Reddit](https://www.reddit.com/r/Brainrotlang/)
 
 ## 📚 Language Reference
 
