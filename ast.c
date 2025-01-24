@@ -1772,6 +1772,17 @@ bool evaluate_expression_bool(ASTNode *node)
         yyerror("Undefined array variable!");
         return 0;
     }
+    case NODE_FUNC_CALL:
+    {
+        bool *res = (bool *)handle_function_call(node);
+        if (res != NULL)
+        {
+            bool return_val = *res;
+            SAFE_FREE(res);
+            return return_val;
+        }
+        return 0;
+    }
     default:
         yyerror("Invalid boolean expression");
         return 0;
@@ -1915,9 +1926,38 @@ bool is_short_expression(ASTNode *node)
         return is_short_expression(node->data.op.left) ||
                is_short_expression(node->data.op.right);
     }
+    case NODE_FUNC_CALL:
+    {
+        return get_function_return_type(node->data.func_call.function_name) == VAR_SHORT;
+    }
     default:
         return false;
     }
+}
+
+Function* get_function(const char *name)
+{
+    Function *func = function_table;
+    while (func != NULL)
+    {
+        if (strcmp(func->name, name) == 0)
+        {
+            return func;
+        }
+        func = func->next;
+    }
+    return NULL;
+}
+
+VarType get_function_return_type(const char *name)
+{
+    Function *func = get_function(name);
+    if (func != NULL)
+    {
+        return func->return_type;
+    }
+    yyerror("Undefined function in type check");
+    return NONE;
 }
 
 bool is_float_expression(ASTNode *node)
@@ -1950,6 +1990,10 @@ bool is_float_expression(ASTNode *node)
         // If either operand is float, result is float
         return is_float_expression(node->data.op.left) ||
                is_float_expression(node->data.op.right);
+    }
+    case NODE_FUNC_CALL:
+    {
+        return get_function_return_type(node->data.func_call.function_name) == VAR_FLOAT;
     }
     default:
         return false;
@@ -1986,6 +2030,10 @@ bool is_double_expression(ASTNode *node)
         // If either operand is double, result is double
         return is_double_expression(node->data.op.left) ||
                is_double_expression(node->data.op.right);
+    }
+    case NODE_FUNC_CALL:
+    {
+        return get_function_return_type(node->data.func_call.function_name) == VAR_DOUBLE;
     }
     default:
         return false;
@@ -3441,7 +3489,6 @@ void execute_function_call(const char *name, ArgumentList *args)
                 var->var_type = curr_param->type;
                 add_variable_to_scope(curr_param->name, var);
 
-                // Evaluate argument and assign to parameter
                 switch (curr_param->type)
                 {
                 case VAR_INT:

@@ -301,6 +301,8 @@ void enter_scope();
 void free_scope(Scope *scope);
 void add_variable_to_scope(const char *name, Variable *var);
 Variable *variable_new(char *name);
+Function* get_function(const char *name);
+VarType get_function_return_type(const char *name);
 
 /* Node creation functions */
 ASTNode *create_int_node(int value);
