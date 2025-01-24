@@ -1,0 +1,18 @@
+cap is_prime(rizz n) {
+    edgy(n < 2) {
+        bussin L;
+    }
+    flex(rizz i = 2; i * i <= n; i++) {
+        edgy(n % i == 0) {
+            bussin L;
+        }
+    }
+    bussin W;
+
+}
+
+skibidi main {
+    yappin("%b\n", is_prime(7));
+    bussin 0;
+}
+

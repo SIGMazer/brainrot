@@ -39,5 +39,8 @@
     "float_array": "3.140000\n3.141500\n3.141592\n",
     "double_array": "3.140000\n3.141500\n3.141592\n",
     "char_array": "rizz",
-    "add_two_numbers": "3"
+    "add_two_numbers": "3",
+    "mul_two_numbers": "11.400000",
+    "max_gigachad": "5.000000",
+    "is_prime": "W"
 }
