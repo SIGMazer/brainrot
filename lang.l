@@ -138,20 +138,16 @@ extern int yylineno;
     if (current_var_type == VAR_SHORT) {
         yylval.sval = (short)atoi(yytext);
         return SHORT_LITERAL;
-    } else if (current_var_type == VAR_INT) {
+    } else if (current_var_type == VAR_INT || current_var_type == NONE) {
         yylval.ival = atoi(yytext);
         return INT_LITERAL;
-    } else if (current_var_type == VAR_FLOAT) {
-        yylval.fval = atof(yytext);
-        return FLOAT_LITERAL;
-    } else if (current_var_type == VAR_DOUBLE) {
-        yylval.dval = (double)atof(yytext);
-        return DOUBLE_LITERAL;
     } else {
+        // Default behavior for unexpected types
         yylval.ival = atoi(yytext);
         return INT_LITERAL;
     }
 }
+
 '.' { yylval.ival = yytext[1]; return CHAR; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.strval = safe_strdup(yytext); return IDENTIFIER; }
 \"([^\\\"]|\\.)*\" {

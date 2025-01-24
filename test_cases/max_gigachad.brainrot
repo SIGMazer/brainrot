@@ -1,0 +1,14 @@
+gigachad gigamax(gigachad a, gigachad b) {
+    gigachad max = 0;
+    edgy (a > b) {
+        max = a;
+    } amogus{
+        max = b;
+    }
+    bussin max;
+}
+
+skibidi main {
+    yappin("%f\n", gigamax(5, 2));
+    bussin 0;
+}

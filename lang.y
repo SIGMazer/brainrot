@@ -39,6 +39,7 @@ ASTNode *root = NULL;
     CaseNode *case_node;
     ArgumentList *args;
     ExpressionList *expr_list;
+    Parameter *param;
 }
 
 /* Define token types */
@@ -58,7 +59,6 @@ ASTNode *root = NULL;
 %token <ival> BOOLEAN
 %token <fval> FLOAT_LITERAL
 %token <dval> DOUBLE_LITERAL
-
 
 /* Declare types for non-terminals */
 %type <ival> type
@@ -82,7 +82,9 @@ ASTNode *root = NULL;
 %type <node> assignment
 %type <node> literal identifier sizeof_expression
 %type <expr_list> array_init initializer_list
-
+%type <node> function_def
+%type <node> function_def_list
+%type <param> param_list parameter params
 
 %start program
 
@@ -101,10 +103,37 @@ ASTNode *root = NULL;
 
 %%
 
-program:
-    skibidi_function
-        {root = $1; }
+program
+    : function_def_list skibidi_function
+        { root = create_statement_list($2, $1); }
     ;
+
+function_def_list
+    : /* empty */
+        { $$ = NULL; }
+    | function_def_list function_def
+        { $$ = create_statement_list($2, $1); }
+    ;
+
+function_def
+    : type IDENTIFIER LPAREN params RPAREN LBRACE statements RBRACE
+        { $$ = create_function_def_node($2, $1, $4, $7); SAFE_FREE($2); }
+    ;
+
+params
+    : param_list
+        { $$ = $1; }
+    | /* empty */
+        { $$ = NULL; }
+    ;
+
+param_list
+    : type IDENTIFIER
+        { $$ = create_parameter($2, $1, NULL); SAFE_FREE($2); }
+    | param_list COMMA type IDENTIFIER 
+        { $$ = create_parameter($4, $3, $1); SAFE_FREE($4); }
+    ;
+
 
 skibidi_function:
     SKIBIDI MAIN LBRACE statements RBRACE
@@ -350,7 +379,9 @@ error_statement:
 
 return_statement:
     BUSSIN expression
-        { $$ = $2; }
+        { $$ = create_return_node($2); }
+    | BUSSIN LPAREN expression RPAREN
+        { $$ = create_return_node($3); }
     ;
 
 expression:
@@ -362,6 +393,7 @@ expression:
     | parentheses
     | array_access
     | sizeof_expression
+    | function_call
     ;
 
 sizeof_expression:
@@ -459,6 +491,7 @@ int main(void) {
         execute_statement(root);
     }
     free_ast(root);
+    free_function_table();
     free_scope(current_scope);
     
     // Clean up flex's internal state

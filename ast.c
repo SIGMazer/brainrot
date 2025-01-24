@@ -10,7 +10,11 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static JumpBuffer *jump_buffer = {0};
+JumpBuffer *jump_buffer = {0};
+
+Function *function_table = NULL;
+jmp_buf return_jump_buf;
+ReturnValue current_return_value;
 
 TypeModifiers current_modifiers = {false, false, false, false, false};
 extern VarType current_var_type;
@@ -20,7 +24,7 @@ Scope *current_scope;
 // Symbol table functions
 bool set_variable(const char *name, void *value, VarType type, TypeModifiers mods)
 {
-    Variable *var = get_variable(name); 
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         var->modifiers = mods;
@@ -59,7 +63,7 @@ bool set_int_variable(const char *name, int value, TypeModifiers mods)
 bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type)
 {
     // search for an existing variable
-    Variable *var = get_variable(name); 
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         if (var->is_array)
@@ -260,6 +264,7 @@ ASTNode *create_int_node(int value)
     return node;
 }
 
+
 ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
 {
     ASTNode *node = SAFE_MALLOC(ASTNode);
@@ -289,7 +294,7 @@ ASTNode *create_array_access_node(char *name, ASTNode *index)
     node->is_array = true;
 
     // Look up and set the array's type from the symbol table
-    Variable *var = get_variable(name); 
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         node->var_type = var->var_type;
@@ -412,7 +417,7 @@ void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int prom
         exit(1);
 
     char *name = node->data.name;
-    Variable *var = get_variable(name); 
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         static Value promoted_value;
@@ -510,7 +515,7 @@ int get_expression_type(ASTNode *node)
     {
         // First, get the array's base type from symbol table
         const char *array_name = node->data.array.name;
-        Variable *var = get_variable(array_name); 
+        Variable *var = get_variable(array_name);
         if (var != NULL)
         {
             // Found the array, now handle the index expression
@@ -534,7 +539,7 @@ int get_expression_type(ASTNode *node)
     {
         // Look up the variable type in the symbol table
         const char *array_name = node->data.name;
-        Variable *var = get_variable(array_name); 
+        Variable *var = get_variable(array_name);
         if (var != NULL)
         {
             return var->var_type;
@@ -636,6 +641,7 @@ void *handle_binary_operation(ASTNode *node, int result_type)
         *(short *)left_value = evaluate_expression_short(node->data.op.left);
         *(short *)right_value = evaluate_expression_short(node->data.op.right);
         break;
+
 
     default:
         yyerror("Unsupported type promotion");
@@ -932,7 +938,6 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
             *result = *(int *)operand_value + 1;
             set_int_variable(node->data.unary.operand->data.name, *result, get_variable_modifiers(node->data.unary.operand->data.name));
             return result;
-
         }
         else if (operand_type == VAR_SHORT)
         {
@@ -1068,6 +1073,7 @@ void *handle_unary_expression(ASTNode *node, void *operand_value, int operand_ty
     }
 }
 
+
 float evaluate_expression_float(ASTNode *node)
 {
     if (!node)
@@ -1079,7 +1085,7 @@ float evaluate_expression_float(ASTNode *node)
     {
         const char *array_name = node->data.array.name;
         int idx = evaluate_expression_int(node->data.array.index);
-        Variable *var = get_variable(array_name); 
+        Variable *var = get_variable(array_name);
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1147,6 +1153,21 @@ float evaluate_expression_float(ASTNode *node)
         SAFE_FREE(result);
         return return_val;
     }
+    case NODE_SIZEOF:
+    {
+        return (float)handle_sizeof(node);
+    }
+    case NODE_FUNC_CALL:
+    {
+        float *res = (float *)handle_function_call(node);
+        if (res != NULL)
+        {
+            float result = *res;
+            SAFE_FREE(res);
+            return result;
+        }
+        return 0.0f;
+    }
     default:
         yyerror("Invalid float expression");
         return 0.0f;
@@ -1165,7 +1186,7 @@ double evaluate_expression_double(ASTNode *node)
         const char *array_name = node->data.array.name;
         int idx = evaluate_expression_int(node->data.array.index);
 
-        Variable *var = get_variable(array_name); 
+        Variable *var = get_variable(array_name);
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1232,6 +1253,22 @@ double evaluate_expression_double(ASTNode *node)
         double return_val = *result;
         SAFE_FREE(result);
         return return_val;
+    }
+    case NODE_SIZEOF:
+    {
+        return (double)handle_sizeof(node);
+    }
+    case NODE_FUNC_CALL:
+    {
+        double *res = (double *)handle_function_call(node);
+        if (res != NULL)
+        {
+            double result = *res;
+            SAFE_FREE(res);
+            return result;
+        }
+        return 0.0L;
+
     }
     default:
         yyerror("Invalid double expression");
@@ -1413,7 +1450,7 @@ short evaluate_expression_short(ASTNode *node)
     {
         // find the symbol
         char *name = node->data.array.name;
-        Variable *var = get_variable(name); 
+        Variable *var = get_variable(name);
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1447,6 +1484,17 @@ short evaluate_expression_short(ASTNode *node)
             }
         }
         yyerror("Undefined array variable!");
+        return 0;
+    }
+    case NODE_FUNC_CALL:
+    {
+        short *res = (short *)handle_function_call(node);
+        if (res != NULL)
+        {
+            short return_val = *res;
+            SAFE_FREE(res);
+            return return_val;
+        }
         return 0;
     }
     default:
@@ -1527,7 +1575,7 @@ int evaluate_expression_int(ASTNode *node)
     {
         // find the symbol
         char *name = node->data.array.name;
-        Variable *var = get_variable(name); 
+        Variable *var = get_variable(name);
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1563,11 +1611,64 @@ int evaluate_expression_int(ASTNode *node)
         yyerror("Undefined array variable!");
         return 0;
     }
+    case NODE_FUNC_CALL:
+    {
+        int *res  = (int *)handle_function_call(node);
+        if (res != NULL)
+        {
+            int return_val = *res;
+            SAFE_FREE(res);
+            return return_val;
+        }
+        return 0;
+    }
     default:
         yyerror("Invalid integer expression");
         return 0;
     }
 }
+
+void *handle_function_call(ASTNode* node)
+{
+    execute_function_call(
+        node->data.func_call.function_name,
+        node->data.func_call.arguments);
+    void* return_value = NULL;
+    if (current_return_value.has_value)
+    {
+        switch (current_return_value.type)
+        {
+        case VAR_INT:
+            return_value = SAFE_MALLOC(int);
+            *(int *)return_value = current_return_value.value.ivalue;
+            break;
+        case VAR_FLOAT:
+            return_value = SAFE_MALLOC(float);
+            *(float *)return_value = current_return_value.value.fvalue;
+            break;
+        case VAR_DOUBLE:
+            return_value = SAFE_MALLOC(double);
+            *(double *)return_value = current_return_value.value.dvalue;
+            break;
+        case VAR_BOOL:
+            return_value = SAFE_MALLOC(bool);
+            *(bool *)return_value = current_return_value.value.bvalue;
+            break;
+        case VAR_CHAR:
+            return_value = SAFE_MALLOC(char);
+            *(char *)return_value = current_return_value.value.ivalue;
+            break;
+        case VAR_SHORT:
+            return_value = SAFE_MALLOC(short);
+            *(short *)return_value = current_return_value.value.svalue;
+            break;
+        case NONE:
+            return NULL;
+        }
+    }
+    return return_value;
+}
+
 
 bool evaluate_expression_bool(ASTNode *node)
 {
@@ -1635,7 +1736,7 @@ bool evaluate_expression_bool(ASTNode *node)
     {
         // find the symbol
         char *name = node->data.array.name;
-        Variable *var = get_variable(name); 
+        Variable *var = get_variable(name);
         if (var != NULL)
         {
             if (!var->is_array)
@@ -1669,6 +1770,17 @@ bool evaluate_expression_bool(ASTNode *node)
             }
         }
         yyerror("Undefined array variable!");
+        return 0;
+    }
+    case NODE_FUNC_CALL:
+    {
+        bool *res = (bool *)handle_function_call(node);
+        if (res != NULL)
+        {
+            bool return_val = *res;
+            SAFE_FREE(res);
+            return return_val;
+        }
         return 0;
     }
     default:
@@ -1763,7 +1875,7 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
 
 bool is_const_variable(const char *name)
 {
-    Variable *var = get_variable(name); 
+    Variable *var = get_variable(name);
     if (var != NULL)
     {
         return var->modifiers.is_const;
@@ -1800,7 +1912,7 @@ bool is_short_expression(ASTNode *node)
     {
         if (!check_and_mark_identifier(node, "Undefined variable in type check"))
             exit(1);
-        Variable *var = get_variable(node->data.name); 
+        Variable *var = get_variable(node->data.name);
         if (var != NULL)
         {
             return var->var_type == VAR_SHORT;
@@ -1814,9 +1926,38 @@ bool is_short_expression(ASTNode *node)
         return is_short_expression(node->data.op.left) ||
                is_short_expression(node->data.op.right);
     }
+    case NODE_FUNC_CALL:
+    {
+        return get_function_return_type(node->data.func_call.function_name) == VAR_SHORT;
+    }
     default:
         return false;
     }
+}
+
+Function* get_function(const char *name)
+{
+    Function *func = function_table;
+    while (func != NULL)
+    {
+        if (strcmp(func->name, name) == 0)
+        {
+            return func;
+        }
+        func = func->next;
+    }
+    return NULL;
+}
+
+VarType get_function_return_type(const char *name)
+{
+    Function *func = get_function(name);
+    if (func != NULL)
+    {
+        return func->return_type;
+    }
+    yyerror("Undefined function in type check");
+    return NONE;
 }
 
 bool is_float_expression(ASTNode *node)
@@ -1850,6 +1991,10 @@ bool is_float_expression(ASTNode *node)
         return is_float_expression(node->data.op.left) ||
                is_float_expression(node->data.op.right);
     }
+    case NODE_FUNC_CALL:
+    {
+        return get_function_return_type(node->data.func_call.function_name) == VAR_FLOAT;
+    }
     default:
         return false;
     }
@@ -1872,7 +2017,7 @@ bool is_double_expression(ASTNode *node)
     {
         if (!check_and_mark_identifier(node, "Undefined variable in type check"))
             exit(1);
-        Variable *var = get_variable(node->data.name); 
+        Variable *var = get_variable(node->data.name);
         if (var != NULL)
         {
             return var->var_type == VAR_DOUBLE;
@@ -1885,6 +2030,10 @@ bool is_double_expression(ASTNode *node)
         // If either operand is double, result is double
         return is_double_expression(node->data.op.left) ||
                is_double_expression(node->data.op.right);
+    }
+    case NODE_FUNC_CALL:
+    {
+        return get_function_return_type(node->data.func_call.function_name) == VAR_DOUBLE;
     }
     default:
         return false;
@@ -1929,7 +2078,7 @@ void execute_assignment(ASTNode *node)
         int idx = evaluate_expression_int(node->data.op.left->data.array.index);
 
         // Find array in symbol table
-        Variable *var = get_variable(array_name); 
+        Variable *var = get_variable(array_name);
         if (var != NULL)
         {
             if (!var->is_array)
@@ -2033,9 +2182,9 @@ void execute_statement(ASTNode *node)
     switch (node->type)
     {
     case NODE_DECLARATION:
-        char* name = node->data.op.left->data.name;
+        char *name = node->data.op.left->data.name;
         Variable *var = variable_new(name);
-        add_variable_to_scope(name,var);
+        add_variable_to_scope(name, var);
         SAFE_FREE(var);
     case NODE_ASSIGNMENT:
     {
@@ -2050,7 +2199,7 @@ void execute_statement(ASTNode *node)
             int idx = evaluate_expression_int(array_node->data.array.index);
 
             // Find array in symbol table
-            Variable *var = get_variable(array_name); 
+            Variable *var = get_variable(array_name);
             if (var != NULL)
             {
                 if (!var->is_array)
@@ -2119,7 +2268,7 @@ void execute_statement(ASTNode *node)
                 yyerror("Failed to set short variable");
             }
         }
-        else if (node->var_type ==VAR_FLOAT || is_float_expression(value_node))
+        else if (node->var_type == VAR_FLOAT || is_float_expression(value_node))
         {
             float value = evaluate_expression_float(value_node);
             if (!set_float_variable(name, value, mods))
@@ -2127,7 +2276,7 @@ void execute_statement(ASTNode *node)
                 yyerror("Failed to set float variable");
             }
         }
-        else if (node->var_type == VAR_DOUBLE|| is_double_expression(value_node))
+        else if (node->var_type == VAR_DOUBLE || is_double_expression(value_node))
         {
             double value = evaluate_expression_double(value_node);
             if (!set_double_variable(name, value, mods))
@@ -2246,11 +2395,31 @@ void execute_statement(ASTNode *node)
         // Signal to break out of the current loop/switch
         bruh();
         break;
+    case NODE_FUNCTION_DEF:
+    {
+        Function *func = create_function(
+            node->data.function_def.name,
+            node->data.function_def.return_type,
+            node->data.function_def.parameters,
+            node->data.function_def.body);
+        if (!func)
+        {
+            yyerror("Failed to create function");
+            exit(1);
+        }
+        break;
+    }
+    case NODE_RETURN:
+    {
+        handle_return_statement(node->data.op.left);
+        break;
+    }
     default:
         yyerror("Unknown statement type");
         break;
     }
 }
+
 
 void execute_statements(ASTNode *node)
 {
@@ -2504,7 +2673,7 @@ void execute_yapping_call(ArgumentList *args)
                     const char *array_name = expr->data.array.name;
                     int idx = evaluate_expression_int(expr->data.array.index);
 
-                    Variable *var = get_variable(array_name); 
+                    Variable *var = get_variable(array_name);
                     if (var != NULL)
                     {
                         if (!var->is_array)
@@ -2740,9 +2909,15 @@ void execute_baka_call(ArgumentList *args)
         baka("\n");
         return;
     }
-    // parse the first argument as a format string
-    // parse subsequent arguments as integers, etc.
-    // call "baka(formatString, val, ...)"
+
+    ASTNode *formatNode = args->expr;
+    if (formatNode->type != NODE_STRING_LITERAL)
+    {
+        yyerror("First argument to yapping must be a string literal");
+        return;
+    }
+
+    baka(formatNode->data.name);
 }
 
 void execute_ragequit_call(ArgumentList *args)
@@ -2819,7 +2994,7 @@ void *evaluate_array_access(ASTNode *node)
     const char *array_name = node->data.array.name;
     int idx = evaluate_expression_int(node->data.array.index);
 
-    Variable *var = get_variable(array_name); 
+    Variable *var = get_variable(array_name);
 
     if (var != NULL)
     {
@@ -3139,6 +3314,20 @@ void free_ast(ASTNode *node)
             free_ast(node->data.op.left);
         }
         break;
+    case NODE_FUNCTION_DEF:
+        SAFE_FREE(node->data.function_def.name);
+        // Free parameters
+        if (node->data.function_def.body)
+        {
+            free_ast(node->data.function_def.body);
+        }
+        break;
+    case NODE_RETURN:
+        if (node->data.op.left)
+        {
+            free_ast(node->data.op.left);
+        }
+        break;
     default:
         fprintf(stderr, "Warning: Unknown node type in free_ast: %d\n", node->type);
         break;
@@ -3148,9 +3337,9 @@ void free_ast(ASTNode *node)
     SAFE_FREE(node);
 }
 
-Scope* create_scope(Scope* parent)
+Scope *create_scope(Scope *parent)
 {
-    Scope* scope = SAFE_MALLOC(Scope);
+    Scope *scope = SAFE_MALLOC(Scope);
     if (!scope)
     {
         yyerror("Failed to allocate memory for scope");
@@ -3162,12 +3351,12 @@ Scope* create_scope(Scope* parent)
     return scope;
 }
 
-Variable* get_variable(const char* name)
+Variable *get_variable(const char *name)
 {
-    Scope* scope = current_scope;
+    Scope *scope = current_scope;
     while (scope)
     {
-        Variable* var = hm_get(scope->variables, name, strlen(name));
+        Variable *var = hm_get(scope->variables, name, strlen(name));
         if (var)
         {
             return var;
@@ -3184,13 +3373,13 @@ void exit_scope()
         yyerror("No scope to exit");
         exit(1);
     }
-    Scope* parent = current_scope->parent;
+    Scope *parent = current_scope->parent;
     hm_free(current_scope->variables);
     SAFE_FREE(current_scope);
     current_scope = parent;
 }
 
-void free_scope(Scope* scope)
+void free_scope(Scope *scope)
 {
     if (!scope)
         return;
@@ -3202,9 +3391,9 @@ void enter_scope()
 {
     current_scope = create_scope(current_scope);
 }
-Variable* variable_new(char* name)
+Variable *variable_new(char *name)
 {
-    Variable* var = SAFE_MALLOC(Variable);
+    Variable *var = SAFE_MALLOC(Variable);
     if (!var)
     {
         yyerror("Failed to allocate memory for variable");
@@ -3215,14 +3404,14 @@ Variable* variable_new(char* name)
     return var;
 }
 
-void add_variable_to_scope(const char* name, Variable* var)
+void add_variable_to_scope(const char *name, Variable *var)
 {
     if (!current_scope)
     {
         yyerror("No scope to add variable to");
         exit(1);
     }
-    Variable* existing = hm_get(current_scope->variables, name, strlen(name));
+    Variable *existing = hm_get(current_scope->variables, name, strlen(name));
     if (existing)
     {
         yyerror("Variable already exists in current scope");
@@ -3232,3 +3421,227 @@ void add_variable_to_scope(const char* name, Variable* var)
 
     hm_put(current_scope->variables, name, strlen(name), var, sizeof(Variable));
 }
+
+ASTNode *create_return_node(ASTNode *expr)
+{
+    ASTNode *node = SAFE_MALLOC(ASTNode);
+    if (!node)
+    {
+        yyerror("Memory allocation failed");
+        return NULL;
+    }
+    node->type = NODE_RETURN;
+    node->data.op.left = expr; // Store return expression in left operand
+    return node;
+}
+
+Function *create_function(char *name, VarType return_type, Parameter *params, ASTNode *body)
+{
+    Function *func = SAFE_MALLOC(Function);
+    if (!func)
+    {
+        yyerror("Failed to allocate memory for function");
+        return NULL;
+    }
+
+    func->name = safe_strdup(name);
+    func->return_type = return_type;
+    func->parameters = params;
+    func->body = body;
+    func->next = function_table;
+    function_table = func;
+
+    return func;
+}
+
+void execute_function_call(const char *name, ArgumentList *args)
+{
+    // Find function in function table
+    Function *func = function_table;
+    while (func)
+    {
+        if (strcmp(func->name, name) == 0)
+        {
+            // Create new scope for function
+            enter_scope();
+
+            // Process arguments and parameters
+            ArgumentList *curr_arg = args;
+            Parameter *curr_param = func->parameters;
+            current_return_value.type = func->return_type;
+
+            // reverse the order of parameters
+            Parameter *prev = NULL;
+            Parameter *next = NULL;
+            while (curr_param)
+            {
+                next = curr_param->next;
+                curr_param->next = prev;
+                prev = curr_param;
+                curr_param = next;
+            }
+            curr_param = prev;
+
+            while (curr_arg && curr_param)
+            {
+                // Create variable for parameter
+                Variable *var = variable_new(curr_param->name);
+                var->var_type = curr_param->type;
+                add_variable_to_scope(curr_param->name, var);
+
+                switch (curr_param->type)
+                {
+                case VAR_INT:
+                    set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_FLOAT:
+                    set_float_variable(curr_param->name, evaluate_expression_float(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_DOUBLE:
+                    set_double_variable(curr_param->name, evaluate_expression_double(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_BOOL:
+                    set_bool_variable(curr_param->name, evaluate_expression_bool(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_SHORT:
+                    set_short_variable(curr_param->name, evaluate_expression_short(curr_arg->expr), get_current_modifiers());
+                    break;
+                case VAR_CHAR:
+                    set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
+                    break;
+                }
+
+                Parameter *tmp = curr_param;
+                curr_arg = curr_arg->next;
+                curr_param = curr_param->next;
+                SAFE_FREE(var);
+                SAFE_FREE(tmp->name);
+                SAFE_FREE(tmp);
+            }
+
+            if (curr_arg || curr_param)
+            {
+                yyerror("Mismatched number of arguments and parameters");
+                exit_scope();
+                return;
+            }
+
+            // Set up return handling
+            current_return_value.has_value = false;
+            PUSH_JUMP_BUFFER();
+            if (setjmp(CURRENT_JUMP_BUFFER()) == 0)
+            {
+                execute_statement(func->body);
+            }
+
+            POP_JUMP_BUFFER();
+            // Clean up scope
+            exit_scope();
+            return;
+        }
+        func = func->next;
+    }
+
+    yyerror("Undefined function");
+}
+
+void handle_return_statement(ASTNode *expr)
+{
+    current_return_value.has_value = true;
+    if (expr)
+    {
+        switch (current_return_value.type)
+        {
+        case VAR_INT:
+            current_return_value.value.ivalue = evaluate_expression_int(expr);
+            break;
+        case VAR_FLOAT:
+            current_return_value.value.fvalue = evaluate_expression_float(expr);
+            break;
+        case VAR_DOUBLE:
+            current_return_value.value.dvalue = evaluate_expression_double(expr);
+            break;
+        case VAR_BOOL:
+            current_return_value.value.bvalue = evaluate_expression_bool(expr);
+            break;
+        case VAR_SHORT:
+            current_return_value.value.svalue = evaluate_expression_short(expr);
+            break;
+        default:
+            yyerror("Unsupported return type");
+            exit(1);
+        }
+    }
+    // skibidi main function do not have jump buffer
+    if(CURRENT_JUMP_BUFFER() != NULL)
+        LONGJMP();
+}
+
+Parameter *create_parameter(char *name, VarType type, Parameter *next)
+{
+    Parameter *param = SAFE_MALLOC(Parameter);
+    if (!param)
+    {
+        yyerror("Failed to allocate memory for parameter");
+        return NULL;
+    }
+
+    param->name = safe_strdup(name);
+    param->type = type;
+    param->next = next;
+
+    return param;
+}
+
+ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *params, ASTNode *body)
+{
+    ASTNode *node = SAFE_MALLOC(ASTNode);
+    if (!node)
+    {
+        yyerror("Failed to allocate memory for function definition node");
+        return NULL;
+    }
+
+    node->type = NODE_FUNCTION_DEF;
+    node->data.function_def.name = safe_strdup(name);
+    node->data.function_def.return_type = return_type;
+    node->data.function_def.parameters = params;
+    node->data.function_def.body = body;
+
+    // Add function to global function table
+    create_function(name, return_type, params, body);
+
+    return node;
+}
+
+void free_parameters(Parameter *param)
+{
+    while (param)
+    {
+        Parameter *next = param->next;
+        SAFE_FREE(param->name);
+        SAFE_FREE(param);
+        param = next;
+    }
+}
+
+void free_function_table(void)
+{
+    Function *f = function_table;
+    while (f)
+    {
+        Function *next = f->next;
+
+        // Safe to free f->name: it's a separate safe_strdup from the AST's name.
+        SAFE_FREE(f->name);
+
+        // DO NOT free f->parameters or f->body here,
+        // because those pointers belong to the AST and
+        // are already freed in free_ast(root).
+
+        SAFE_FREE(f);
+        f = next;
+    }
+    function_table = NULL;
+}
+

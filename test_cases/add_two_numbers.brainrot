@@ -1,0 +1,8 @@
+rizz numba_go_up(rizz a, rizz b) {
+    bussin a + b;
+}
+
+skibidi main {
+    yappin("%d\n", numba_go_up(1, 2));
+    bussin 0;
+}
