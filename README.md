@@ -182,8 +182,9 @@ The language supports basic arithmetic operators:
 Current limitations include:
 
 - Limited support for complex expressions
-- No support for functions other than main
 - Basic error reporting
+- No support for arrays in user-defined functions
+- No support for pointers
 
 ## 🔌 VSCode Extension
 
