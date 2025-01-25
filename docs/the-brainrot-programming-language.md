@@ -138,7 +138,7 @@ To run your first Brainrot program:
    ```
 2. **Execute** it:
    ```bash
-   ./brainrot hello.brainrot
+   ./brainrot < hello.brainrot
    ```
    The compiler interprets the code, prints “Hello, World!”, and ends with `bussin 0` (akin to `return 0;`).
 
@@ -269,16 +269,14 @@ Brainrot supports common arithmetic and logical operators:
 - **`yappin`**: prints text **without** adding a newline.
 - **`baka`**: prints to `stderr`, typically used for errors/warnings.
 - **`ragequit`**: terminates program execution immediately with the provided exit code.
-- **`chill`**: sleep for a integer number of seconds.
-- **`slorp`**: reads user input, similar to `scanf` but safe.
 
 ---
 
 ### 7.7. User Defined Function
 
-Defining a function in brainrot follows the same pattern as the C programming language: `return_type func_name(param_type param_name) {}`
+To define function in brainrot it similar as C `return_type func_name(params) {}`
 
-#### Example:
+#### Example: 
 
 ```c
 cap is_prime(rizz n) {
@@ -296,18 +294,18 @@ cap is_prime(rizz n) {
 ```
 
 #### BreakDown
-
 - **Function definition**:
-  - `cap`: return type (bool)
-  - `is_prime`: function name
-  - `n`: parameter
+    - `cap`: return type (bool)
+    - `is_prime`: function name
+    - `n`: parameter
 
-#### Usage Example:
+#### Usage Example: 
 
 ```c
 cap isPrime = is_prime(11)
 
 ```
+
 
 ## 8. Extended User Documentation
 
@@ -387,26 +385,6 @@ void chill(unsigned int seconds);
 
 ```c
 chill(2);
-```
-
-### 8.6. `slorp`
-
-```c
-void slorp(var_type var_name);
-```
-
-- Reads user input
-
-**Example**:
-
-```c
-skibidi main {
-    rizz num;
-    yapping("Enter a number:");
-	slorp(num);
-    yapping("You typed: %d", num);
-	bussin 0;
-}
 ```
 
 ---
