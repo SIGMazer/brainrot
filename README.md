@@ -90,6 +90,18 @@ flex -o lang.lex.c lang.l
 make
 ```
 
+## Installation
+
+```bash
+sudo make install
+```
+
+## Uninstall
+
+```bash
+sudo make uninstall
+```
+
 ## 💻 Usage
 
 1. Create a Brainrot source file (e.g., `hello.brainrot`):
