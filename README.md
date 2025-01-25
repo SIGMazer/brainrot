@@ -5,6 +5,10 @@
 
 Brainrot is a meme-inspired programming language that translates common programming keywords into internet slang and meme references. It's built using Flex (lexical analyzer) and Bison (parser generator), making it a fun way to learn about language processing and compiler design.
 
+## History
+
+The TRUE history behind the Brainrot programming language can be found [here](TRUTH.md).
+
 ## 🤔 What is Brainrot?
 
 Brainrot is a C-like programming language where traditional keywords are replaced with popular internet slang. For example:
