@@ -95,7 +95,7 @@ make
 1. Create a Brainrot source file (e.g., `hello.brainrot`):
 
 ```c
- main {
+ skibidi main {
     yapping("Hello, World!");
     bussin 0;
 }
