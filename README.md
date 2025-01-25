@@ -100,7 +100,7 @@ make
 2. Run your Brainrot program:
 
 ```bash
-./brainrot < hello.brainrot
+./brainrot hello.brainrot
 ```
 
 Check out the [examples](examples/README.md):
@@ -113,8 +113,9 @@ Check out the [examples](examples/README.md):
 ## 🗪 Community
 
 Join our community on:
- - [Discord](https://discord.gg/FjHhvBHSGj)
- - [Reddit](https://www.reddit.com/r/Brainrotlang/)
+
+- [Discord](https://discord.gg/FjHhvBHSGj)
+- [Reddit](https://www.reddit.com/r/Brainrotlang/)
 
 ## 📚 Language Reference
 
