@@ -63,6 +63,18 @@ valgrind:
 	done
 	@echo "Valgrind check done. If anything was sus, it'll show up with a non-zero exit code. No cap."
 
+# Install target
+.PHONY: install
+install:
+	install -d /usr/local/bin
+	install -m 755 $(TARGET) /usr/local/bin/
+	@echo "$(TARGET) installed successfully. You're goated with the sauce!"
+
+# Uninstall target
+.PHONY: uninstall
+uninstall:
+	rm -f /usr/local/bin/$(TARGET)
+	@echo "$(TARGET) uninstalled successfully. Back to the grind."
 
 # Check dependencies
 .PHONY: check-deps
@@ -90,6 +102,8 @@ format:
 help:
 	@echo "Available targets (rizzy edition):"
 	@echo "  all        : Build the main executable (default target). Sigma grindset activated."
+	@echo "  install    : Install the binary to /usr/local/bin. Certified W."
+	@echo "  uninstall  : Uninstall the binary from /usr/local/bin. Back to square one."
 	@echo "  test       : Run the test suite. Huggy Wuggy approves."
 	@echo "  clean      : Remove all generated files. Amogus sussy imposter mode."
 	@echo "  check-deps : Verify all required bro apps are installed."
