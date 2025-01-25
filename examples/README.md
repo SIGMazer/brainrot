@@ -197,4 +197,66 @@ skibidi main {
 
 ---
 
+## 5. Two Sum leetCode problem
+
+**File Name:** `twoSum.brainrot`
+
+```c
+skibidi main {
+    rizz nums[] = {7, 11, 2, 15};
+    rizz target = 9;
+    rizz numsSize = maxxing(nums) / maxxing(nums[0]);
+    rizz result[2];
+
+    flex (rizz i = 0; i < numsSize - 1; i++) {
+        flex (rizz j = i + 1; j < numsSize; j++) {
+            edgy (nums[i] > nums[j]) {
+                rizz temp = nums[i];
+                nums[i] = nums[j];
+                nums[j] = temp;
+            }
+        }
+    }
+
+    
+    rizz left = 0;
+    rizz right = numsSize -1;
+
+    goon (left < right){
+        rizz sum = nums[left] + nums[right];
+        edgy (sum == target){
+            result[0] = nums[left];
+            result[1] = nums[right];
+            bruh;
+        } amogus edgy (sum < target){
+            left++;
+        } amogus {
+            right--;
+        }
+    }
+
+    edgy ( left < right){
+        yappin("the two numbers are: %d and %d\n", result[0], result[1]);
+    } amogus {
+        yappign("No solution found\n");
+    }
+
+    bussin 0;
+}
+
+```
+
+### What It Does
+
+- Solves the classic Two Sum problem: find two numbers in the array `nums[]` that add up to the target value 9.
+- The array is first sorted using a Bubble Sort algorithm (nested loops with `edgy`/`amogus` for comparison and swapping).
+- The program uses a two-pointer technique (`left` and `right`) to find the pair that adds up to the `target` value.
+- If the sum equals the target, the result is stored in the `result[]` array and printed.
+- If no solution is found, it prints `"No solution found"`.
+- Showcases:
+    - Array manipulation.
+    - Using a two-pointer approach to solve the problem efficiently.
+    - Conditional checking with `edgy`/`amogus`.
+
+
 Feel free to explore and modify each example to learn more about how this language’s syntax and features work!

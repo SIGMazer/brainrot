@@ -17,6 +17,7 @@ A Meme-Fueled Journey into Compiler Design, Internet Slang, and Skibidi Toilets
    - 7.4. Declarations and Variables (`rizz`)
    - 7.5. Return Statements (`bussin`)
    - 7.6. Built-In Functions
+   - 7.7. User Defined Functions
 8. **Extended User Documentation**
    - 8.1. `yapping`
    - 8.2. `yappin`
@@ -270,6 +271,41 @@ Brainrot supports common arithmetic and logical operators:
 - **`ragequit`**: terminates program execution immediately with the provided exit code.
 
 ---
+
+### 7.7. User Defined Function
+
+To define function in brainrot it similar as C `return_type func_name(params) {}`
+
+#### Example: 
+
+```c
+cap is_prime(rizz n) {
+    edgy(n < 2) {
+        bussin L;
+    }
+    flex(rizz i = 2; i * i <= n; i++) {
+        edgy(n % i == 0) {
+            bussin L;
+        }
+    }
+    bussin W;
+
+}
+```
+
+#### BreakDown
+- **Function definition**:
+    - `cap`: return type (bool)
+    - `is_prime`: function name
+    - `n`: parameter
+
+#### Usage Example: 
+
+```c
+cap isPrime = is_prime(11)
+
+```
+
 
 ## 8. Extended User Documentation
 
