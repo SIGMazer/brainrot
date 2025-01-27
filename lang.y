@@ -18,7 +18,7 @@ void yapping(const char* format, ...);
 void yappin(const char* format, ...);
 void baka(const char* format, ...);
 char slorp_char(char chr);
-char *slorp_string(char *string);
+char *slorp_string(char *string, size_t size);
 int slorp_int(int val);
 short slorp_short(short val);
 float slorp_float(float var);
@@ -582,11 +582,11 @@ char slorp_char(char chr) {
     }
 }
 
-char *slorp_string(char *string) {
+char *slorp_string(char *string, size_t size) {
     size_t chars_read;
     input_status status;
 
-    status = input_string(string, sizeof(string), &chars_read);
+    status = input_string(string, size, &chars_read);
     if (status == INPUT_SUCCESS)
     {
         return string;
@@ -614,6 +614,7 @@ int slorp_int(int val) {
     else if (status == INPUT_INTEGER_OVERFLOW)
     {
         fprintf(stderr, "Error: Integer value out of range.\n");
+        exit(EXIT_FAILURE);
     }
     else if (status == INPUT_CONVERSION_ERROR)
     {
@@ -638,6 +639,7 @@ short slorp_short(short val) {
     else if (status == INPUT_SHORT_OVERFLOW)
     {
         fprintf(stderr, "Error: short value out of range.\n");
+        exit(EXIT_FAILURE);
     }
     else if (status == INPUT_CONVERSION_ERROR)
     {

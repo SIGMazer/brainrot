@@ -60,6 +60,12 @@ bool set_int_variable(const char *name, int value, TypeModifiers mods)
     return set_variable(name, &value, VAR_INT, mods);
 }
 
+bool set_char_variable(const char *name, int value, TypeModifiers mods)
+{
+    return set_variable(name, &value, VAR_CHAR, mods);
+}
+
+
 bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type)
 {
     // search for an existing variable
@@ -175,7 +181,7 @@ extern void yapping(const char *format, ...);
 extern void yappin(const char *format, ...);
 extern void baka(const char *format, ...);
 extern char slorp_char(char chr);
-extern char *slorp_string(char *string);
+extern char *slorp_string(char *string, size_t size);
 extern int slorp_int(int val);
 extern short slorp_short(short val);
 extern float slorp_float(float var);
@@ -2250,7 +2256,7 @@ void execute_statement(ASTNode *node)
         if (value_node->type == NODE_CHAR)
         {
             // Handle character assignments directly
-            if (!set_int_variable(name, value_node->data.ivalue, mods))
+            if (!set_char_variable(name, value_node->data.ivalue, mods))
             {
                 yyerror("Failed to set character variable");
             }
@@ -2732,12 +2738,23 @@ void execute_yapping_call(ArgumentList *args)
             else if (*format == 's')
             {
                 // String
-                if (expr->type != NODE_STRING_LITERAL)
+                const Variable *var = get_variable(expr->data.name);
+                if (var != NULL)
+                {
+                    if (!var->is_array)
+                    {
+                        yyerror("Invalid argument type for %s");
+                        exit(EXIT_FAILURE);
+                    }
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, var->value.carray);
+                }
+                else if (expr->type != NODE_STRING_LITERAL)
                 {
                     yyerror("Invalid argument type for %s");
                     exit(EXIT_FAILURE);
+                }else{
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
                 }
-                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
             }
             else
             {
@@ -2869,13 +2886,23 @@ void execute_yappin_call(ArgumentList *args)
             }
             else if (*format == 's')
             {
-                // Handle string literals
-                if (expr->type != NODE_STRING_LITERAL)
+                const Variable *var = get_variable(expr->data.name);
+                if (var != NULL)
+                {
+                    if (!var->is_array)
+                    {
+                        yyerror("Invalid argument type for %s");
+                        exit(EXIT_FAILURE);
+                    }
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, var->value.carray);
+                }
+                else if (expr->type != NODE_STRING_LITERAL)
                 {
                     yyerror("Invalid argument type for %s");
                     exit(EXIT_FAILURE);
+                }else{
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
                 }
-                buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
             }
             else
             {
@@ -3008,6 +3035,13 @@ void execute_slorp_call(ArgumentList *args)
     }
     case VAR_CHAR:
     {
+        if (var->is_array)
+        {
+            char val[var->array_length];
+            slorp_string(val, sizeof(val));
+            var->value.carray = safe_strdup(val);
+            return;
+        }
         char val = 0;
         val = slorp_char(val);
         set_int_variable(name, val, var->modifiers);
@@ -3366,6 +3400,7 @@ void free_ast(ASTNode *node)
     case NODE_FLOAT:
     case NODE_DOUBLE:
     case NODE_BOOLEAN:
+    case NODE_CHAR:
         // These nodes don't have additional allocations
         break;
 

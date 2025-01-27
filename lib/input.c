@@ -63,7 +63,7 @@ input_status input_string(char *buffer, size_t buffer_size, size_t *chars_read)
         return INPUT_NULL_PTR;
     }
 
-    if (buffer_size == 0)
+    if (buffer_size <= 1)
     {
         return INPUT_BUFFER_OVERFLOW;
     }
@@ -87,9 +87,8 @@ input_status input_string(char *buffer, size_t buffer_size, size_t *chars_read)
 
     // Check if the input was truncated (no newline found)
     size_t len = strnlen(buffer, buffer_size);
-    if (len == buffer_size - 1 && buffer[len - 1] != '\n')
+    if(len == buffer_size && buffer[len - 1] != '\n')
     {
-        // Input was truncated; clear the remaining input
         clear_stdin_buffer();
         return INPUT_BUFFER_OVERFLOW;
     }
