@@ -69,29 +69,7 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
         if (var->is_array)
         {
             // free the old array
-            switch (var->var_type)
-            {
-            case VAR_INT:
-                SAFE_FREE(var->value.iarray);
-                break;
-            case VAR_SHORT:
-                SAFE_FREE(var->value.sarray);
-                break;
-            case VAR_FLOAT:
-                SAFE_FREE(var->value.farray);
-                break;
-            case VAR_DOUBLE:
-                SAFE_FREE(var->value.darray);
-                break;
-            case VAR_BOOL:
-                SAFE_FREE(var->value.barray);
-                break;
-            case VAR_CHAR:
-                SAFE_FREE(var->value.carray);
-                break;
-            default:
-                break;
-            }
+            SAFE_FREE(var->value.array_data);
         }
         var->var_type = type;
         var->is_array = true;
@@ -100,28 +78,28 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
         switch (type)
         {
         case VAR_INT:
-            var->value.iarray = SAFE_MALLOC_ARRAY(int, length);
-            if(length) memset(var->value.iarray, 0, length * sizeof(int));
+            var->value.array_data = SAFE_MALLOC_ARRAY(int, length);
+            if(length) memset(var->value.array_data, 0, length * sizeof(int));
             break;
         case VAR_SHORT:
-            var->value.sarray = SAFE_MALLOC_ARRAY(short, length);
-            if(length) memset(var->value.sarray, 0, length * sizeof(short));
+            var->value.array_data = SAFE_MALLOC_ARRAY(short, length);
+            if(length) memset(var->value.array_data, 0, length * sizeof(short));
             break;
         case VAR_FLOAT:
-            var->value.farray = SAFE_MALLOC_ARRAY(float, length);
-            if(length) memset(var->value.farray, 0, length * sizeof(float));
+            var->value.array_data = SAFE_MALLOC_ARRAY(float, length);
+            if(length) memset(var->value.array_data, 0, length * sizeof(float));
             break;
         case VAR_DOUBLE:
-            var->value.darray = SAFE_MALLOC_ARRAY(double, length);
-            if(length) memset(var->value.darray, 0, length * sizeof(double));
+            var->value.array_data = SAFE_MALLOC_ARRAY(double, length);
+            if(length) memset(var->value.array_data, 0, length * sizeof(double));
             break;
         case VAR_BOOL:
-            var->value.barray = SAFE_MALLOC_ARRAY(bool, length);
-            if(length) memset(var->value.barray, 0, length * sizeof(bool));
+            var->value.array_data = SAFE_MALLOC_ARRAY(bool, length);
+            if(length) memset(var->value.array_data, 0, length * sizeof(bool));
             break;
         case VAR_CHAR:
-            var->value.carray = SAFE_MALLOC_ARRAY(char, length);
-            if(length) memset(var->value.carray, 0, length * sizeof(char));
+            var->value.array_data = SAFE_MALLOC_ARRAY(char, length);
+            if(length) memset(var->value.array_data, 0, length * sizeof(char));
             break;
         default:
             break;
@@ -1106,17 +1084,17 @@ float evaluate_expression_float(ASTNode *node)
             switch (var->var_type)
             {
             case VAR_FLOAT:
-                return var->value.farray[idx];
+                return ((float *)var->value.array_data)[idx];
             case VAR_DOUBLE:
-                return (float)var->value.darray[idx];
+                return ((double *)var->value.array_data)[idx];
             case VAR_INT:
-                return (float)var->value.iarray[idx];
+                return (float)((int *)var->value.array_data)[idx];
             case VAR_SHORT:
-                return (float)var->value.sarray[idx];
+                return (float)((short *)var->value.array_data)[idx];
             case VAR_BOOL:
-                return (float)var->value.barray[idx];
+                return (float)((bool *)var->value.array_data)[idx];
             case VAR_CHAR:
-                return (float)var->value.carray[idx];
+                return (float)((char *)var->value.array_data)[idx];
             default:
                 yyerror("Unsupported array type");
                 return 0.0f;
@@ -1207,17 +1185,17 @@ double evaluate_expression_double(ASTNode *node)
             switch (var->var_type)
             {
             case VAR_FLOAT:
-                return (double)var->value.farray[idx];
+                return (double)((float *)var->value.array_data)[idx];
             case VAR_DOUBLE:
-                return var->value.darray[idx];
+                return ((double *)var->value.array_data)[idx];
             case VAR_INT:
-                return (double)var->value.iarray[idx];
+                return (double)((int *)var->value.array_data)[idx];
             case VAR_SHORT:
-                return (double)var->value.sarray[idx];
+                return (double)((short *)var->value.array_data)[idx];
             case VAR_BOOL:
-                return (double)var->value.barray[idx];
+                return (double)((bool *)var->value.array_data)[idx];
             case VAR_CHAR:
-                return (double)var->value.carray[idx];
+                return (double)((char *)var->value.array_data)[idx];
             default:
                 yyerror("Unsupported array type");
                 return 0.0L;
@@ -1470,17 +1448,17 @@ short evaluate_expression_short(ASTNode *node)
             switch (node->var_type)
             {
             case VAR_INT:
-                return (short)var->value.iarray[idx];
+                return ((int *)var->value.array_data)[idx];
             case VAR_SHORT:
-                return var->value.sarray[idx];
+                return ((short *)var->value.array_data)[idx];
             case VAR_FLOAT:
-                return (short)var->value.farray[idx];
+                return (short)((float *)var->value.array_data)[idx];
             case VAR_DOUBLE:
-                return (short)var->value.darray[idx];
+                return (short)((double *)var->value.array_data)[idx];
             case VAR_BOOL:
-                return (short)var->value.barray[idx];
+                return (short)((bool *)var->value.array_data)[idx];
             case VAR_CHAR:
-                return (short)var->value.carray[idx];
+                return (short)((char *)var->value.array_data)[idx];
             default:
                 yyerror("Undefined array type!");
             }
@@ -1595,17 +1573,17 @@ int evaluate_expression_int(ASTNode *node)
             switch (node->var_type)
             {
             case VAR_INT:
-                return var->value.iarray[idx];
+                return ((int *)var->value.array_data)[idx];
             case VAR_SHORT:
-                return var->value.sarray[idx];
+                return ((short *)var->value.array_data)[idx];
             case VAR_FLOAT:
-                return var->value.farray[idx];
+                return (int)((float *)var->value.array_data)[idx];
             case VAR_DOUBLE:
-                return var->value.darray[idx];
+                return (int)((double *)var->value.array_data)[idx];
             case VAR_BOOL:
-                return var->value.barray[idx];
+                return (int)((bool *)var->value.array_data)[idx];
             case VAR_CHAR:
-                return var->value.carray[idx];
+                return (int)((char *)var->value.array_data)[idx];
             default:
                 yyerror("Undefined array type!");
             }
@@ -1755,17 +1733,17 @@ bool evaluate_expression_bool(ASTNode *node)
             switch (node->var_type)
             {
             case VAR_INT:
-                return (bool)var->value.iarray[idx];
+                return (bool)((int *)var->value.array_data)[idx];
             case VAR_SHORT:
-                return (bool)var->value.sarray[idx];
+                return (bool)((short *)var->value.array_data)[idx];
             case VAR_FLOAT:
-                return (bool)var->value.farray[idx];
+                return (bool)((float *)var->value.array_data)[idx];
             case VAR_DOUBLE:
-                return (bool)var->value.darray[idx];
+                return (bool)((double *)var->value.array_data)[idx];
             case VAR_BOOL:
-                return var->value.barray[idx];
+                return ((bool *)var->value.array_data)[idx];
             case VAR_CHAR:
-                return (bool)var->value.carray[idx];
+                return (bool)((char *)var->value.array_data)[idx];
             default:
                 yyerror("Undefined array type!");
             }
@@ -2097,16 +2075,16 @@ void execute_assignment(ASTNode *node)
             switch (var->var_type)
             {
             case VAR_FLOAT:
-                var->value.farray[idx] = evaluate_expression_float(node->data.op.right);
+                ((float *)var->value.array_data)[idx] = evaluate_expression_float(node->data.op.right);
                 break;
             case VAR_DOUBLE:
-                var->value.darray[idx] = evaluate_expression_double(node->data.op.right);
+                ((double *)var->value.array_data)[idx] = evaluate_expression_double(node->data.op.right);
                 break;
             case VAR_INT:
-                var->value.iarray[idx] = evaluate_expression_int(node->data.op.right);
+                ((int *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
                 break;
             case VAR_SHORT:
-                var->value.sarray[idx] = evaluate_expression_short(node->data.op.right);
+                ((short *)var->value.array_data)[idx] = evaluate_expression_short(node->data.op.right);
                 break;
             default:
                 yyerror("Unsupported array type");
@@ -2217,22 +2195,22 @@ void execute_statement(ASTNode *node)
                 switch (var->var_type)
                 {
                 case VAR_FLOAT:
-                    var->value.farray[idx] = evaluate_expression_float(node->data.op.right);
+                    ((float *)var->value.array_data)[idx] = evaluate_expression_float(node->data.op.right);
                     break;
                 case VAR_DOUBLE:
-                    var->value.darray[idx] = evaluate_expression_double(node->data.op.right);
+                    ((double *)var->value.array_data)[idx] = evaluate_expression_double(node->data.op.right);
                     break;
                 case VAR_INT:
-                    var->value.iarray[idx] = evaluate_expression_int(node->data.op.right);
+                    ((int *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
                     break;
                 case VAR_SHORT:
-                    var->value.sarray[idx] = evaluate_expression_short(node->data.op.right);
+                    ((short *)var->value.array_data)[idx] = evaluate_expression_short(node->data.op.right);
                     break;
                 case VAR_BOOL:
-                    var->value.barray[idx] = evaluate_expression_bool(node->data.op.right);
+                    ((bool *)var->value.array_data)[idx] = evaluate_expression_bool(node->data.op.right);
                     break;
                 case VAR_CHAR:
-                    var->value.carray[idx] = (char)evaluate_expression_int(node->data.op.right);
+                    ((char *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
                     break;
                 default:
                     yyerror("Unsupported array type");
@@ -2692,14 +2670,14 @@ void execute_yapping_call(ArgumentList *args)
                         }
                         if (var->var_type == VAR_FLOAT)
                         {
-                            float val = var->value.farray[idx];
+                            float val = ((float *)var->value.array_data)[idx];
                             buffer_offset += snprintf(buffer + buffer_offset,
                                                       sizeof(buffer) - buffer_offset,
                                                       specifier, val);
                         }
                         else if (var->var_type == VAR_DOUBLE)
                         {
-                            double val = var->value.darray[idx];
+                            double val = ((double *)var->value.array_data)[idx];
                             buffer_offset += snprintf(buffer + buffer_offset,
                                                       sizeof(buffer) - buffer_offset,
                                                       specifier, val);
@@ -3075,16 +3053,26 @@ void *evaluate_array_access(ASTNode *node)
         void *result = SAFE_MALLOC(double); // Use largest possible type
         switch (var->var_type)
         {
-        case VAR_DOUBLE:
-            *(double *)result = var->value.darray[idx];
-            break;
-        case VAR_FLOAT:
-            *(double *)result = (double)var->value.farray[idx];
-            break;
-        case VAR_INT:
-            *(double *)result = (double)var->value.iarray[idx];
-            break;
-            // ... handle other types ...
+            case VAR_FLOAT:
+                ((float *)var->value.array_data)[idx] = evaluate_expression_float(node->data.op.right);
+                break;
+            case VAR_DOUBLE:
+                ((double *)var->value.array_data)[idx] = evaluate_expression_double(node->data.op.right);
+                break;
+            case VAR_INT:
+                ((int *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
+                break;
+            case VAR_SHORT:
+                ((short *)var->value.array_data)[idx] = evaluate_expression_short(node->data.op.right);
+                break;
+            case VAR_BOOL:
+                ((bool *)var->value.array_data)[idx] = evaluate_expression_bool(node->data.op.right);
+                break;
+            case VAR_CHAR:
+                ((char *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
+                break;
+            default:
+                yyerror("Unsupported array type");
         }
         return result;
     }
@@ -3183,22 +3171,22 @@ void populate_array_variable(char *name, ExpressionList *list)
             switch (var_type)
             {
             case VAR_INT:
-                var->value.iarray[index] = evaluate_expression_int(current->expr);
+                ((int *)var->value.array_data)[index] = evaluate_expression_int(current->expr);
                 break;
             case VAR_FLOAT:
-                var->value.farray[index] = evaluate_expression_float(current->expr);
+                ((float *)var->value.array_data)[index] = evaluate_expression_float(current->expr);
                 break;
             case VAR_DOUBLE:
-                var->value.darray[index] = evaluate_expression_double(current->expr);
+                ((double *)var->value.array_data)[index] = evaluate_expression_double(current->expr);
                 break;
             case VAR_SHORT:
-                var->value.sarray[index] = evaluate_expression_short(current->expr);
+                ((short *)var->value.array_data)[index] = evaluate_expression_short(current->expr);
                 break;
             case VAR_CHAR:
-                var->value.carray[index] = (char)evaluate_expression_int(current->expr);
+                ((char *)var->value.array_data)[index] = evaluate_expression_int(current->expr);
                 break;
             case VAR_BOOL:
-                var->value.barray[index] = evaluate_expression_bool(current->expr);
+                ((bool *)var->value.array_data)[index] = evaluate_expression_bool(current->expr);
                 break;
             default:
                 yyerror("Unsupported array type");

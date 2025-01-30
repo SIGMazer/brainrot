@@ -94,12 +94,7 @@ typedef struct
         bool bvalue;
         float fvalue;
         double dvalue;
-        int *iarray;
-        short *sarray;
-        bool *barray;
-        float *farray;
-        double *darray;
-        char *carray;
+        void *array_data;
     } value;
     TypeModifiers modifiers;
     VarType var_type;
