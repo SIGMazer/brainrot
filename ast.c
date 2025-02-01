@@ -3026,7 +3026,8 @@ void execute_slorp_call(ArgumentList *args)
         {
             char val[var->array_length];
             slorp_string(val, sizeof(val));
-            var->value.array_data = safe_strdup(val);
+            strncpy(var->value.array_data, val, var->array_length - 1);
+            ((char *)var->value.array_data)[var->array_length - 1] = '\0';
             return;
         }
         char val = 0;
