@@ -65,7 +65,6 @@ bool set_char_variable(const char *name, int value, TypeModifiers mods)
     return set_variable(name, &value, VAR_CHAR, mods);
 }
 
-
 bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type)
 {
     // search for an existing variable
@@ -85,27 +84,33 @@ bool set_array_variable(char *name, int length, TypeModifiers mods, VarType type
         {
         case VAR_INT:
             var->value.array_data = SAFE_MALLOC_ARRAY(int, length);
-            if(length) memset(var->value.array_data, 0, length * sizeof(int));
+            if (length)
+                memset(var->value.array_data, 0, length * sizeof(int));
             break;
         case VAR_SHORT:
             var->value.array_data = SAFE_MALLOC_ARRAY(short, length);
-            if(length) memset(var->value.array_data, 0, length * sizeof(short));
+            if (length)
+                memset(var->value.array_data, 0, length * sizeof(short));
             break;
         case VAR_FLOAT:
             var->value.array_data = SAFE_MALLOC_ARRAY(float, length);
-            if(length) memset(var->value.array_data, 0, length * sizeof(float));
+            if (length)
+                memset(var->value.array_data, 0, length * sizeof(float));
             break;
         case VAR_DOUBLE:
             var->value.array_data = SAFE_MALLOC_ARRAY(double, length);
-            if(length) memset(var->value.array_data, 0, length * sizeof(double));
+            if (length)
+                memset(var->value.array_data, 0, length * sizeof(double));
             break;
         case VAR_BOOL:
             var->value.array_data = SAFE_MALLOC_ARRAY(bool, length);
-            if(length) memset(var->value.array_data, 0, length * sizeof(bool));
+            if (length)
+                memset(var->value.array_data, 0, length * sizeof(bool));
             break;
         case VAR_CHAR:
             var->value.array_data = SAFE_MALLOC_ARRAY(char, length);
-            if(length) memset(var->value.array_data, 0, length * sizeof(char));
+            if (length)
+                memset(var->value.array_data, 0, length * sizeof(char));
             break;
         default:
             break;
@@ -2724,13 +2729,15 @@ void execute_yapping_call(ArgumentList *args)
                         yyerror("Invalid argument type for %s");
                         exit(EXIT_FAILURE);
                     }
-                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, var->value.carray);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, var->value.array_data);
                 }
                 else if (expr->type != NODE_STRING_LITERAL)
                 {
                     yyerror("Invalid argument type for %s");
                     exit(EXIT_FAILURE);
-                }else{
+                }
+                else
+                {
                     buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
                 }
             }
@@ -2872,13 +2879,15 @@ void execute_yappin_call(ArgumentList *args)
                         yyerror("Invalid argument type for %s");
                         exit(EXIT_FAILURE);
                     }
-                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, var->value.carray);
+                    buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, var->value.array_data);
                 }
                 else if (expr->type != NODE_STRING_LITERAL)
                 {
                     yyerror("Invalid argument type for %s");
                     exit(EXIT_FAILURE);
-                }else{
+                }
+                else
+                {
                     buffer_offset += snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset, specifier, expr->data.name);
                 }
             }
@@ -3017,7 +3026,7 @@ void execute_slorp_call(ArgumentList *args)
         {
             char val[var->array_length];
             slorp_string(val, sizeof(val));
-            var->value.carray = safe_strdup(val);
+            var->value.array_data = safe_strdup(val);
             return;
         }
         char val = 0;
@@ -3087,26 +3096,26 @@ void *evaluate_array_access(ASTNode *node)
         void *result = SAFE_MALLOC(double); // Use largest possible type
         switch (var->var_type)
         {
-            case VAR_FLOAT:
-                ((float *)var->value.array_data)[idx] = evaluate_expression_float(node->data.op.right);
-                break;
-            case VAR_DOUBLE:
-                ((double *)var->value.array_data)[idx] = evaluate_expression_double(node->data.op.right);
-                break;
-            case VAR_INT:
-                ((int *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
-                break;
-            case VAR_SHORT:
-                ((short *)var->value.array_data)[idx] = evaluate_expression_short(node->data.op.right);
-                break;
-            case VAR_BOOL:
-                ((bool *)var->value.array_data)[idx] = evaluate_expression_bool(node->data.op.right);
-                break;
-            case VAR_CHAR:
-                ((char *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
-                break;
-            default:
-                yyerror("Unsupported array type");
+        case VAR_FLOAT:
+            ((float *)var->value.array_data)[idx] = evaluate_expression_float(node->data.op.right);
+            break;
+        case VAR_DOUBLE:
+            ((double *)var->value.array_data)[idx] = evaluate_expression_double(node->data.op.right);
+            break;
+        case VAR_INT:
+            ((int *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
+            break;
+        case VAR_SHORT:
+            ((short *)var->value.array_data)[idx] = evaluate_expression_short(node->data.op.right);
+            break;
+        case VAR_BOOL:
+            ((bool *)var->value.array_data)[idx] = evaluate_expression_bool(node->data.op.right);
+            break;
+        case VAR_CHAR:
+            ((char *)var->value.array_data)[idx] = evaluate_expression_int(node->data.op.right);
+            break;
+        default:
+            yyerror("Unsupported array type");
         }
         return result;
     }
