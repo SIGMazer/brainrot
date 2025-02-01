@@ -711,7 +711,7 @@ void cleanup() {
 }
 
 TypeModifiers get_variable_modifiers(const char* name) {
-    TypeModifiers mods = {false, false, false, false};  // Default modifiers
+    TypeModifiers mods = {false, false, false, false, false};  // Default modifiers
     Variable *var = get_variable(name); 
     if (var != NULL) {
         return var->modifiers;

@@ -110,7 +110,7 @@ void dump(HashMap *hm)
         if (hm->nodes[i])
         {
             Variable *v = (Variable *)hm->nodes[i]->value;
-            printf("key: %s, value: %s, is_array: %s\n", hm->nodes[i]->key, v->name, v->is_array ? "true" : "false");
+            printf("key: %p, value: %s, is_array: %s\n", hm->nodes[i]->key, v->name, v->is_array ? "true" : "false");
         }
     }
 }
@@ -160,7 +160,7 @@ void *hm_get(HashMap *hm, const void *key, size_t key_size)
  * Resizes hashmap if load factor threshold would be exceeded.
  * Uses linear probing to handle collisions.
  */
-void hm_put(HashMap *hm, void *key, size_t key_size, void *value, size_t value_size)
+void hm_put(HashMap *hm, const void *key, size_t key_size, void *value, size_t value_size)
 {
     if (hm->size >= hm->capacity * LOAD_FACTOR)
     {
@@ -235,11 +235,12 @@ void hm_free(HashMap *hm)
         {
             SAFE_FREE(hm->nodes[i]->key);
             Variable *var = hm->nodes[i]->value;
-            if (var != NULL){
-                if(var->is_array){
+            if (var != NULL)
+            {
+                if (var->is_array)
+                {
                     SAFE_FREE(var->value.array_data);
                 }
-
             }
 
             SAFE_FREE(hm->nodes[i]->value);
