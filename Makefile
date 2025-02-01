@@ -5,7 +5,7 @@ FLEX := flex
 PYTHON := python3
 
 # Compiler and linker flags
-CFLAGS := -Wall -Wextra -Wpedantic -O2
+CFLAGS := -Wall -Wextra -Wpedantic -Werror -O2
 LDFLAGS := -lfl -lm
 
 # Source files and directories
