@@ -17,7 +17,7 @@
 #define ALIGNMENT sizeof(void *)
 
 // Magic number to detect buffer overruns and validate pointers
-#define MEMORY_GUARD 0xDEADBEEFDEADBEEFULL 
+#define MEMORY_GUARD 0xDEADBEEFDEADBEEFULL
 
 typedef struct
 {
@@ -30,7 +30,7 @@ void *handle_malloc_error(size_t size);
 size_t align_size(size_t size);
 void *safe_malloc(size_t size);
 void *safe_malloc_array(size_t nmemb, size_t size);
-void safe_free(void **ptr, const char* file, int line, const char* func);
+void safe_free(void **ptr, const char *file, int line, const char *func);
 void *safe_memcpy(void *dest, const void *src, size_t n);
 char *safe_strdup(const char *str);
 int is_safe_malloc_ptr(const void *ptr);

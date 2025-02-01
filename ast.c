@@ -49,6 +49,8 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
         case VAR_CHAR:
             var->value.ivalue = *(char *)value;
             break;
+        case NONE:
+            break;
         }
         return true;
     }
@@ -238,7 +240,6 @@ void execute_switch_statement(ASTNode *node)
 static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
 {
     ASTNode *node = SAFE_MALLOC(ASTNode);
-    int a;
     if (!node)
     {
         yyerror("Error: Memory allocation failed for ASTNode.\n");
@@ -451,6 +452,7 @@ void *handle_identifier(ASTNode *node, const char *contextErrorMessage, int prom
             case VAR_CHAR:
             case VAR_SHORT:
                 promoted_value.fvalue = (float)var->value.svalue;
+                return &promoted_value.svalue;
             case VAR_BOOL:
                 promoted_value.fvalue = (float)var->value.ivalue;
                 return &promoted_value.fvalue;
@@ -569,7 +571,7 @@ int get_expression_type(ASTNode *node)
     }
 }
 
-void *handle_binary_operation(ASTNode *node, int result_type)
+void *handle_binary_operation(ASTNode *node)
 {
     if (!node || node->type != NODE_OPERATION)
     {
@@ -1127,7 +1129,7 @@ float evaluate_expression_float(ASTNode *node)
     case NODE_OPERATION:
     {
         int result_type = get_expression_type(node);
-        void *result = handle_binary_operation(node, result_type);
+        void *result = handle_binary_operation(node);
         float result_float = 0.0f;
         result_float = (result_type == VAR_INT)
                            ? (float)(*(int *)result)
@@ -1228,7 +1230,7 @@ double evaluate_expression_double(ASTNode *node)
     case NODE_OPERATION:
     {
         int result_type = get_expression_type(node);
-        void *result = handle_binary_operation(node, result_type);
+        void *result = handle_binary_operation(node);
         double result_double = 0.0L;
         result_double = (result_type == VAR_INT)
                             ? (double)(*(int *)result)
@@ -1340,7 +1342,6 @@ size_t handle_sizeof(ASTNode *node)
 {
     ASTNode *expr = node->data.sizeof_stmt.expr;
     VarType type = get_expression_type(node->data.sizeof_stmt.expr);
-    bool is_array = node->data.sizeof_stmt.expr->is_array;
     if (expr->type == NODE_IDENTIFIER)
     {
         return get_type_size(expr->data.name);
@@ -1417,7 +1418,7 @@ short evaluate_expression_short(ASTNode *node)
 
         // Regular integer operations
         int result_type = get_expression_type(node);
-        void *result = handle_binary_operation(node, result_type);
+        void *result = handle_binary_operation(node);
         short result_short = 0;
         result_short = (result_type == VAR_SHORT)
                            ? *(short *)result
@@ -1544,7 +1545,7 @@ int evaluate_expression_int(ASTNode *node)
 
         // Regular integer operations
         int result_type = get_expression_type(node);
-        void *result = handle_binary_operation(node, result_type);
+        void *result = handle_binary_operation(node);
         int result_int = 0;
         result_int = (result_type == VAR_INT)
                          ? *(int *)result
@@ -1704,7 +1705,7 @@ bool evaluate_expression_bool(ASTNode *node)
 
         // Regular integer operations
         int result_type = get_expression_type(node);
-        void *result = handle_binary_operation(node, result_type);
+        void *result = handle_binary_operation(node);
         bool result_bool = 0;
         result_bool = (result_type == VAR_INT)
                           ? (bool)(*(int *)result)
@@ -2172,10 +2173,13 @@ void execute_statement(ASTNode *node)
     switch (node->type)
     {
     case NODE_DECLARATION:
+    {
         char *name = node->data.op.left->data.name;
         Variable *var = variable_new(name);
         add_variable_to_scope(name, var);
         SAFE_FREE(var);
+    }
+        __attribute__((fallthrough));
     case NODE_ASSIGNMENT:
     {
         char *name = node->data.op.left->data.name;
@@ -2287,8 +2291,7 @@ void execute_statement(ASTNode *node)
     case NODE_ARRAY_ACCESS:
         if (node->data.array.name && node->data.array.index)
         {
-            int length = node->data.array.index->data.ivalue;
-            if (!(node->data.array.name, length, node->modifiers, node->var_type))
+            if (!(node->data.array.name))
             {
                 yyerror("Failed to create array");
             }
@@ -2757,7 +2760,7 @@ void execute_yapping_call(ArgumentList *args)
         }
 
         // Check for buffer overflow
-        if (buffer_offset >= sizeof(buffer))
+        if (buffer_offset >= (int)sizeof(buffer))
         {
             yyerror("Buffer overflow in yapping call");
             exit(EXIT_FAILURE);
@@ -2907,7 +2910,7 @@ void execute_yappin_call(ArgumentList *args)
         }
 
         // Check for buffer overflow
-        if (buffer_offset >= sizeof(buffer))
+        if (buffer_offset >= (int)sizeof(buffer))
         {
             yyerror("Buffer overflow in yappin call");
             exit(EXIT_FAILURE);
@@ -3200,7 +3203,7 @@ void populate_array_variable(char *name, ExpressionList *list)
             yyerror("Not an array!");
             return;
         }
-        if (var->array_length < count_expression_list(list))
+        if (var->array_length < (int)count_expression_list(list))
         {
             yyerror("Too many elements in array initialization");
             exit(1);
@@ -3604,6 +3607,8 @@ void execute_function_call(const char *name, ArgumentList *args)
                 case VAR_CHAR:
                     set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
                     break;
+                case NONE:
+                    break;
                 }
 
                 Parameter *tmp = curr_param;
@@ -3668,7 +3673,7 @@ void handle_return_statement(ASTNode *expr)
         }
     }
     // skibidi main function do not have jump buffer
-    if (jump_buffer && CURRENT_JUMP_BUFFER() != NULL)
+    if (CURRENT_JUMP_BUFFER())
         LONGJMP();
 }
 

@@ -377,6 +377,7 @@ Parameter *create_parameter(char *name, VarType type, Parameter *next);
 void execute_function_call(const char *name, ArgumentList *args);
 ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *params, ASTNode *body);
 void handle_return_statement(ASTNode *expr);
+void *handle_binary_operation(ASTNode *node);
 void free_parameters(Parameter *param);
 void free_function_table(void);
 
