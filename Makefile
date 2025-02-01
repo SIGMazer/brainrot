@@ -5,7 +5,7 @@ FLEX := flex
 PYTHON := python3
 
 # Compiler and linker flags
-CFLAGS := -Wall -Wextra -O2
+CFLAGS := -Wall -Wextra -Wpedantic -O2
 LDFLAGS := -lfl -lm
 
 # Source files and directories
@@ -54,13 +54,7 @@ clean:
 # Run Valgrind on all .brainrot tests
 .PHONY: valgrind
 valgrind:
-	@for f in test_cases/*.brainrot; do \
-		echo "Ayo, Valgrind is pulling up on $$f..."; \
-		valgrind --leak-check=full --error-exitcode=1 ./$(TARGET) $$f; \
-		if [ $$? -eq 0 ]; then echo "Valgrind passed for $$f, no memory leaks. Big W!"; \
-		else echo "Valgrind found a memory leak in $$f, taking an L. Better grind harder."; exit 1; fi; \
-		echo; \
-	done
+	@./run_valgrind_tests.sh
 	@echo "Valgrind check done. If anything was sus, it'll show up with a non-zero exit code. No cap."
 
 # Install target
