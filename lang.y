@@ -164,8 +164,6 @@ statement:
         { $$ = $1;  }
     | do_while_statement
         { $$ = $1;  }
-    | function_call SEMICOLON
-        { $$ = $1; }
     | error_statement SEMICOLON
         { $$ = $1; }
     | return_statement SEMICOLON
@@ -392,8 +390,6 @@ error_statement:
 return_statement:
     BUSSIN expression
         { $$ = create_return_node($2); }
-    | BUSSIN LPAREN expression RPAREN
-        { $$ = create_return_node($3); }
     ;
 
 expression:

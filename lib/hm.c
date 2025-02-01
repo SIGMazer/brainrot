@@ -237,15 +237,7 @@ void hm_free(HashMap *hm)
             Variable *var = hm->nodes[i]->value;
             if (var != NULL){
                 if(var->is_array){
-                    switch (var->var_type) {
-                        case VAR_INT: SAFE_FREE(var->value.iarray); break;
-                        case VAR_SHORT: SAFE_FREE(var->value.sarray); break;
-                        case VAR_FLOAT: SAFE_FREE(var->value.farray); break;
-                        case VAR_DOUBLE: SAFE_FREE(var->value.darray); break;
-                        case VAR_BOOL: SAFE_FREE(var->value.barray); break;
-                        case VAR_CHAR: SAFE_FREE(var->value.carray); break;
-                        default: break;
-                    }
+                    SAFE_FREE(var->value.array_data);
                 }
 
             }
