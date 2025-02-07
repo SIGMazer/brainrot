@@ -565,6 +565,18 @@ int get_expression_type(ASTNode *node)
     {
         return VAR_INT; // Sizeof always returns an integer
     }
+    case NODE_FUNC_CALL:
+    {
+        // Look up the function in the symbol table
+        const char *func_name = node->data.func_call.function_name;
+        Function *func = get_function(func_name);
+        if (func != NULL)
+        {
+            return func->return_type;
+        }
+        yyerror("Undefined function in get_expression_type");
+        return NONE;
+    }
     default:
         yyerror("Unknown node type in get_expression_type");
         return NONE;
@@ -643,6 +655,7 @@ void *handle_binary_operation(ASTNode *node)
         return NULL;
     }
 
+    
     // Perform the operation and allocate the result.
     void *result;
     if (promoted_type == VAR_DOUBLE)
@@ -2308,6 +2321,7 @@ void execute_statement(ASTNode *node)
         evaluate_expression(node);
         break;
     case NODE_FUNC_CALL:
+        // TODO: clearn up built-in functions
         if (strcmp(node->data.func_call.function_name, "yapping") == 0)
         {
             execute_yapping_call(node->data.func_call.arguments);
@@ -2331,6 +2345,12 @@ void execute_statement(ASTNode *node)
         else if (strcmp(node->data.func_call.function_name, "slorp") == 0)
         {
             execute_slorp_call(node->data.func_call.arguments);
+        }
+        else
+        {
+            execute_function_call(
+                node->data.func_call.function_name,
+                node->data.func_call.arguments);
         }
         break;
     case NODE_FOR_STATEMENT:
@@ -3459,6 +3479,10 @@ Variable *get_variable(const char *name)
         {
             return var;
         }
+        if (scope->is_function_scope)
+        {
+            return NULL;
+        }
         scope = scope->parent;
     }
     return NULL;
@@ -3561,70 +3585,9 @@ void execute_function_call(const char *name, ArgumentList *args)
         if (strcmp(func->name, name) == 0)
         {
             // Create new scope for function
-            enter_scope();
-
-            // Process arguments and parameters
-            ArgumentList *curr_arg = args;
-            Parameter *curr_param = func->parameters;
+            enter_function_scope(func, args);
             current_return_value.type = func->return_type;
 
-            // reverse the order of parameters
-            Parameter *prev = NULL;
-            Parameter *next = NULL;
-            while (curr_param)
-            {
-                next = curr_param->next;
-                curr_param->next = prev;
-                prev = curr_param;
-                curr_param = next;
-            }
-            curr_param = prev;
-
-            while (curr_arg && curr_param)
-            {
-                // Create variable for parameter
-                Variable *var = variable_new(curr_param->name);
-                var->var_type = curr_param->type;
-                add_variable_to_scope(curr_param->name, var);
-
-                switch (curr_param->type)
-                {
-                case VAR_INT:
-                    set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
-                    break;
-                case VAR_FLOAT:
-                    set_float_variable(curr_param->name, evaluate_expression_float(curr_arg->expr), get_current_modifiers());
-                    break;
-                case VAR_DOUBLE:
-                    set_double_variable(curr_param->name, evaluate_expression_double(curr_arg->expr), get_current_modifiers());
-                    break;
-                case VAR_BOOL:
-                    set_bool_variable(curr_param->name, evaluate_expression_bool(curr_arg->expr), get_current_modifiers());
-                    break;
-                case VAR_SHORT:
-                    set_short_variable(curr_param->name, evaluate_expression_short(curr_arg->expr), get_current_modifiers());
-                    break;
-                case VAR_CHAR:
-                    set_int_variable(curr_param->name, evaluate_expression_int(curr_arg->expr), get_current_modifiers());
-                    break;
-                case NONE:
-                    break;
-                }
-
-                Parameter *tmp = curr_param;
-                curr_arg = curr_arg->next;
-                curr_param = curr_param->next;
-                SAFE_FREE(var);
-                SAFE_FREE(tmp->name);
-                SAFE_FREE(tmp);
-            }
-
-            if (curr_arg || curr_param)
-            {
-                yyerror("Mismatched number of arguments and parameters");
-                exit_scope();
-                return;
-            }
 
             // Set up return handling
             current_return_value.has_value = false;
@@ -3635,8 +3598,6 @@ void execute_function_call(const char *name, ArgumentList *args)
             }
 
             POP_JUMP_BUFFER();
-            // Clean up scope
-            exit_scope();
             return;
         }
         func = func->next;
@@ -3672,9 +3633,17 @@ void handle_return_statement(ASTNode *expr)
             exit(1);
         }
     }
+    // Clean up all scopes until we reach the function scope
+    while (current_scope && !current_scope->is_function_scope)
+    {
+        exit_scope();
+    }
+
     // skibidi main function do not have jump buffer
-    if (CURRENT_JUMP_BUFFER())
+    if (CURRENT_JUMP_BUFFER()){
+        exit_scope(); // exit current function scope
         LONGJMP();
+    }
 }
 
 Parameter *create_parameter(char *name, VarType type, Parameter *next)
@@ -3744,3 +3713,102 @@ void free_function_table(void)
     }
     function_table = NULL;
 }
+
+void reverse_parameter_list(Parameter **head)
+{
+    Parameter *prev = NULL, *current = *head, *next = NULL;
+    while (current)
+    {
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    *head = prev;
+}
+
+void enter_function_scope(Function *func, ArgumentList *args)
+{
+    ArgumentList *curr_arg = args;
+    Value arg_values[MAX_ARGUMENTS];
+    int arg_count = 0;
+
+    // Reverse the parameter list
+    reverse_parameter_list(&func->parameters);
+    Parameter *curr_param = func->parameters;
+
+    // Evaluate argument values before creating the scope
+    while (curr_arg && curr_param)
+    {
+        switch (curr_param->type)
+        {
+        case VAR_INT:
+        case VAR_CHAR:
+            arg_values[arg_count].ivalue = evaluate_expression_int(curr_arg->expr);
+            break;
+        case VAR_FLOAT:
+            arg_values[arg_count].fvalue = evaluate_expression_float(curr_arg->expr);
+            break;
+        case VAR_DOUBLE:
+            arg_values[arg_count].dvalue = evaluate_expression_double(curr_arg->expr);
+            break;
+        case VAR_BOOL:
+            arg_values[arg_count].bvalue = evaluate_expression_bool(curr_arg->expr);
+            break;
+        case VAR_SHORT:
+            arg_values[arg_count].svalue = evaluate_expression_short(curr_arg->expr);
+            break;
+        case NONE:
+            break;
+        }
+
+        curr_arg = curr_arg->next;
+        curr_param = curr_param->next;
+        arg_count++;
+    }
+
+    if (curr_arg || curr_param)
+    {
+        yyerror("Mismatched number of arguments and parameters");
+        return;
+    }
+
+    // Create function scope after evaluating arguments
+    Scope *scope = create_scope(current_scope);
+    current_scope = scope;
+    current_scope->is_function_scope = true;
+
+    curr_param = func->parameters; // Reset parameter list after reversing
+
+    // Assign evaluated values to function parameters
+    for (int i = 0; i < arg_count; i++)
+    {
+        Variable *var = variable_new(curr_param->name);
+        var->var_type = curr_param->type;
+        add_variable_to_scope(curr_param->name, var);
+
+        switch (curr_param->type)
+        {
+        case VAR_INT:
+        case VAR_CHAR:
+            set_int_variable(curr_param->name, arg_values[i].ivalue, get_current_modifiers());
+            break;
+        case VAR_FLOAT:
+            set_float_variable(curr_param->name, arg_values[i].fvalue, get_current_modifiers());
+            break;
+        case VAR_DOUBLE:
+            set_double_variable(curr_param->name, arg_values[i].dvalue, get_current_modifiers());
+            break;
+        case VAR_BOOL:
+            set_bool_variable(curr_param->name, arg_values[i].bvalue, get_current_modifiers());
+            break;
+        case VAR_SHORT:
+            set_short_variable(curr_param->name, arg_values[i].svalue, get_current_modifiers());
+            break;
+        case NONE:
+            break;
+        }
+        curr_param = curr_param->next;
+    }
+}
+

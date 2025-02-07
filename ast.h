@@ -12,6 +12,7 @@
 #include <setjmp.h>
 
 #define MAX_VARS 100
+#define MAX_ARGUMENTS 100
 
 /* Forward declarations */
 typedef struct ASTNode ASTNode;
@@ -104,11 +105,15 @@ typedef struct
 
 typedef union
 {
-    int ivalue;
-    short svalue;
-    bool bvalue;
-    float fvalue;
-    double dvalue;
+    VarType type;
+    union
+    {
+        int ivalue;
+        short svalue;
+        bool bvalue;
+        float fvalue;
+        double dvalue;
+    };
 } Value;
 
 /* Operator types */
@@ -272,6 +277,7 @@ typedef struct Scope
 {
     HashMap *variables;
     struct Scope *parent;
+    bool is_function_scope;
 } Scope;
 
 /* Global variable declarations */
@@ -291,6 +297,7 @@ void reset_modifiers(void);
 TypeModifiers get_current_modifiers(void);
 Variable *get_variable(const char *name);
 Scope *create_scope(Scope *parent);
+void enter_function_scope(Function *func, ArgumentList *args);
 void exit_scope();
 void enter_scope();
 void free_scope(Scope *scope);
