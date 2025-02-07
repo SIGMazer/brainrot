@@ -48,5 +48,7 @@
     "slorp_float": "You typed: 3.140000",
     "slorp_double": "You typed: 3.141592",
     "slorp_char": "You typed: c",
-    "slorp_string": "You typed: skibidi bop bop yes yes"
+    "slorp_string": "You typed: skibidi bop bop yes yes",
+    "fib": "55",
+    "func_scope": "from inner 10\nfrom outer 4\n"
 }

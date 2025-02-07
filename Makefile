@@ -10,6 +10,7 @@ LDFLAGS := -lfl -lm
 
 # Source files and directories
 SRC_DIR := lib
+DEBUG_FLAGS := -g
 SRCS := $(SRC_DIR)/hm.c $(SRC_DIR)/mem.c $(SRC_DIR)/input.c ast.c
 GENERATED_SRCS := lang.tab.c lex.yy.c
 ALL_SRCS := $(SRCS) $(GENERATED_SRCS)
@@ -22,6 +23,13 @@ FLEX_OUTPUT := lex.yy.c
 # Default target
 .PHONY: all
 all: $(TARGET)
+
+# Debug target
+.PHONY: debug
+debug: CFLAGS += $(DEBUG_FLAGS)
+debug: clean $(TARGET)
+	@echo "Debug build compiled with -g. Time to sigma grind with GDB."
+
 
 # Main executable build
 $(TARGET): $(ALL_SRCS)

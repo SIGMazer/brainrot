@@ -1,0 +1,12 @@
+rizz fib(rizz n) {
+  edgy (n <= 1) {
+    bussin n;
+  }
+  bussin fib(n -1) + fib(n -2);
+}
+
+skibidi main {
+    rizz result = fib(10);
+    yapping("%d",result);
+    bussin 0;
+}

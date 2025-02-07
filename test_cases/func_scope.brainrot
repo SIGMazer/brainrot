@@ -1,0 +1,18 @@
+rizz inner()
+{
+    rizz x = 10;
+    yapping("from inner %d",x);
+    bussin 0;
+}
+
+rizz outer(rizz n) {
+    rizz x = 4;
+    inner();
+    yapping("from outer %d",x);
+    bussin x;
+}
+
+skibidi main {
+    outer(10);
+    bussin 0;
+}
