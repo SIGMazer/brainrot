@@ -2113,14 +2113,11 @@ void execute_assignment(ASTNode *node)
                 break;
             default:
                 yyerror("Unsupported array type");
-                free_ast(node);
                 return;
             }
-            free_ast(node);
             return;
         }
         yyerror("Undefined array variable");
-        free_ast(node);
         return;
     }
 
@@ -2140,7 +2137,6 @@ void execute_assignment(ASTNode *node)
             {
                 yyerror("Failed to set integer variable");
             }
-            free_ast(node);
             return;
         }
     }
@@ -3284,176 +3280,9 @@ void free_statement_list(StatementList *list)
     }
 }
 
-void free_ast(ASTNode *node)
+void free_ast()
 {
-    (void)node;
     arena_free(&arena);
-    // if (!node)
-    //     return;
-    //
-    // switch (node->type)
-    // {
-    // case NODE_IDENTIFIER:
-    //     SAFE_FREE(node->data.name);
-    //     break;
-    //
-    // case NODE_OPERATION:
-    // case NODE_ASSIGNMENT:
-    // case NODE_DECLARATION:
-    //     free_ast(node->data.op.left);
-    //     free_ast(node->data.op.right);
-    //     break;
-    //
-    // case NODE_UNARY_OPERATION:
-    //     free_ast(node->data.unary.operand);
-    //     break;
-    //
-    // case NODE_STATEMENT_LIST:
-    // {
-    //     StatementList *current = node->data.statements;
-    //     while (current)
-    //     {
-    //         StatementList *next = current->next;
-    //         if (current->statement)
-    //         {
-    //             free_ast(current->statement);
-    //         }
-    //         SAFE_FREE(current);
-    //         current = next;
-    //     }
-    //     break;
-    // }
-    //
-    // case NODE_SWITCH_STATEMENT:
-    //     if (node->data.switch_stmt.expression)
-    //         free_ast(node->data.switch_stmt.expression);
-    //     if (node->data.switch_stmt.cases)
-    //     {
-    //         CaseNode *current = node->data.switch_stmt.cases;
-    //         while (current)
-    //         {
-    //             CaseNode *next = current->next;
-    //             if (current->value)
-    //                 free_ast(current->value);
-    //             if (current->statements)
-    //                 free_ast(current->statements);
-    //             SAFE_FREE(current);
-    //             current = next;
-    //         }
-    //     }
-    //     break;
-    //
-    // case NODE_FOR_STATEMENT:
-    //     if (node->data.for_stmt.init)
-    //         free_ast(node->data.for_stmt.init);
-    //     if (node->data.for_stmt.cond)
-    //         free_ast(node->data.for_stmt.cond);
-    //     if (node->data.for_stmt.incr)
-    //         free_ast(node->data.for_stmt.incr);
-    //     if (node->data.for_stmt.body)
-    //         free_ast(node->data.for_stmt.body);
-    //     break;
-    //
-    // case NODE_WHILE_STATEMENT:
-    // case NODE_DO_WHILE_STATEMENT:
-    //     if (node->data.while_stmt.cond)
-    //         free_ast(node->data.while_stmt.cond);
-    //     if (node->data.while_stmt.body)
-    //         free_ast(node->data.while_stmt.body);
-    //     break;
-    //
-    // case NODE_ARRAY_ACCESS:
-    //     if (node->data.array.name)
-    //     {
-    //         SAFE_FREE(node->data.array.name);
-    //     }
-    //     if (node->data.array.index)
-    //     {
-    //         free_ast(node->data.array.index);
-    //     }
-    //     break;
-    //
-    // case NODE_IF_STATEMENT:
-    //     if (node->data.if_stmt.condition)
-    //         free_ast(node->data.if_stmt.condition);
-    //     if (node->data.if_stmt.then_branch)
-    //         free_ast(node->data.if_stmt.then_branch);
-    //     if (node->data.if_stmt.else_branch)
-    //         free_ast(node->data.if_stmt.else_branch);
-    //     break;
-    //
-    // case NODE_SIZEOF:
-    //     if (node->data.sizeof_stmt.expr)
-    //         free_ast(node->data.sizeof_stmt.expr);
-    //     break;
-    //
-    // case NODE_BREAK_STATEMENT:
-    //     // Nothing additional to free
-    //     break;
-    //
-    // case NODE_FUNC_CALL:
-    //     if (node->data.func_call.function_name)
-    //     {
-    //         SAFE_FREE(node->data.func_call.function_name);
-    //     }
-    //     ArgumentList *current_arg = node->data.func_call.arguments;
-    //     while (current_arg)
-    //     {
-    //         ArgumentList *next_arg = current_arg->next;
-    //         if (current_arg->expr)
-    //         {
-    //             free_ast(current_arg->expr);
-    //         }
-    //         SAFE_FREE(current_arg);
-    //         current_arg = next_arg;
-    //     }
-    //     break;
-    //
-    // case NODE_STRING_LITERAL:
-    //     if (node->data.name)
-    //     {
-    //         SAFE_FREE(node->data.name);
-    //     }
-    //     break;
-    //
-    // case NODE_INT:
-    // case NODE_SHORT:
-    // case NODE_FLOAT:
-    // case NODE_DOUBLE:
-    // case NODE_BOOLEAN:
-    // case NODE_CHAR:
-    //     // These nodes don't have additional allocations
-    //     break;
-    //
-    // case NODE_ERROR_STATEMENT:
-    // case NODE_PRINT_STATEMENT:
-    //     if (node->data.op.left)
-    //     {
-    //         free_ast(node->data.op.left);
-    //     }
-    //     break;
-    // case NODE_FUNCTION_DEF:
-    //     SAFE_FREE(node->data.function_def.name);
-    //     // Free parameters
-    //     free_parameters(node->data.function_def.parameters);
-    //     if (node->data.function_def.body)
-    //     {
-    //         free_ast(node->data.function_def.body);
-    //     }
-    //     break;
-    // case NODE_RETURN:
-    //     if (node->data.op.left)
-    //     {
-    //         free_ast(node->data.op.left);
-    //     }
-    //     break;
-    // default:
-    //     fprintf(stderr, "Warning: Unknown node type in free_ast: %d\n", node->type);
-    //     break;
-    // }
-    //
-    // // Free the node itself
-    // SAFE_FREE(node);
 }
 
 Scope *create_scope(Scope *parent)
@@ -3684,16 +3513,6 @@ ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *pa
     return node;
 }
 
-void free_parameters(Parameter *param)
-{
-    while (param)
-    {
-        Parameter *next = param->next;
-        SAFE_FREE(param->name);
-        SAFE_FREE(param);
-        param = next;
-    }
-}
 
 void free_function_table(void)
 {

@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
     }
 
     fclose(source);
-    free_ast(root);
+    free_ast();
     free_function_table();
     free_scope(current_scope);
     yylex_destroy();
@@ -701,7 +701,7 @@ double slorp_double(double var) {
 
 void cleanup() {
     // Free the AST
-    free_ast(root);
+    free_ast();
     
     // Free the scope
     free_scope(current_scope);
