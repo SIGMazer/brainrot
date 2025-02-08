@@ -18,5 +18,9 @@ for f in test_cases/*.brainrot; do
     else
         valgrind --leak-check=full --error-exitcode=1 ./brainrot "$f"
     fi
+    if [[ $? -ne 0 ]]; then
+        echo "Valgrind failed on $f"
+        exit 1
+    fi
     echo
 done

@@ -3435,6 +3435,7 @@ void free_ast(ASTNode *node)
     case NODE_FUNCTION_DEF:
         SAFE_FREE(node->data.function_def.name);
         // Free parameters
+        free_parameters(node->data.function_def.parameters);
         if (node->data.function_def.body)
         {
             free_ast(node->data.function_def.body);
@@ -3786,6 +3787,7 @@ void enter_function_scope(Function *func, ArgumentList *args)
         Variable *var = variable_new(curr_param->name);
         var->var_type = curr_param->type;
         add_variable_to_scope(curr_param->name, var);
+        SAFE_FREE(var);
 
         switch (curr_param->type)
         {
@@ -3810,5 +3812,6 @@ void enter_function_scope(Function *func, ArgumentList *args)
         }
         curr_param = curr_param->next;
     }
+    reverse_parameter_list(&func->parameters);
 }
 
