@@ -434,7 +434,7 @@ assignment:
     | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
         {
             ASTNode *access = create_array_access_node($1, $3);
-            ASTNode *node = SAFE_MALLOC(ASTNode);
+            ASTNode *node = ARENA_ALLOC(ASTNode);
             if (!node) {
                 yyerror("Memory allocation failed");
                 SAFE_FREE($1);
@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
     }
 
     fclose(source);
-    free_ast(root);
+    free_ast();
     free_function_table();
     free_scope(current_scope);
     yylex_destroy();
@@ -701,7 +701,7 @@ double slorp_double(double var) {
 
 void cleanup() {
     // Free the AST
-    free_ast(root);
+    free_ast();
     
     // Free the scope
     free_scope(current_scope);

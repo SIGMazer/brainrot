@@ -11,7 +11,7 @@ LDFLAGS := -lfl -lm
 # Source files and directories
 SRC_DIR := lib
 DEBUG_FLAGS := -g
-SRCS := $(SRC_DIR)/hm.c $(SRC_DIR)/mem.c $(SRC_DIR)/input.c ast.c
+SRCS := $(SRC_DIR)/hm.c $(SRC_DIR)/mem.c $(SRC_DIR)/input.c $(SRC_DIR)/arena.c  ast.c
 GENERATED_SRCS := lang.tab.c lex.yy.c
 ALL_SRCS := $(SRCS) $(GENERATED_SRCS)
 

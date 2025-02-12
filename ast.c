@@ -2,7 +2,6 @@
 
 #include "ast.h"
 #include "lib/mem.h"
-#include "lib/hm.h"
 #include <stdbool.h>
 #include <math.h>
 #include <limits.h>
@@ -15,6 +14,7 @@ JumpBuffer *jump_buffer = {0};
 Function *function_table = NULL;
 jmp_buf return_jump_buf;
 ReturnValue current_return_value;
+Arena arena;
 
 TypeModifiers current_modifiers = {false, false, false, false, false};
 extern VarType current_var_type;
@@ -239,7 +239,7 @@ void execute_switch_statement(ASTNode *node)
 
 static ASTNode *create_node(NodeType type, VarType var_type, TypeModifiers modifiers)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     if (!node)
     {
         yyerror("Error: Memory allocation failed for ASTNode.\n");
@@ -262,7 +262,7 @@ ASTNode *create_int_node(int value)
 
 ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     if (!node)
         return NULL;
 
@@ -270,13 +270,13 @@ ASTNode *create_array_declaration_node(char *name, int length, VarType var_type)
     node->var_type = var_type;
     node->is_array = true;
     node->array_length = length;
-    node->data.array.name = safe_strdup(name);
+    node->data.array.name = ARENA_STRDUP(name);
     return node;
 }
 
 ASTNode *create_array_access_node(char *name, ASTNode *index)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     if (!node)
     {
         yyerror("Memory allocation failed");
@@ -284,7 +284,7 @@ ASTNode *create_array_access_node(char *name, ASTNode *index)
     }
 
     node->type = NODE_ARRAY_ACCESS;
-    node->data.array.name = safe_strdup(name);
+    node->data.array.name = ARENA_STRDUP(name);
     node->data.array.index = index;
     node->is_array = true;
 
@@ -1795,7 +1795,7 @@ bool evaluate_expression_bool(ASTNode *node)
 
 ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list)
 {
-    ArgumentList *new_node = SAFE_MALLOC(ArgumentList);
+    ArgumentList *new_node = ARENA_ALLOC(ArgumentList);
     new_node->expr = expr;
     new_node->next = NULL;
 
@@ -1818,7 +1818,7 @@ ArgumentList *create_argument_list(ASTNode *expr, ArgumentList *existing_list)
 
 ASTNode *create_print_statement_node(ASTNode *expr)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     node->type = NODE_PRINT_STATEMENT;
     node->data.op.left = expr;
     return node;
@@ -1826,7 +1826,7 @@ ASTNode *create_print_statement_node(ASTNode *expr)
 
 ASTNode *create_error_statement_node(ASTNode *expr)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     node->type = NODE_ERROR_STATEMENT;
     node->data.op.left = expr;
     return node;
@@ -1837,14 +1837,14 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
     if (!existing_list)
     {
         // If there's no existing list, create a new one
-        ASTNode *node = SAFE_MALLOC(ASTNode);
+        ASTNode *node = ARENA_ALLOC(ASTNode);
         if (!node)
         {
             yyerror("Memory allocation failed");
             return NULL;
         }
         node->type = NODE_STATEMENT_LIST;
-        node->data.statements = SAFE_MALLOC(StatementList);
+        node->data.statements = ARENA_ALLOC(StatementList);
         if (!node->data.statements)
         {
             SAFE_FREE(node);
@@ -1864,7 +1864,7 @@ ASTNode *create_statement_list(ASTNode *statement, ASTNode *existing_list)
             sl = sl->next;
         }
         // Now sl is the last element; append the new statement
-        StatementList *new_item = SAFE_MALLOC(StatementList);
+        StatementList *new_item = ARENA_ALLOC(StatementList);
         if (!new_item)
         {
             yyerror("Memory allocation failed");
@@ -2113,14 +2113,11 @@ void execute_assignment(ASTNode *node)
                 break;
             default:
                 yyerror("Unsupported array type");
-                free_ast(node);
                 return;
             }
-            free_ast(node);
             return;
         }
         yyerror("Undefined array variable");
-        free_ast(node);
         return;
     }
 
@@ -2140,7 +2137,6 @@ void execute_assignment(ASTNode *node)
             {
                 yyerror("Failed to set integer variable");
             }
-            free_ast(node);
             return;
         }
     }
@@ -2527,7 +2523,7 @@ void execute_do_while_statement(ASTNode *node)
 
 ASTNode *create_if_statement_node(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     node->type = NODE_IF_STATEMENT;
     node->data.if_stmt.condition = condition;
     node->data.if_stmt.then_branch = then_branch;
@@ -2537,15 +2533,15 @@ ASTNode *create_if_statement_node(ASTNode *condition, ASTNode *then_branch, ASTN
 
 ASTNode *create_string_literal_node(char *string)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     node->type = NODE_STRING_LITERAL;
-    node->data.name = safe_strdup(string);
+    node->data.name = ARENA_STRDUP(string);
     return node;
 }
 
 ASTNode *create_switch_statement_node(ASTNode *expression, CaseNode *cases)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     node->type = NODE_SWITCH_STATEMENT;
     node->data.switch_stmt.expression = expression;
     node->data.switch_stmt.cases = cases;
@@ -2554,7 +2550,7 @@ ASTNode *create_switch_statement_node(ASTNode *expression, CaseNode *cases)
 
 CaseNode *create_case_node(ASTNode *value, ASTNode *statements)
 {
-    CaseNode *node = SAFE_MALLOC(CaseNode);
+    CaseNode *node = ARENA_ALLOC(CaseNode);
     node->value = value;
     node->statements = statements;
     node->next = NULL;
@@ -2579,7 +2575,7 @@ CaseNode *append_case_list(CaseNode *list, CaseNode *case_node)
 
 ASTNode *create_break_node()
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     node->type = NODE_BREAK_STATEMENT;
     node->data.break_stmt = NULL;
     return node;
@@ -3117,7 +3113,7 @@ void *evaluate_array_access(ASTNode *node)
         }
 
         // Allocate and return value based on type
-        void *result = SAFE_MALLOC(double); // Use largest possible type
+        void *result = ARENA_ALLOC(double); // Use largest possible type
         switch (var->var_type)
         {
         case VAR_FLOAT:
@@ -3259,8 +3255,6 @@ void populate_array_variable(char *name, ExpressionList *list)
                 yyerror("Unsupported array type");
                 return;
             }
-
-            SAFE_FREE(current->expr);
             current = current->next;
             if (current == list)
                 break;
@@ -3286,174 +3280,9 @@ void free_statement_list(StatementList *list)
     }
 }
 
-void free_ast(ASTNode *node)
+void free_ast()
 {
-    if (!node)
-        return;
-
-    switch (node->type)
-    {
-    case NODE_IDENTIFIER:
-        SAFE_FREE(node->data.name);
-        break;
-
-    case NODE_OPERATION:
-    case NODE_ASSIGNMENT:
-    case NODE_DECLARATION:
-        free_ast(node->data.op.left);
-        free_ast(node->data.op.right);
-        break;
-
-    case NODE_UNARY_OPERATION:
-        free_ast(node->data.unary.operand);
-        break;
-
-    case NODE_STATEMENT_LIST:
-    {
-        StatementList *current = node->data.statements;
-        while (current)
-        {
-            StatementList *next = current->next;
-            if (current->statement)
-            {
-                free_ast(current->statement);
-            }
-            SAFE_FREE(current);
-            current = next;
-        }
-        break;
-    }
-
-    case NODE_SWITCH_STATEMENT:
-        if (node->data.switch_stmt.expression)
-            free_ast(node->data.switch_stmt.expression);
-        if (node->data.switch_stmt.cases)
-        {
-            CaseNode *current = node->data.switch_stmt.cases;
-            while (current)
-            {
-                CaseNode *next = current->next;
-                if (current->value)
-                    free_ast(current->value);
-                if (current->statements)
-                    free_ast(current->statements);
-                SAFE_FREE(current);
-                current = next;
-            }
-        }
-        break;
-
-    case NODE_FOR_STATEMENT:
-        if (node->data.for_stmt.init)
-            free_ast(node->data.for_stmt.init);
-        if (node->data.for_stmt.cond)
-            free_ast(node->data.for_stmt.cond);
-        if (node->data.for_stmt.incr)
-            free_ast(node->data.for_stmt.incr);
-        if (node->data.for_stmt.body)
-            free_ast(node->data.for_stmt.body);
-        break;
-
-    case NODE_WHILE_STATEMENT:
-    case NODE_DO_WHILE_STATEMENT:
-        if (node->data.while_stmt.cond)
-            free_ast(node->data.while_stmt.cond);
-        if (node->data.while_stmt.body)
-            free_ast(node->data.while_stmt.body);
-        break;
-
-    case NODE_ARRAY_ACCESS:
-        if (node->data.array.name)
-        {
-            SAFE_FREE(node->data.array.name);
-        }
-        if (node->data.array.index)
-        {
-            free_ast(node->data.array.index);
-        }
-        break;
-
-    case NODE_IF_STATEMENT:
-        if (node->data.if_stmt.condition)
-            free_ast(node->data.if_stmt.condition);
-        if (node->data.if_stmt.then_branch)
-            free_ast(node->data.if_stmt.then_branch);
-        if (node->data.if_stmt.else_branch)
-            free_ast(node->data.if_stmt.else_branch);
-        break;
-
-    case NODE_SIZEOF:
-        if (node->data.sizeof_stmt.expr)
-            free_ast(node->data.sizeof_stmt.expr);
-        break;
-
-    case NODE_BREAK_STATEMENT:
-        // Nothing additional to free
-        break;
-
-    case NODE_FUNC_CALL:
-        if (node->data.func_call.function_name)
-        {
-            SAFE_FREE(node->data.func_call.function_name);
-        }
-        ArgumentList *current_arg = node->data.func_call.arguments;
-        while (current_arg)
-        {
-            ArgumentList *next_arg = current_arg->next;
-            if (current_arg->expr)
-            {
-                free_ast(current_arg->expr);
-            }
-            SAFE_FREE(current_arg);
-            current_arg = next_arg;
-        }
-        break;
-
-    case NODE_STRING_LITERAL:
-        if (node->data.name)
-        {
-            SAFE_FREE(node->data.name);
-        }
-        break;
-
-    case NODE_INT:
-    case NODE_SHORT:
-    case NODE_FLOAT:
-    case NODE_DOUBLE:
-    case NODE_BOOLEAN:
-    case NODE_CHAR:
-        // These nodes don't have additional allocations
-        break;
-
-    case NODE_ERROR_STATEMENT:
-    case NODE_PRINT_STATEMENT:
-        if (node->data.op.left)
-        {
-            free_ast(node->data.op.left);
-        }
-        break;
-    case NODE_FUNCTION_DEF:
-        SAFE_FREE(node->data.function_def.name);
-        // Free parameters
-        free_parameters(node->data.function_def.parameters);
-        if (node->data.function_def.body)
-        {
-            free_ast(node->data.function_def.body);
-        }
-        break;
-    case NODE_RETURN:
-        if (node->data.op.left)
-        {
-            free_ast(node->data.op.left);
-        }
-        break;
-    default:
-        fprintf(stderr, "Warning: Unknown node type in free_ast: %d\n", node->type);
-        break;
-    }
-
-    // Free the node itself
-    SAFE_FREE(node);
+    arena_free(&arena);
 }
 
 Scope *create_scope(Scope *parent)
@@ -3547,7 +3376,7 @@ void add_variable_to_scope(const char *name, Variable *var)
 
 ASTNode *create_return_node(ASTNode *expr)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     if (!node)
     {
         yyerror("Memory allocation failed");
@@ -3649,14 +3478,14 @@ void handle_return_statement(ASTNode *expr)
 
 Parameter *create_parameter(char *name, VarType type, Parameter *next)
 {
-    Parameter *param = SAFE_MALLOC(Parameter);
+    Parameter *param = ARENA_ALLOC(Parameter);
     if (!param)
     {
         yyerror("Failed to allocate memory for parameter");
         return NULL;
     }
 
-    param->name = safe_strdup(name);
+    param->name = ARENA_STRDUP(name);
     param->type = type;
     param->next = next;
 
@@ -3665,7 +3494,7 @@ Parameter *create_parameter(char *name, VarType type, Parameter *next)
 
 ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *params, ASTNode *body)
 {
-    ASTNode *node = SAFE_MALLOC(ASTNode);
+    ASTNode *node = ARENA_ALLOC(ASTNode);
     if (!node)
     {
         yyerror("Failed to allocate memory for function definition node");
@@ -3673,7 +3502,7 @@ ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *pa
     }
 
     node->type = NODE_FUNCTION_DEF;
-    node->data.function_def.name = safe_strdup(name);
+    node->data.function_def.name = ARENA_STRDUP(name);
     node->data.function_def.return_type = return_type;
     node->data.function_def.parameters = params;
     node->data.function_def.body = body;
@@ -3684,16 +3513,6 @@ ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *pa
     return node;
 }
 
-void free_parameters(Parameter *param)
-{
-    while (param)
-    {
-        Parameter *next = param->next;
-        SAFE_FREE(param->name);
-        SAFE_FREE(param);
-        param = next;
-    }
-}
 
 void free_function_table(void)
 {

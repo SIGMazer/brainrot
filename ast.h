@@ -4,6 +4,7 @@
 #define AST_H
 
 #include "lib/hm.h"
+#include "lib/arena.h"
 #include "lib/mem.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -342,7 +343,7 @@ ExpressionList *create_expression_list(ASTNode *expr);
 ExpressionList *append_expression_list(ExpressionList *list, ASTNode *expr);
 void free_expression_list(ExpressionList *list);
 void populate_array_variable(char *name, ExpressionList *list);
-void free_ast(ASTNode *node);
+void free_ast(void);
 
 /* Evaluation and execution functions */
 void *evaluate_array_access(ASTNode *node);
@@ -369,7 +370,6 @@ void execute_baka_call(ArgumentList *args);
 void execute_ragequit_call(ArgumentList *args);
 void execute_chill_call(ArgumentList *args);
 void execute_slorp_call(ArgumentList *args);
-void free_ast(ASTNode *node);
 void reset_modifiers(void);
 bool check_and_mark_identifier(ASTNode *node, const char *contextErrorMessage);
 void bruh();
@@ -385,10 +385,14 @@ void execute_function_call(const char *name, ArgumentList *args);
 ASTNode *create_function_def_node(char *name, VarType return_type, Parameter *params, ASTNode *body);
 void handle_return_statement(ASTNode *expr);
 void *handle_binary_operation(ASTNode *node);
-void free_parameters(Parameter *param);
 void free_function_table(void);
 
 extern TypeModifiers current_modifiers;
+
+extern Arena arena;
+
+#define ARENA_ALLOC(type) arena_alloc(&arena, sizeof(type))
+#define ARENA_STRDUP(str) arena_strdup(&arena, str)
 
 /* Macros for assigning specific fields to a node */
 #define SET_DATA_INT(node, value) ((node)->data.ivalue = (value))
@@ -396,7 +400,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_FLOAT(node, value) ((node)->data.fvalue = (value))
 #define SET_DATA_DOUBLE(node, value) ((node)->data.dvalue = (value))
 #define SET_DATA_BOOL(node, value) ((node)->data.bvalue = (value) ? 1 : 0)
-#define SET_DATA_NAME(node, n) ((node)->data.name = safe_strdup(n))
+#define SET_DATA_NAME(node, n) ((node)->data.name = ARENA_STRDUP(n))
 #define SET_SIZEOF(node, n) ((node)->data.sizeof_stmt.expr = (n))
 #define SET_DATA_OP(node, l, r, opr) \
     do                               \
@@ -432,7 +436,7 @@ extern TypeModifiers current_modifiers;
 #define SET_DATA_FUNC_CALL(node, func_name, args)                      \
     do                                                                 \
     {                                                                  \
-        (node)->data.func_call.function_name = safe_strdup(func_name); \
+        (node)->data.func_call.function_name = ARENA_STRDUP(func_name); \
         (node)->data.func_call.arguments = (args);                     \
     } while (0)
 

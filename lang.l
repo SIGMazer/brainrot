@@ -4,6 +4,7 @@
 #include <string.h>
 #include "ast.h"
 #include "lib/mem.h"
+#include "lib/arena.h"
 #include "lang.tab.h"
 
 VarType current_var_type = NONE;
