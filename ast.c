@@ -12,7 +12,6 @@
 JumpBuffer *jump_buffer = {0};
 
 Function *function_table = NULL;
-jmp_buf return_jump_buf;
 ReturnValue current_return_value;
 Arena arena;
 
@@ -27,6 +26,7 @@ bool set_variable(const char *name, void *value, VarType type, TypeModifiers mod
     Variable *var = get_variable(name);
     if (var != NULL)
     {
+
         var->modifiers = mods;
         var->var_type = type;
         switch (type)
@@ -160,6 +160,7 @@ TypeModifiers get_current_modifiers(void)
 
 /* Include the symbol table functions */
 extern void yyerror(const char *s);
+extern void cleanup(void);
 extern void ragequit(int exit_code);
 extern void chill(unsigned int seconds);
 extern void yapping(const char *format, ...);
@@ -1893,6 +1894,8 @@ void check_const_assignment(const char *name)
     {
         yylineno = yylineno - 2;
         yyerror("Cannot modify const variable");
+        // TODO: make proper cleanup when error occurs
+        cleanup();
         exit(EXIT_FAILURE);
     }
 }
@@ -3476,7 +3479,7 @@ void handle_return_statement(ASTNode *expr)
     }
 }
 
-Parameter *create_parameter(char *name, VarType type, Parameter *next)
+Parameter *create_parameter(char *name, VarType type, Parameter *next, TypeModifiers mods)
 {
     Parameter *param = ARENA_ALLOC(Parameter);
     if (!param)
@@ -3488,6 +3491,7 @@ Parameter *create_parameter(char *name, VarType type, Parameter *next)
     param->name = ARENA_STRDUP(name);
     param->type = type;
     param->next = next;
+    param->modifiers = mods;
 
     return param;
 }
@@ -3605,6 +3609,7 @@ void enter_function_scope(Function *func, ArgumentList *args)
     {
         Variable *var = variable_new(curr_param->name);
         var->var_type = curr_param->type;
+        TypeModifiers mods = curr_param->modifiers;
         add_variable_to_scope(curr_param->name, var);
         SAFE_FREE(var);
 
@@ -3612,19 +3617,19 @@ void enter_function_scope(Function *func, ArgumentList *args)
         {
         case VAR_INT:
         case VAR_CHAR:
-            set_int_variable(curr_param->name, arg_values[i].ivalue, get_current_modifiers());
+            set_int_variable(curr_param->name, arg_values[i].ivalue, mods);
             break;
         case VAR_FLOAT:
-            set_float_variable(curr_param->name, arg_values[i].fvalue, get_current_modifiers());
+            set_float_variable(curr_param->name, arg_values[i].fvalue, mods);
             break;
         case VAR_DOUBLE:
-            set_double_variable(curr_param->name, arg_values[i].dvalue, get_current_modifiers());
+            set_double_variable(curr_param->name, arg_values[i].dvalue, mods);
             break;
         case VAR_BOOL:
-            set_bool_variable(curr_param->name, arg_values[i].bvalue, get_current_modifiers());
+            set_bool_variable(curr_param->name, arg_values[i].bvalue, mods);
             break;
         case VAR_SHORT:
-            set_short_variable(curr_param->name, arg_values[i].svalue, get_current_modifiers());
+            set_short_variable(curr_param->name, arg_values[i].svalue, mods);
             break;
         case NONE:
             break;
