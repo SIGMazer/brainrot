@@ -261,7 +261,7 @@ skibidi main {
 
 ## 6. Sieve of Eratosthenes
 **File Name:** `sieve_of_eras.brainrot`
-```
+```c
 skibidi main {
         rizz i;
         rizz p;
