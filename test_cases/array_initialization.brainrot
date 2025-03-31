@@ -1,6 +1,6 @@
 skibidi main {
     rizz int_array[3] = {1,2,3};
-    rizz int_array1[] = {1,2,3};
+    rizz int_array1[3] = {1,2,3};
 
     flex (rizz i = 0; i < 3; i = i + 1) {
         yapping("%d", int_array[i]);

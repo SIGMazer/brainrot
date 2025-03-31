@@ -14,12 +14,22 @@
 
 #define MAX_VARS 100
 #define MAX_ARGUMENTS 100
+#define MAX_DIMENSIONS 10
 
 /* Forward declarations */
 typedef struct ASTNode ASTNode;
 typedef struct StatementList StatementList;
 typedef struct ArgumentList ArgumentList;
 typedef struct CaseNode CaseNode;
+
+
+/* Define Array Dimensions */
+typedef struct
+{
+    int dimensions[MAX_DIMENSIONS];
+    int num_dimensions;
+    size_t total_size;
+} ArrayDimensions;
 
 /* Define TypeModifiers first */
 typedef struct
@@ -102,7 +112,8 @@ typedef struct
     TypeModifiers modifiers;
     VarType var_type;
     bool is_array;
-    int array_length;
+    int array_length; // lets keep it for now for backword compatibility
+    ArrayDimensions array_dimensions;
 } Variable;
 
 typedef union
@@ -175,6 +186,13 @@ typedef enum
     NODE_RETURN,
 } NodeType;
 
+typedef struct
+{
+    char *name;
+    ASTNode *index;
+    ASTNode *indices[MAX_DIMENSIONS];
+    int num_dimensions;
+} Array;
 /* Rest of the structure definitions */
 struct StatementList
 {
@@ -212,6 +230,7 @@ struct ASTNode
     bool is_valid_symbol;
     bool is_array;
     int array_length;
+    ArrayDimensions array_dimensions;
     union
     {
         short svalue;
@@ -220,11 +239,7 @@ struct ASTNode
         float fvalue;
         double dvalue;
         char *name;
-        struct
-        {
-            char *name;
-            ASTNode *index;
-        } array;
+        Array array;
         struct
         {
             ASTNode *left;
@@ -343,7 +358,7 @@ ASTNode *create_return_node(ASTNode *expr);
 ExpressionList *create_expression_list(ASTNode *expr);
 ExpressionList *append_expression_list(ExpressionList *list, ASTNode *expr);
 void free_expression_list(ExpressionList *list);
-void populate_array_variable(char *name, ExpressionList *list);
+void populate_multi_array_variable(char *name, ExpressionList *list, int dimensions[], int num_dimensions);
 void free_ast(void);
 
 /* Evaluation and execution functions */
@@ -378,6 +393,10 @@ size_t count_expression_list(ExpressionList *list);
 size_t handle_sizeof(ASTNode *node);
 size_t get_type_size(char *name);
 void *handle_function_call(ASTNode *node);
+ASTNode *create_multi_array_declaration_node(char *name, int dimensions[], int num_dimensions, VarType type);
+bool set_multi_array_variable(const char *name, int dimensions[], int num_dimensions, TypeModifiers mods, VarType type);
+ASTNode *create_array_access_node_single(char *name, ASTNode *index);
+ASTNode *create_multi_array_access_node(char *name, ASTNode *indices[], int num_indices);
 
 /* User-defined functions */
 Function *create_function(char *name, VarType return_type, Parameter *params, ASTNode *body);

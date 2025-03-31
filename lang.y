@@ -47,6 +47,8 @@ ASTNode *root = NULL;
     ArgumentList *args;
     ExpressionList *expr_list;
     Parameter *param;
+    ArrayDimensions array_dims;
+    Array array;
 }
 
 /* Define token types */
@@ -93,6 +95,8 @@ ASTNode *root = NULL;
 %type <node> function_def
 %type <node> function_def_list
 %type <param> param_list params
+%type <array_dims> dimensions
+%type <array> multi_dimension_access
 
 %start program
 
@@ -231,49 +235,53 @@ declaration:
             $$ = create_declaration_node($3, $5);
             SAFE_FREE($3);
         }
-    | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+    | optional_modifiers type IDENTIFIER dimensions
         {
             Variable *var = variable_new($3);
             add_variable_to_scope($3, var);
-            if (!set_array_variable($3, $5, get_current_modifiers(), $2)) {
+            if (!set_multi_array_variable($3, $4.dimensions, $4.num_dimensions, get_current_modifiers(), $2)) {
                 yyerror("Failed to create array");
                 SAFE_FREE($3);
                 YYABORT;
             }
-            $$ = create_array_declaration_node($3, $5, $2);
+            $$ = create_multi_array_declaration_node($3, $4.dimensions, $4.num_dimensions, $2);
             SAFE_FREE($3);
             SAFE_FREE(var);
         }
-    | optional_modifiers type IDENTIFIER LBRACKET RBRACKET EQUALS array_init
+    | optional_modifiers type IDENTIFIER dimensions EQUALS array_init
         {
             Variable *var = variable_new($3);
             add_variable_to_scope($3, var);
-            set_array_variable($3, count_expression_list($7), get_current_modifiers(), $2);
-            populate_array_variable($3, $7);
-            $$ = create_array_declaration_node($3, count_expression_list($7), $2);
+            set_multi_array_variable($3, $4.dimensions, $4.num_dimensions, get_current_modifiers(), $2);
+            // Handle initialization with proper dimension checks
+            populate_multi_array_variable($3, $6, $4.dimensions, $4.num_dimensions);
+            $$ = create_multi_array_declaration_node($3, $4.dimensions, $4.num_dimensions, $2);
             SAFE_FREE($3);
             SAFE_FREE(var);
-            free_expression_list($7);
-        }
-    | optional_modifiers type IDENTIFIER LBRACKET INT_LITERAL RBRACKET EQUALS array_init
-        {
-            Variable *var = variable_new($3);
-            add_variable_to_scope($3, var);
-            ASTNode *node = create_array_declaration_node($3, $5, $2);
-            set_array_variable($3, $5, get_current_modifiers(), $2);
-            if ($8) {
-                populate_array_variable($3, $8);
-                free_expression_list($8);
-            }
-            $$ = node;
-            SAFE_FREE($3);
-            SAFE_FREE(var);
+            free_expression_list($6);
         }
     ;
 
 array_init:
     LBRACE initializer_list RBRACE
         { $$ = $2; }
+    ;
+
+dimensions:
+    LBRACKET INT_LITERAL RBRACKET
+        {
+            $$.dimensions[0] = $2;
+            $$.num_dimensions = 1;
+        }
+    | dimensions LBRACKET INT_LITERAL RBRACKET
+        {
+            if ($1.num_dimensions >= MAX_DIMENSIONS) {
+                yyerror("Maximum array dimensions exceeded");
+                YYABORT;
+            }
+            $$.dimensions[$1.num_dimensions] = $3;
+            $$.num_dimensions = $1.num_dimensions + 1;
+        }
     ;
 
 initializer_list:
@@ -431,9 +439,9 @@ assignment:
             $$ = create_assignment_node($1, $3); 
             SAFE_FREE($1);
         }
-    | IDENTIFIER LBRACKET expression RBRACKET EQUALS expression
+    | IDENTIFIER multi_dimension_access EQUALS expression
         {
-            ASTNode *access = create_array_access_node($1, $3);
+            ASTNode *access= create_multi_array_access_node($1, $2.indices, $2.num_dimensions);
             ASTNode *node = ARENA_ALLOC(ASTNode);
             if (!node) {
                 yyerror("Memory allocation failed");
@@ -442,10 +450,28 @@ assignment:
             }
             node->type = NODE_ASSIGNMENT;
             node->data.op.left = access;
-            node->data.op.right = $6;
+            node->data.op.right = $4;
             node->data.op.op = OP_ASSIGN;
             $$ = node;
             SAFE_FREE($1);
+        }
+    ;
+
+multi_dimension_access:
+    LBRACKET expression RBRACKET
+        {
+            $$.indices[0] = $2;
+            $$.num_dimensions = 1;
+        }
+    | multi_dimension_access LBRACKET expression RBRACKET
+        {
+            if ($1.num_dimensions >= MAX_DIMENSIONS) {
+                yyerror("Too many array indices");
+                YYABORT;
+            }
+            $$ = $1;
+            $$.indices[$$.num_dimensions] = $3;
+            $$.num_dimensions++;
         }
     ;
 
@@ -482,14 +508,13 @@ parentheses:
     ;
 
 array_access:
-      IDENTIFIER LBRACKET expression RBRACKET
-        { 
-            $$ = create_array_access_node($1, $3);
+    IDENTIFIER multi_dimension_access
+        {
+            ASTNode *node = create_multi_array_access_node($1, $2.indices, $2.num_dimensions);
             SAFE_FREE($1);
+            $$ = node;
         }
     ;
-
-
 
 %%
 

@@ -1,5 +1,5 @@
 skibidi main {
-    rizz nums[] = {7, 11, 2, 15};
+    rizz nums[4] = {7, 11, 2, 15};
     rizz target = 9;
     rizz numsSize = maxxing(nums) / maxxing(nums[0]);
     rizz result[2];
